@@ -1,0 +1,9 @@
+# Ignore everything
+/[!.]*
+/.?*
+
+# Except the Cloud Function files we want to deploy
+!/app.yaml
+!/dist/**
+!/main.py
+!/requirements.txt

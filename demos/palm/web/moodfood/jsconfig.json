@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "baseUrl": "."
+  },
+  "include": ["src/**/*", "config-overrides.js"],
+  "exclude": ["node_modules"]
+}
