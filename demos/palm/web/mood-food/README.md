@@ -1,5 +1,7 @@
 # LLM Demo - Mood Food
 
+![mood-food-header](./docs/mood_food_header.png)
+
 Mood Food is a chatbot-based web application that can create a recipe based on the user's message. It is powered by PaLM, a large language model from Google. To use Mood Food, simply type in a message describing your mood or what you're in the mood for, and Mood Food will generate a recipe that matches your request.
 
 Mood Food is a great way to find new recipes to try, and it's also a fun way to explore different cuisines and ingredients.
