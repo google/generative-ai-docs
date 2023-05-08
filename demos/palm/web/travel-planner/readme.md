@@ -1,10 +1,10 @@
-# LLM Demo - Wanderlust
+# LLM Demo - Travel Planner
 
-Wanderlust is a chatbot-based web application that can create itinerary based on the user's message. It is powered by PaLM, a large language model from Google. To use Wanderlust, simply type in a message that describes your interests or preferences, and it will generate an itinerary for you. You can also provide additional information to refine the itinerary.
+Travel Planner is a chatbot-based web application that can create itinerary based on the user's message. It is powered by PaLM, a large language model from Google. To use Wanderlust, simply type in a message that describes your interests or preferences, and it will generate an itinerary for you. You can also provide additional information to refine the itinerary.
 
 Wanderlust will consider your interests and preferences to create a personalized itinerary for you. It's a great tool for planning your next trip!
 
-![wanderlust-demo](./docs/wanderlust_demo.gif)
+![travel-planner-demo](./docs/wanderlust_demo.gif)
 
 ## Table of contents
 
