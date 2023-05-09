@@ -1,0 +1,14 @@
+name: "Mediapipe"
+description:
+  "Cross-platform, customizable ML solutions for live and streaming media."
+
+third_party {
+  url {
+    type: GIT
+    value: "https://github.com/google/mediapipe"
+  }
+  version: "0.9.3.0"
+  last_upgrade_date { year: 2023 month: 05 day: 24 }
+  license_type: PERMISSIVE
+  local_modifications: "None"
+}
