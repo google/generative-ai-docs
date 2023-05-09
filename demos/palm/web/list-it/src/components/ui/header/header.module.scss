@@ -1,0 +1,105 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables.scss';
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  z-index: 999;
+
+  @media screen and (max-width: $containerWidth) {
+    background-color: $md-white;
+  }
+
+  @media screen and (min-width: #{$containerWidth + 1px}) {
+    padding: 40px;
+  }
+
+  .logo {
+    font-weight: 500;
+    font-size: 18px;
+    color: $c-main;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      font-size: 24px;
+    }
+  }
+
+  .navList {
+    display: flex;
+    gap: 24px;
+  }
+
+  .navItem {
+    position: relative;
+    display: inline-block;
+
+    button,
+    span {
+      display: block;
+    }
+  }
+
+  .copied {
+    opacity: 0;
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 28px;
+    height: 30px;
+    padding: 0 12px;
+    letter-spacing: 0;
+    border-radius: 100px;
+    background: $md-grey-900;
+    color: white;
+    position: absolute;
+    pointer-events: none;
+    transform: translate(-10px, -50%);
+
+    &.show {
+      animation-name: copied;
+      animation-duration: 1s;
+    }
+  }
+}
+@keyframes copied {
+  0% {
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  75% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,131 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import 'variables.scss';
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background-color: $c-bg;
+  color: $c-text;
+}
+
+html,
+button,
+input {
+  font-family: $base-font-family;
+  font-size: $base-font-size;
+}
+
+main {
+  padding-top: 56px;
+
+  @media screen and (min-width: #{$containerWidth + 1px}) {
+    padding-top: 100px;
+  }
+}
+
+button,
+input {
+  &:focus {
+    outline: none;
+  }
+}
+
+button {
+  appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.heading {
+  font-weight: 500;
+  font-size: 18px;
+
+  @media screen and (min-width: #{$containerWidth + 1px}) {
+    font-size: 28px;
+  }
+}
+
+.container {
+  max-width: $containerWidth;
+  margin-left: auto;
+  margin-right: auto;
+
+  @media screen and (max-width: $containerWidth) {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+.container--wide {
+  max-width: $containerWidthWide;
+}
+
+.space-m {
+  margin-bottom: 16px;
+
+  @media screen and (min-width: #{$containerWidth + 1px}) {
+    margin-bottom: 24px;
+  }
+}
+.space-l {
+  margin-bottom: 24px;
+
+  @media screen and (min-width: #{$containerWidth + 1px}) {
+    margin-bottom: 32px;
+  }
+}
+
+.circleButton {
+  border: 1.25px solid $c-main;
+  color: $c-main;
+  border-radius: 100%;
+  height: 30px;
+  width: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 1 / 1;
+
+  span {
+    font-size: 20px;
+  }
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+  border-radius: 50%;
+  border-top: 2px solid $c-main;
+  border-left: 2px solid $c-main;
+  border-bottom: 2px solid $c-main;
+  border-right: 2px solid rgba(255, 255, 255, 0);
+  animation: spinner 1s linear infinite;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}

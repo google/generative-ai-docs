@@ -1,0 +1,173 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables.scss';
+
+.textareaBox {
+  border: 1px solid $md-grey-300;
+  transition: all 300ms ease-in-out;
+  padding: 18px 16px;
+  border: 1px solid $c-border;
+  border-radius: 8px;
+  width: calc(100% - 2 * 16px);
+  margin: 16px;
+  background-color: $md-white;
+
+  @media screen and (min-width: #{$containerWidth + 1px}) {
+    padding: 24px;
+    max-width: $containerWidth;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 24px;
+  }
+
+  &.hasFocus {
+    box-shadow: $soft-shadow;
+  }
+
+  &.expand {
+    @media screen and (max-width: $containerWidth) {
+      width: 100%;
+      border-radius: 0;
+      margin: 0 0 16px 0;
+      border-left: none;
+      border-right: none;
+    }
+
+    .prompt {
+      color: $c-main;
+    }
+
+    .textarea .wrapper {
+      @media screen and (max-width: $containerWidth) {
+        font-size: 16px;
+      }
+    }
+  }
+
+  .textarea {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+
+    .wrapper {
+      position: relative;
+      flex: 1;
+      font-size: 18px;
+      line-height: 20px;
+
+      &:hover {
+        cursor: text;
+      }
+
+      @media screen and (min-width: #{$containerWidth + 1px}) {
+        font-size: 24px;
+        line-height: 36px;
+      }
+
+      .prompt {
+        display: inline-block;
+      }
+
+      .spanParent {
+        position: relative;
+        padding-top: 1px;
+        padding-bottom: 1px;
+
+        .editableContent {
+          position: relative;
+          color: $c-main;
+          word-break: break-word;
+          outline: none;
+
+          &.disabled {
+            pointer-events: none;
+          }
+        }
+
+        .placeholder {
+          position: absolute;
+          top: 50%;
+          left: 0;
+          white-space: nowrap;
+          color: $md-grey-700;
+          pointer-events: none;
+          transform: translate(0, -50%);
+        }
+      }
+    }
+
+    .rightColumn {
+      display: flex;
+
+      .submit {
+        background-color: $c-main;
+        color: $md-white;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 100%;
+
+        @media screen and (min-width: #{$containerWidth + 1px}) {
+          width: 32px;
+          height: 32px;
+        }
+
+        &.hide {
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        span {
+          font-size: 14px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+      }
+    }
+  }
+
+  .restart {
+    width: 100%;
+    margin-top: 8px;
+    cursor: pointer;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      margin-top: 16px;
+    }
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: $c-main;
+      font-size: 12px;
+
+      span {
+        font-size: 16px;
+      }
+
+      .restartText {
+        font-size: 12px;
+      }
+    }
+  }
+}

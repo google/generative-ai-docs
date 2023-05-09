@@ -1,0 +1,214 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables.scss';
+
+// $infiniteListBlueLineHeightPadding: 60px;
+// $infiniteListBlueLineHeight: calc(1em + $infiniteListBlueLineHeightPadding);
+$infiniteListBlueLineHeight: 60px;
+
+.listBox {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 16px;
+
+  @media screen and (min-width: #{$containerWidth + 1px}) {
+    padding-bottom: 24px;
+  }
+
+  .animationContainer {
+    transform: translate(0, 64px) scale(0.95);
+    opacity: 0;
+    transform-origin: top center;
+    transition: all 0.8s 0.3s ease;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      background-color: $md-white;
+    }
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      border: 1.25px solid $c-border;
+      border-radius: 10px;
+      max-width: $containerWidth;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
+  &.isFirst {
+    overflow: visible;
+
+    .animationContainer {
+      transition-delay: 0;
+    }
+  }
+
+  &.animateIn .animationContainer {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  .listHead {
+    padding: 16px 16px;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      padding: 32px 32px; // 16 + 60 (target height) - 28 (Line-Height) / 2 (for top/bottom)
+    }
+  }
+
+  .list {
+    list-style: none;
+    // border-top: 1px solid $md-green-100;
+    margin-bottom: 16px;
+
+    background-image: linear-gradient($md-green-100 1px, transparent 1px);
+    background-size: $infiniteListBlueLineHeight $infiniteListBlueLineHeight;
+    list-style-position: outside;
+
+    // this reveals the last blue line
+    padding-bottom: 1px;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      margin-bottom: 32px;
+    }
+
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border-width: 1px;
+    }
+  }
+
+  .listItem {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+
+    &:before {
+      content: '';
+      position: absolute;
+      top: calc(18px + 0.5em);
+
+      width: 6px;
+      height: 6px;
+      background-color: black;
+      border-radius: 100%;
+
+      @media screen and (min-width: #{$containerWidth + 1px}) {
+        top: calc(20px + 0.5em);
+        width: 7.5px;
+        height: 7.5px;
+      }
+    }
+
+    button {
+      transition: all 0.1s ease-in-out;
+      margin-top: 15px;
+    }
+
+    @media (hover: hover) {
+      button:hover {
+        background-color: $c-main;
+        span {
+          color: $c-bg;
+          @media screen and (min-width: #{$containerWidth + 1px}) {
+            color: $md-white;
+          }
+        }
+      }
+    }
+
+    button:active {
+      background-color: $c-main;
+      span {
+        color: $c-bg;
+        @media screen and (min-width: #{$containerWidth + 1px}) {
+          color: $md-white;
+        }
+      }
+    }
+  }
+
+  .listItemTitle {
+    font-size: 14px;
+    line-height: 60px;
+    padding-left: 16px; /// 6 dot + 10 gap
+    // padding-top: 17px; // (60 - 18 ) / 2 - line should be min 60 height
+    // padding-bottom: 17px; // (60 - 18 ) / 2 - line should be min 60 height
+    padding-right: 16px;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      font-size: 18px;
+      padding-left: 17.5px; /// 7.5 dot + 10 gap
+      // padding-top: 21px; // (60 - 18 ) / 2 - line should be min 60 height
+      // padding-bottom: 21px; // (60 - 18 ) / 2 - line should be min 60 height
+    }
+  }
+
+  .listActions {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      padding: 0 32px;
+      margin-bottom: 32px;
+    }
+
+    > * {
+      flex: 1 1 auto;
+    }
+  }
+  .listTipBox {
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-bottom: 16px;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      padding-left: 32px;
+      padding-right: 32px;
+      margin-bottom: 32px;
+    }
+  }
+}
+
+// reset hover state on loading & touch
+.isLoading,
+:global(.isTouch) {
+  .listItem {
+    button:hover {
+      background-color: transparent;
+      span {
+        color: $c-main;
+      }
+    }
+
+    button:active {
+      background-color: $c-main;
+      span {
+        color: $c-bg;
+        @media screen and (min-width: #{$containerWidth + 1px}) {
+          color: $md-white;
+        }
+      }
+    }
+  }
+}

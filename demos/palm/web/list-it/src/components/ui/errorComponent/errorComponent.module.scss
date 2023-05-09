@@ -1,0 +1,89 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables.scss';
+
+.error {
+  padding-left: 16px;
+  padding-right: 16px;
+
+  transform: translate(0, 64px) scale(0.95);
+  opacity: 0;
+  transform-origin: top center;
+  transition: all 0.8s ease;
+
+  @media screen and (min-width: #{$containerWidth + 1px}) {
+    border: 1.25px solid $c-border;
+    border-radius: 10px;
+    padding: 16px 32px 32px 32px;
+    background-color: $md-white;
+  }
+
+  &.animateIn {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  .heading {
+    padding-top: 15px;
+    padding-bottom: 15px;
+    line-height: 1;
+    font-size: 18px;
+    display: block;
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      font-size: 28px;
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+  }
+
+  .errorBox {
+    position: relative;
+    padding: 24px;
+
+    @media screen and (max-width: $containerWidth) {
+      background-color: $md-white;
+      padding: 16px;
+    }
+
+    @media screen and (min-width: #{$containerWidth + 1px}) {
+      max-width: $containerWidth;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 16px;
+      background-color: $md-grey-50;
+    }
+
+    &:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 2px;
+      background-color: $c-main;
+    }
+  }
+
+  .message {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  button {
+    width: 100%;
+  }
+}

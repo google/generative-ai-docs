@@ -1,0 +1,83 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables.scss';
+
+.button {
+  border: 1px solid $c-main;
+  color: $c-main;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+
+  &[disabled] {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  @media screen and (min-width: #{$containerWidth + 1px}) {
+    padding: 16px;
+  }
+
+  &,
+  svg path {
+    transition: all 0.2s ease-in-out;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: $c-main;
+      color: $md-white;
+
+      svg path {
+        fill: $md-white;
+      }
+    }
+  }
+
+  &:active {
+    background-color: $c-main;
+    span {
+      color: $c-bg;
+      @media screen and (min-width: #{$containerWidth + 1px}) {
+        color: $md-white;
+      }
+    }
+  }
+}
+
+:global(.isTouch) {
+  .button:hover {
+    background-color: transparent;
+    color: $c-main;
+
+    svg path {
+      fill: $c-main;
+    }
+  }
+
+  .button:active {
+    background-color: $c-main;
+    span {
+      color: $c-bg;
+      @media screen and (min-width: #{$containerWidth + 1px}) {
+        color: $md-white;
+      }
+    }
+  }
+}
