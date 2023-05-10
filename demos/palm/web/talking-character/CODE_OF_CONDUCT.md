@@ -69,8 +69,8 @@ dispute. If you are unable to resolve the matter for any reason, or if the
 behavior is threatening or harassing, report it. We are dedicated to providing
 an environment where participants feel welcome and safe.
 
-Reports should be directed to _[PROJECT STEWARD NAME(s) AND EMAIL(s)]_, the
-Project Steward(s) for _[PROJECT NAME]_. It is the Project Steward’s duty to
+Reports should be directed to jayji@google.com, the
+Project Steward(s) for Talking Character. It is the Project Steward’s duty to
 receive and address reported violations of the code of conduct. They will then
 work with a committee consisting of representatives from the Open Source
 Programs Office and the Google Open Source Strategy team. If for any reason you
