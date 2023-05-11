@@ -23,6 +23,19 @@ import {
 
 const MODEL_TEMPERATURE = 0.25
 
+
+/**
+ * @typedef {Object} TextPrompt
+ * @property {string} text The text to continue.
+ */
+
+/**
+ * Generate a continuation of a text.
+ * 
+ * @param {TextPrompt} prompt  The TextPrompt to send to the model.
+ * @param {number} temperature The model temperature.
+ * @returns A Promise object that, if fulfilled, returns an object that represents the model's response.
+ */
 const predict = async (prompt, temperature = MODEL_TEMPERATURE) => {
   try {
     const response = await post({
