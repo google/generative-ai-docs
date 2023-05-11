@@ -15,32 +15,19 @@
  */
 
 import {createMediaPipeLib, GraphRunner, WasmModule} from './mediapipe/web/graph_runner/graph_runner';
-// import {TrustedResourceUrl} from 'safevalues';
 
 declare interface AudioBlendshapesWasmModule {
-  // Blendshape-specific fcns
-  // TODO(tmullen): Look into caching names or using an array, to avoid repeated
-  //    C++-to-JS string translation and lookup.
   updateBlendshape: (name: string, value: number) => void;
 }
 
-/**
- * Valid types of image sources which we can run our GraphRunner over.
- */
 export interface Blendshapes {
   [name: string]: number;
 }
 
-/**
- * Simple class to extract a list of classifications from an image source.
- * Takes a WebAssembly Module (must be instantiated to Window.Module).
- */
 export class MediaPipeAudioBlendshapes extends GraphRunner {
   private readonly blendshapes: Blendshapes = {};
 
   constructor(module: WasmModule) {
-    // We assume we're running on Chrome for now, so we have access to
-    // OffscreenCanvas.
     super(module);
     (module as unknown as AudioBlendshapesWasmModule).updateBlendshape =
         (name: string, value: number) => {
