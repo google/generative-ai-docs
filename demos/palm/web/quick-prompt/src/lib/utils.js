@@ -20,12 +20,11 @@ import excluded_words from './excluded_words'
 export const getRand = xs => xs[Math.floor(Math.random() * xs.length)]
 
 export const roundSeconds = 120
-// export const roundSeconds = 5
 
 export const useIsMobile = () => {
-  // store if window inner width is smaller than 768px
+  // Store if window inner width is smaller than 768px
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  // add event listener to window to update isMobile state
+  // Add event listener to window to update isMobile state
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', handleResize)
@@ -34,18 +33,9 @@ export const useIsMobile = () => {
   return isMobile
 }
 
-/**
- * The AI will return a string with [] to indicate the part of the string
- * that is the guess. Replace [] with <mark> tag to style the guessed word,
- * then split the text into an array of objects with word and count properties
- * to be used in the wordByWord animation.
- *
- * @param {string} str - string to split
- * @returns {array} - array of objects with word and count properties
- * @example
- * splitText('Hello world')
- * // returns [{word: 'Hello', count: 0}, {word: 'world', count: 6}]
- **/
+// The model will enclose the word it is guessing within [square brackets]
+// Surround the enclosed item with <mark> tags to style it in the UI,
+// then split the text into an array of {word, count} objects
 export const splitText = str => {
   let count = 0
   const re = new RegExp('(<mark.*?</mark>)', 'g')
@@ -69,12 +59,14 @@ export const splitText = str => {
 }
 
 /**
- * Will match if a word from the user input (userInputWords) matches part or all of gamePrompt.word
- * Will match if a word from the user input (userInputWords) exactly matches a disallowed word
+ * Check the user input against the target word and list of forbidden words.
+ * 
+ * Will match if a word from the user input contains part or all of the target word,
+ * or if a word from the user input exactly matches one of the disallowed words.
  *
- * @param {object} gamePrompt - object representing the game prompt
- * @param {array} userInputWords - the user input, as an array of words
- * @returns {array} - array of matches
+ * @param {object} gamePrompt       An object representing the current target word and disallowed words.
+ * @param {string[]} userInputWords The user input, as an array of words.
+ * @returns {string[]} An array of matches.
  */
 export const matchDisallowedWords = (gamePrompt, userInputWords) => {
   const {word, disallowed} = gamePrompt
