@@ -65,8 +65,10 @@ const useStore = create((set, get) => ({
       if (!muted) sound.playSound(fileName)
     },
     /**
-     * Fetches words from src/lib/words.js, splits them into 3 difficulty levels,
-     * builds an array with 3 of each difficulty level, then random after that
+     * Fetch words from src/lib/words.js.
+     * The resulting `words` array contains three random words from each of the
+     * difficulty levels (easy, medium, hard) in order of ascending difficulty,
+     * followed by all remaining words in random order.
      */
     fetchWords: () => {
       const {easy_words, medium_words, hard_words} = allWords
@@ -85,9 +87,8 @@ const useStore = create((set, get) => ({
         words
       })
     },
-
     /**
-     * Sets secondsLeft to 0, which will trigger the end of the game.
+     * Set `secondsLeft` to 0, which will trigger the end of the game.
      */
     stopGame: ({showStart} = {showStart: false}) => {
       const {actions} = get()
@@ -95,15 +96,13 @@ const useStore = create((set, get) => ({
       setTimeout(actions.tick, 1)
       set({
         secondsLeft: 0,
-        // tickInt: setTimeout(actions.tick, 1),
         gameStarted: !showStart
       })
     },
-
     /**
-     * Sets a new word for the AI to guess and starts the round.
+     * Select a new word for the AI to guess.
      *
-     * @param {boolean} reset - if true, refetch the words and start from the beginning
+     * @param {boolean} reset If true, re-fetch the words.
      */
     startRound: reset => {
       set(() => {
@@ -149,7 +148,6 @@ const useStore = create((set, get) => ({
         }
       })
     },
-
     startTimer: () => {
       const {actions, tickInt, timerStarted} = get()
       if (timerStarted) return
@@ -162,18 +160,21 @@ const useStore = create((set, get) => ({
         timerStarted: true
       })
     },
-
     /**
-     * Tests the passed string against the prompt's disallowed words, adds the text to the dialogue,
-     * If there are disallowed words, it will set the badInput state and return, otherwise it will
-     * call the model to respond.
-     *
+     * Perform all steps necessary to complete a user turn.
+     * 
+     * First, check the passed user hint against the target word and list of forbidden words.
      * Rules are as follows:
-     * Mentioning a forbidden word skips that word
-     * Mentioning the word that needs to be described skips that word
-     * Mentioning a part of the word that needs to be described skips that word (i.e. “earring”, you can not say “ear” or “ring”)
+     * - The user hint may not contain the target word.
+     * - The user hint may not contain a substring of the target word.
+     *  (For example, if the target word is "earring", the user hint may not contain "ear" or "ring")
+     * - The user hint may not contain any of the forbidden words.
+     * 
+     * If the passed string passes the above checks, add the string to the dialogue and call the model.
+     * Otherwise, add the passed string (as the user turn) followed by FORBIDDEN_WORD_RESPONSE (as the model turn)
+     * to the dialogue and move on to the next word (do not call the model).
      *
-     * @param {string} text - the text to add to the dialogue
+     * @param {string} text The hint provided by the user to help the AI guess the target word.
      */
     addHumanTurn: async text => {
       const {dialogue, modelDialogue, actions, gamePrompt, addNewWordPrefix} =
@@ -196,7 +197,7 @@ const useStore = create((set, get) => ({
           actions.setBadInput(false)
           actions.startRound()
 
-          // add the forbidden word response to the dialogue that gets sent to the model
+          // Add the forbidden word response to the dialogue that gets sent to the model
           set({
             dialogue: [
               ...dialogue,
@@ -207,7 +208,7 @@ const useStore = create((set, get) => ({
 
         actions.playSound('sounds/forbidden-word.mp3')
 
-        // sort matches by index in text so the words in forbiddenPopup are in the correct order
+        // Sort matches by their indicies in the passed `text` so the words in `forbiddenPopup` appear in the correct order
         matches.sort((a, b) => {
           const aIndex = text.indexOf(a)
           const bIndex = text.indexOf(b)
@@ -217,14 +218,14 @@ const useStore = create((set, get) => ({
         set({
           modelDialogue: [
             ...modelDialogue,
-            // add the user text to the dialogue that gets sent to the model
+            // Add the user text to the dialogue that gets sent to the model
             {
               id: uuid(),
               text: addNewWordPrefix
                 ? `${NEW_WORD_PREFIX} ${turnText}`
                 : turnText
             },
-            // add the forbidden word response to the dialogue that gets sent to the model
+            // Add the forbidden word response to the dialogue that gets sent to the model
             {
               id: uuid(),
               text: FORBIDDEN_WORD_RESPONSE
@@ -235,7 +236,7 @@ const useStore = create((set, get) => ({
 
         const re = new RegExp(`(${matches.join('|')})`, 'g')
 
-        // add the marked user text to the dialogue that is displayed on-screen
+        // Add the marked user text to the dialogue that is displayed on-screen
         set({
           dialogue: [
             ...dialogue,
@@ -248,7 +249,7 @@ const useStore = create((set, get) => ({
           ]
         })
 
-        // if the user text contained forbidden words, don't send the updated dialogue to the model
+        // If the user text does not passed the disallowed word checks, do not call the model
         return
       }
 
@@ -257,7 +258,7 @@ const useStore = create((set, get) => ({
         : `${turnText} ${USER_TURN_SUFFIX}`
 
       set({
-        // add the user text to the dialogue that gets sent to the model
+        // Add the user text to the dialogue that gets sent to the model
         modelDialogue: [
           ...modelDialogue,
           {
@@ -265,7 +266,7 @@ const useStore = create((set, get) => ({
             text: modelDialogueText
           }
         ],
-        // add the user text to the dialogue that is displayed on-screen
+        // Add the user text to the dialogue that is displayed on-screen
         dialogue: [
           ...dialogue,
           {
@@ -276,16 +277,15 @@ const useStore = create((set, get) => ({
         addNewWordPrefix: false
       })
 
-      // send the updated dialogue to the model
+      // Send the updated dialogue to the model
       await actions.addAITurn()
     },
-
     speakDialogue: async modelText => {
       const {computerVoice, muted} = get()
 
       if (muted || !computerVoice) return
 
-      // if computerVoice is true, get the speech utterance
+      // If computerVoice is true, get the speech synthesis utterance
       const audio = computerVoice && speech.getUtterance(modelText, 'Fred')
 
       if (!muted && computerVoice) {
@@ -297,7 +297,9 @@ const useStore = create((set, get) => ({
         await speech.playSpeech(audio)
       }
     },
-
+    /**
+     * Check the model's guess against the target word.
+     */
     testGuess: async () => {
       const {currentGuess, gamePrompt} = get()
 
@@ -316,13 +318,15 @@ const useStore = create((set, get) => ({
         setTimeout(actions.startRound, 2000)
       }
     },
-
+    /**
+     * Perform all steps necessary to complete a model turn.
+     */
     addAITurn: async () => {
       const {dialogue, modelDialogue, actions, currentGuess} = get()
 
       actions.pause()
 
-      // send user text to API
+      // Send the conversation to the API to have the model generate a response
       const modelResponse = await api.performTurn(
         modelDialogue.map(({text}) => text)
       )
@@ -332,11 +336,11 @@ const useStore = create((set, get) => ({
         (modelResponse.error &&
           error_responses[Math.floor(Math.random() * error_responses.length)])
 
-      // if there is a guess in the model response, save it to state (the model will return a guess in the form of [guess])
+      // If there is a guess in the model response, save it to state (the model will enclose guessed words within [square brackets])
       const guessMatch = modelText.toLowerCase().match(/\[([\w\s]+)\]/)
       const guess = guessMatch && guessMatch[1]
 
-      // add the AI response to the dialogue
+      // Add the model response to the dialogue
       set(() => {
         return {
           dialogue: [...dialogue, {id: uuid(), text: modelText, isModel: true}],
@@ -402,7 +406,7 @@ const useStore = create((set, get) => ({
 
       set(() => ({didSkip}))
     },
-    // when you turn computerVoice toggle on, set speechCharIndex to 10000 so that the whole text is visible
+    // If computerVoice is turned on, set speechCharIndex to 10000 so that the whole text is visible
     setComputerVoice: computerVoice =>
       set(() => ({computerVoice, speechCharIndex: 10000})),
     pause: () => set({inputDisabled: true, paused: true}),
@@ -434,7 +438,7 @@ const useStore = create((set, get) => ({
       const timeout = secondsLeft - 1 === 0 ? 0 : 1000
 
       set(() => ({
-        // if `didWin` is true, pause the timer
+        // If `didWin` is true, pause the timer
         secondsLeft: didWin ? secondsLeft : secondsLeft - 1,
         tickInt: setTimeout(actions.tick, timeout)
       }))
