@@ -81,6 +81,22 @@ export const LISTIT_PROMPT_COMPONENTS = {
   ]
 }
 
+/**
+ * @typedef {Object} PromptComponents
+ * @property {string[]} prefixes
+ * @property {string[][]} examples
+ * 
+ * Each element in examples has a length of prefixes.length.
+ * The value at prefixes[i] corresponds to the value at examples[<any>][i].
+ */
+
+/**
+ * Construct a prompt string from a PromptComponents object and an input.
+ * 
+ * @param {PromptComponents} promptComponents The prompt components.
+ * @param {string} input                      The input to the prompt.
+ * @returns A prompt string.
+ */
 export const constructPrompt = (promptComponents, input) => {
   const lines = []
   if (promptComponents.preamble) {
