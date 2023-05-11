@@ -20,8 +20,32 @@ import {QUICKPROMPT_PROMPT_COMPONENTS} from './priming'
 const MODEL_TEMPERATURE = 0.25
 const NUM_CANDIDATE_RESPONSES = 8
 
+/**
+ * @typedef {Object} Message
+ * @property {string|undefined} author The author of this Message (optional).
+ * @property {string} content          The text content of the Message.
+ * 
+ * @typedef {Object} Example
+ * @property {Message} input  An example of an input Message from the user.
+ * @property {Message} output An example of what the model should output given the input.
+ * 
+ * @typedef {Object} MessagePrompt
+ * @property {string|undefined} context     Context to steer model responses (optional).
+ * @property {Example[]|undefined} examples Examples to further tune model responses (optional).
+ * @property {Message[]} messages           The conversation, as an array of alterning user/model Messages.
+ */
+
+/**
+ * Get a guess from the model.
+ * 
+ * @param {MessagePrompt} prompt The MessagePrompt to send to the model.
+ * @param {number} temperature   The model temperature.
+ * @returns A Promise object that, if fulfilled, returns an object that represents the model's response.
+ */
 const getGuess = async (prompt, temperature = MODEL_TEMPERATURE) => {
   try {
+    // Call the PaLM API
+    // For more info, see https://developers.generativeai.google/api/rest/generativelanguage/models/generateMessage
     const result = await post({
       model: 'chat-bison-001',
       method: 'generateMessage',
@@ -66,6 +90,12 @@ const getGuess = async (prompt, temperature = MODEL_TEMPERATURE) => {
   }
 }
 
+/**
+ * Perform the model's turn in a conversation between the user and the model.
+ * 
+ * @param {string[]} convo The conversation, as an array of alterning user/model strings.
+ * @returns A Promise object that, if fulfilled, returns an object that represents the model's response.
+ */
 export const performTurn = async convo => {
   const messages = convo.map((content, i) => ({author: `${i % 2}`, content}))
 
