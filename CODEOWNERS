@@ -1,7 +1,3 @@
-demos/web/list-it/ @mrayinteractive
-demos/web/mood-food/ @lyleaf
-demos/web/quick-prompt/ @mrayinteractive
-demos/web/talking-character/ @jayji
-demos/web/travel-planner/ @lyleaf
+demos/web/ @mrayinteractive @aaron-wade @lyleaf @jayji
 
 site/ @google/generative-ai-site-team
