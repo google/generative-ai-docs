@@ -18,8 +18,9 @@ const audioContext = new AudioContext()
 const audioBuffers = {}
 
 /**
- * Get audio buffer from cache or fetch it
- * @param {string} url
+ * Get an AudioBuffer from cache, or retrieve the audio asset from the provided URL if the AudioBuffer doesn't exist in cache.
+ * 
+ * @param {string} url The URL from which to retrieve the audio asset.
  * @returns {Promise<AudioBuffer>}
  */
 const getAudio = async url => {
@@ -30,8 +31,9 @@ const getAudio = async url => {
 }
 
 /**
- * Fetch audio buffer from url
- * @param {string} url
+ * Retrieve an audio asset from a URL.
+ * 
+ * @param {string} url The URL from which to retrieve the audio asset.
  * @returns {Promise<AudioBuffer>}
  */
 const fetchAudio = async url => {
@@ -42,8 +44,9 @@ const fetchAudio = async url => {
 }
 
 /**
- * Play audio buffer from url
- * @param {string} url
+ * Play an audio asset retrieved from a URL.
+ * 
+ * @param {string} url The URL from which to retrieve the audio asset.
  * @returns {Promise}
  */
 export const playSound = async url => {
