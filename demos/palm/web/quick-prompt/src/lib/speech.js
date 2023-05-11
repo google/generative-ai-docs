@@ -30,19 +30,17 @@ export const checkVoiceSupport = () => {
   return voices.length > 0
 }
 
-/**
- * Text to speech requires a user interaction to work
- * call this function on page load when turning on
- * computer voice in settings to enable it
- **/
+
+// Text-to-speech requires a user interaction to work
+// Call this function on page load when turning on computer voice in settings
 export const initSpeechSynth = () =>
   speechSynth.speak(new SpeechSynthesisUtterance(''))
 
 /**
- * Get a speech synthesis utterance
+ * Get a speech synthesis utterance.
  *
- * @param {string} text - the text to speak
- * @param {string} voice - the name of the voice to use
+ * @param {string} text The text to speak.
+ * @param {string} voice The name of the voice to use.
  * @returns {SpeechSynthesisUtterance}
  */
 export const getUtterance = (text, voice) => {
@@ -63,9 +61,9 @@ export const getUtterance = (text, voice) => {
 }
 
 /**
- * Plays a speech synthesis utterance and resolves a promise when it ends
+ * Play a speech synthesis utterance.
  *
- * @param {SpeechSynthesisUtterance} utterance
+ * @param {SpeechSynthesisUtterance} utterance The utterance to play.
  * @returns {Promise}
  */
 export const playSpeech = utterance => {
