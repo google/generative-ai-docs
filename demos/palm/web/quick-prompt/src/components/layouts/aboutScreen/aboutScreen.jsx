@@ -48,19 +48,19 @@ const AboutScreen = () => {
       <div className="container container--wide">
         <h2>About this game</h2>
         <img
-          src="https://www.gstatic.com/webp/gallery/1.webp"
-          alt="placeholder"
+          src="https://storage.googleapis.com/experiments-uploads/quick-prompt/quick-prompt.gif"
+          alt="Quick Prompt demo gif"
         />
         <p>
-          This is a game where you prompt your AI teammate to guess a word
-          without saying the forbidden words. Because it uses a generative
-          language model, you can give it just about any clue and it will use
-          that clue to generate new guesses. It’s a simple demo of how
-          developers can use the Google Generative Language API to build AI apps
-          like conversation-driven games.
+          <em>Quick, Prompt!</em> is a game where you try to get your AI
+          teammate to guess a given word without using the word itself or any of
+          the “forbidden” words. This demo is an example of how you can use the
+          PaLM API to build conversation-driven applications that leverage
+          Google’s state of the art large language models (LLMs).
         </p>
         <p>Built by Google Creative Lab</p>
         <h2>License</h2>
+        <p>Apache License, Version 2.0</p>
       </div>
     </div>
   )
