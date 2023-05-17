@@ -6,6 +6,13 @@ Mood Food is a chatbot-based web application that can create a recipe based on t
 
 Mood Food is a great way to find new recipes to try, and it's also a fun way to explore different cuisines and ingredients.
 
+Swiggy, an Indian online food ordering and delivery platform, expressed their excitement when considering the use cases made possible by experiences like MoodFood.
+
+**“We're excited about the potential of Generative AI to transform the way we interact with our customers and merchants on our platform. Moodfood has the potential to help us go deeper into the products and services we offer, in a fun and engaging way" - Madhusudhan Rao, CTO, Swiggy**
+
+Google’s Partner Innovation team will also continue to build features and tools in partnership with local markets to expand on the R&D already underway.
+
+
 ![mood-food-demo](./docs/mood_food_demo.gif)
 
 ## Table of contents
