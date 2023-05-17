@@ -6,6 +6,20 @@ Talking Character is a voice chatbot-based web application that allows users to 
 
 Whether you're looking for a fun way to learn about PaLM, or you're interested in voice chatbot, Talking Character is the right demo for you!
 
+ZEPETO, beloved by Gen Z, is an avatar-centric social universe where users can fully customize their digital personas, explore fashion trends, and engage in vibrant self-expression and virtual interaction. Our Talking Character template allows users to create their own avatars, dress them up in different clothes and accessories, and interact with other users in virtual worlds. We are working with ZEPETO and have tested their metaverse avatar with over 50 blendshapes with great results.
+
+**"Seeing an AI character come to life as a ZEPETO avatar and speak with such fluidity and depth is truly inspiring. We believe a combination of advanced language models and avatars will infinitely expand what is possible in the metaverse, and we are excited to be a part of it."- Daewook Kim, CEO, ZEPETO**
+
+The demo is not restricted to metaverse use cases, though. The demo shows how characters can bring text corpus or knowledge bases to life in any domain.
+
+For example in gaming, LLM powered NPCs could enrich the universe of a game and deepen user experience through natural language conversations discussing the game’s world, history and characters.
+
+In education, characters can be created to represent different subjects a student is to study, or have different characters representing different levels of difficulty in an interactive educational quiz scenario, or representing specific characters and events from history to help people learn about different cultures, places, people and times.
+
+In commerce, the Talking Character kit could be used to bring brands and stores to life, or to power merchants in an eCommerce marketplace and democratize tools to make their stores more engaging and personalized to give better user experience. It could be used to create avatars for customers as they explore a retail environment and gamify the experience of shopping in the real world.
+
+Even more broadly, any brand, product or service can use this demo to bring a talking agent to life that can interact with users based on any knowledge set of tone of voice, acting as a brand ambassador, customer service representative, or sales assistant.
+
 ![talking-character-screen](./docs/talking-character-screen.png)
 
 ## Table of contents
