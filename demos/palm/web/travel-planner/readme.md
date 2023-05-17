@@ -6,6 +6,18 @@ Travel Planner is a chatbot-based web application that can create itinerary base
 
 Travel Planner will consider your interests and preferences to create a personalized itinerary for you. It's a great tool for planning your next trip!
 
+The industry demo, built by Google’s Partner Innovation team, will initially be launched in partnership with travel intermediary Agoda in APAC. 
+
+"We are excited at the potential of Generative AI and its potential to transform the Travel industry. We're looking forward to experimenting with Google's new technologies in this space to unlock higher value for our users" - Idan Zalzberg, CTO, Agoda
+
+Developing features and experiences based on Travel Planner provides multiple opportunities to improve customer experience and create business value. Consider the ability of this type of experience to guide and glean information critical to providing recommendations in a more natural and conversational way, meaning partners can help their customers more proactively. 
+
+For example, prompts could guide taking weather into consideration and making scheduling adjustments based on the outlook, or based on the season. Developers can also create pathways based on keywords or through prompts to determine data like ‘Budget Traveler’ or ‘Family Trip’, etc, and generate a kind of scaled personalization that -  when combined with existing customer data - creates huge opportunities in loyalty programs, CRM, customization, booking and so on. 
+
+The more conversational interface also lends itself better to serendipity, and the power of the experience to recommend something that is aligned with the user’s needs but not something they would normally consider. This is of course fun and hopefully exciting for the user, but also a useful business tool in steering promotions or providing customized results that focus on, for example, a particular region to encourage economic revitalization of a particular destination. 
+
+Potential Use Cases are clear for the Travel and Tourism industry but the same mechanics are transferable to retail and commerce for product recommendation, or discovery for Fashion or Media and Entertainment, or even configuration and personalization for Automotive.
+
 ![travel-planner-demo](./docs/wanderlust_demo.png)
 
 ## Table of contents
