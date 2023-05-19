@@ -6,7 +6,7 @@ Travel Planner is a chatbot-based web application that can create itinerary base
 
 Travel Planner will consider your interests and preferences to create a personalized itinerary for you. It's a great tool for planning your next trip!
 
-The industry demo, built by Google’s Partner Innovation team, will initially be launched in partnership with travel intermediary Agoda in APAC. 
+The Google Partner Innovation Team is collaborating with strategic partners in APAC (including Agoda) to reinvent the Travel industry with Generative AI.
 
 **"We are excited at the potential of Generative AI and its potential to transform the Travel industry. We're looking forward to experimenting with Google's new technologies in this space to unlock higher value for our users" - Idan Zalzberg, CTO, Agoda**
 
