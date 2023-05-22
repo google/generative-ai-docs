@@ -37,8 +37,8 @@ jobs:
     name: Notebook lint
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-python@v1
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
     - name: Install tensorflow-docs
       run: python3 -m pip install -U git+https://github.com/tensorflow/docs
     - name: Fetch main branch
@@ -56,5 +56,6 @@ jobs:
             --styles=google,tensorflow \
             --arg=repo:google/generative-ai-docs --arg=branch:main \
             --exclude_lint=tensorflow::button_download \
+            --exclude_lint=tensorflow::button_website \
             "${changed_notebooks[@]}"
         fi
