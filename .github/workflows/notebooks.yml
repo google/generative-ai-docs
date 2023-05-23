@@ -23,8 +23,13 @@ jobs:
       run: git fetch -u origin main:main
     - name: Check notebook formatting
       run: |
-        # Only check notebooks modified in this pull request.
-        readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          # Only check notebooks modified in this pull request
+          readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
+        else
+          # Manual run, check everything
+          readarray -t changed_notebooks < <(find -name '*.ipynb')
+        fi
         if [[ ${#changed_notebooks[@]} == 0 ]]; then
           echo "No notebooks modified in this pull request."
           exit 0
@@ -45,8 +50,13 @@ jobs:
       run: git fetch -u origin main:main
     - name: Lint notebooks
       run: |
-        # Only check notebooks modified in this pull request.
-        readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          # Only check notebooks modified in this pull request
+          readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
+        else
+          # Manual run, check everything
+          readarray -t changed_notebooks < <(find -name '*.ipynb')
+        fi
         if [[ ${#changed_notebooks[@]} == 0 ]]; then
           echo "No notebooks modified in this pull request."
           exit 0
