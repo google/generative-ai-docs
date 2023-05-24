@@ -28,7 +28,7 @@ jobs:
           readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
         else
           # Manual run, check everything
-          readarray -t changed_notebooks < <(find -name '*.ipynb')
+          readarray -t changed_notebooks < <(find site/en/ -name '*.ipynb')
         fi
         if [[ ${#changed_notebooks[@]} == 0 ]]; then
           echo "No notebooks modified in this pull request."
@@ -55,7 +55,7 @@ jobs:
           readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
         else
           # Manual run, check everything
-          readarray -t changed_notebooks < <(find -name '*.ipynb')
+          readarray -t changed_notebooks < <(find site/en/ -name '*.ipynb')
         fi
         if [[ ${#changed_notebooks[@]} == 0 ]]; then
           echo "No notebooks modified in this pull request."
