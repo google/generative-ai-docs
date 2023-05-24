@@ -66,6 +66,5 @@ jobs:
             --styles=google,tensorflow \
             --arg=repo:google/generative-ai-docs --arg=branch:main \
             --exclude_lint=tensorflow::button_download \
-            --exclude_lint=tensorflow::button_website \
             "${changed_notebooks[@]}"
         fi
