@@ -65,6 +65,7 @@ jobs:
           python3 -m tensorflow_docs.tools.nblint \
             --styles=google,tensorflow \
             --arg=repo:google/generative-ai-docs --arg=branch:main \
+            --arg=base_url:https://developers.generativeai.google/ \
             --exclude_lint=tensorflow::button_download \
             "${changed_notebooks[@]}"
         fi
