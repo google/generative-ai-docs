@@ -1,3 +1,5 @@
-demos/web/ @mrayinteractive @aaron-wade @lyleaf @jayjicheng
+* @google/generative-ai-admin
+
+demos/palm/web/ @mrayinteractive @aaron-wade @lyleaf @jayjicheng
 
 site/ @google/generative-ai-site-team
