@@ -1,0 +1,11 @@
+# Lint check for license headers.
+# See: https://github.com/googleapis/repo-automation-bots/tree/main/packages/header-checker-lint
+allowedCopyrightHolders:
+  - 'Google LLC'
+allowedLicenses:
+  - 'Apache-2.0'
+sourceFileExtensions:
+  - 'python'
+  - 'ts'
+  - 'js'
+  - 'java'
