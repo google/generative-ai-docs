@@ -17,7 +17,7 @@
 export default class LLMCaller {
   constructor() {
     this.apiKey = import.meta.env.VITE_GOOGLE_GENERATIVE_LANGUAGE_API_KEY
-    this.baseUrl = 'https://autopush-generativelanguage.sandbox.googleapis.com';
+    this.baseUrl = 'https://generativelanguage.googleapis.com';
   }
 
   async sendPrompt(context, examples, messages, temperature = 0) {
@@ -30,7 +30,7 @@ export default class LLMCaller {
       }
 
       try {
-        const response = await fetch(`${this.baseUrl}/v1beta1/models/chat-bison-001:generateMessage?key=${this.apiKey}`, {
+        const response = await fetch(`${this.baseUrl}/v1beta2/models/chat-bison-001:generateMessage?key=${this.apiKey}`, {
           headers: {
             'Content-Type': 'application/json',
           },
