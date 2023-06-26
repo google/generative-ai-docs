@@ -120,6 +120,15 @@ The output of the LLM is in this structure:
 ## How to install
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+### API_KEYs Setting
+
+This project requires two API_KEYs:
+
+- `GOOGLE_CLOUD_API_KEY`: for speech reconfnition and convert text to speech;
+- `LANGUAGE_MODEL_API_KEY`: for accessing language model PaLM.
+
+Edit these two API_KEYs in the file `src/context/constants.ts`.
+
 ### Available Scripts
 
 In the project directory, you can run:
