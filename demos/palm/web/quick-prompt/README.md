@@ -115,7 +115,7 @@ To run the application locally:
 
 2. Run `npm i` or `yarn` in the root folder to install dependencies.
 
-3. Add your Firebase info to `firebase.config.js`.
+3. Add your Firebase info to `src/lib/firebase.config.js`.
 
 4. Run `npm run dev` or `yarn dev` to start the application. The application will be served on localhost:5555. You can change the port in `vite.config.js` if desired.
 
