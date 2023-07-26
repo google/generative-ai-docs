@@ -6900,9 +6900,9 @@ postcss@^7.0.35:
     picocolors "^0.2.1"
     source-map "^0.6.1"
 
-postcss@^8.3.5, postcss@^8.4.16, postcss@^8.4.19, postcss@^8.4.23, postcss@^8.4.4:
-  version "8.4.23"
-  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.4.23.tgz#df0aee9ac7c5e53e1075c24a3613496f9e6552ab"
+postcss@^8.3.5, postcss@^8.4.18, postcss@^8.4.19, postcss@^8.4.23, postcss@^8.4.4:
+  version "8.4.24"
+  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.4.24.tgz#f714dba9b2284be3cc07dbd2fc57ee4dc972d2df"
   dependencies:
     nanoid "^3.3.6"
     picocolors "^1.0.0"
@@ -7411,15 +7411,9 @@ rollup-plugin-terser@^7.0.0:
     serialize-javascript "^4.0.0"
     terser "^5.0.0"
 
-rollup@^2.43.1:
+rollup@^2.43.1, rollup@^2.79.1:
   version "2.79.1"
   resolved "https://registry.yarnpkg.com/rollup/-/rollup-2.79.1.tgz#bedee8faef7c9f93a2647ac0108748f497f081c7"
-  optionalDependencies:
-    fsevents "~2.3.2"
-
-rollup@~2.78.0:
-  version "2.78.1"
-  resolved "https://registry.npmjs.org/rollup/-/rollup-2.78.1.tgz"
   optionalDependencies:
     fsevents "~2.3.2"
 
@@ -8302,14 +8296,14 @@ vary@~1.1.2:
   version "1.1.2"
   resolved "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz"
 
-vite@^3.0.7:
-  version "3.1.8"
-  resolved "https://registry.npmjs.org/vite/-/vite-3.1.8.tgz"
+vite@^3.2.7:
+  version "3.2.7"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-3.2.7.tgz#35a62826bd4d6b778ae5db8766d023bcd4e7bef3"
   dependencies:
     esbuild "^0.15.9"
-    postcss "^8.4.16"
+    postcss "^8.4.18"
     resolve "^1.22.1"
-    rollup "~2.78.0"
+    rollup "^2.79.1"
   optionalDependencies:
     fsevents "~2.3.2"
 
