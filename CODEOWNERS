@@ -1,5 +1,9 @@
 * @google/generative-ai-admin
 
-demos/palm/web/ @mrayinteractive @aaron-wade @lyleaf @jayjicheng @blownhither
+demos/palm/web/talking-character @lyleaf @jayjicheng
+demos/palm/web/mood-food @lyleaf @jayjicheng
+demos/palm/web/travel-planner @lyleaf @jayjicheng
+demos/palm/web/list-it @mrayinteractive @aaron-wade
+demos/palm/web/quick-prompt @mrayinteractive @aaron-wade
 
 site/ @google/generative-ai-site-team
