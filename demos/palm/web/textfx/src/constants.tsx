@@ -830,8 +830,15 @@ const constructMacroExplainer = (taskDescription: string) => {
         The table below shows how we primed the LLM to {taskDescription}. The
         format of this table is adapted from MakerSuite, which is a platform
         that makes it easy to build and experiment with LLM prompts. To learn
-        more, head over to{' '}
-        <a href="makersuite.google.com">makersuite.google.com</a>.
+        more about MakerSuite, head{' '}
+        <a
+          href="https://developers.generativeai.google/products/makersuite"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          here
+        </a>
+        .
       </p>
     </>
   )
