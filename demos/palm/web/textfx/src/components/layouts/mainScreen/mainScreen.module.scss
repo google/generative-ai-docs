@@ -1,0 +1,187 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables';
+
+$barHeight: 5.8rem;
+$inputsHeight: 57.4vh;
+$inputsHeightMobile: 80vh;
+
+$animDuration: 0.4s;
+
+.mainScreen {
+  --inputSectionHeight: var(--app-height);
+  height: 100%;
+  overflow: hidden;
+
+  &.hasOutputs {
+    overflow: auto;
+
+    .inputSection {
+      margin-top: calc(#{var(--inputSectionHeight)} - #{$barHeight});
+
+      @media screen and (min-width: $medium) {
+        margin-top: calc(#{var(--inputSectionHeight)} - #{$barHeight});
+      }
+    }
+
+    .inputSectionWrapper {
+      height: auto;
+      height: var(--inputSectionHeight);
+
+      @media screen and (min-width: $medium) {
+        height: auto;
+        height: var(--inputSectionHeight);
+      }
+    }
+
+    .outputSection {
+      height: auto;
+      max-height: none;
+      min-height: calc(100vh - #{var(--inputSectionHeight)});
+      overflow: visible;
+      transition-timing-function: ease-in-out;
+    }
+  }
+
+  &.isSticky {
+    .collapsedBar {
+      opacity: 1;
+      z-index: 10;
+
+      span {
+        opacity: 1;
+      }
+    }
+  }
+
+  &.isHover {
+    .inputSectionWrapper {
+      transform: translate(-50%, 0);
+      z-index: 11;
+    }
+  }
+
+  .inputSection {
+    margin-top: calc(var(--inputSectionHeight) - #{$barHeight});
+    position: sticky; // Needed for the isSticky to work
+    top: -1px;
+    transition: margin $animDuration cubic-bezier(0.37, 0.18, 0.19, 1);
+    z-index: 20;
+  }
+
+  .inputSectionWrapper {
+    display: flex;
+    flex-flow: column;
+    height: 100vh;
+    height: var(--inputSectionHeight);
+    left: 50%;
+    overflow: auto;
+    padding: 0 0 2.5rem;
+    position: absolute;
+    top: 0;
+    transform: translate(-50%, calc(-100% + #{$barHeight}));
+    transform-origin: center;
+    width: 100%;
+
+    transition: height $animDuration cubic-bezier(0.37, 0.18, 0.19, 1),
+      transform $animDuration cubic-bezier(0.37, 0.18, 0.19, 1),
+      background-color $fadeDuration ease-in-out;
+    @media screen and (min-width: $medium) {
+      overflow: visible;
+      padding: 0 0 5rem;
+    }
+
+    .topBar {
+      align-items: center;
+      display: flex;
+      height: 8rem;
+      justify-content: space-between;
+      margin: 0 2rem;
+      padding-bottom: 2.4rem;
+      padding-top: 2rem;
+
+      @media screen and (min-width: $medium) {
+        margin: 0 2.8rem;
+        padding-top: 2.8rem;
+      }
+
+      .logo {
+        aspect-ratio: auto;
+        color: $dark;
+      }
+    }
+
+    & > :global(.container) {
+      display: flex;
+      flex-flow: column;
+      height: 100%;
+      justify-content: center;
+    }
+  }
+
+  .collapsedBar {
+    opacity: 0;
+    position: relative;
+    z-index: -1;
+
+    .macroName {
+      align-items: center;
+      display: flex;
+      font-family: $font_mono;
+      font-size: $base_font_size;
+      font-weight: 700;
+      gap: 0.1rem;
+      height: 5.8rem;
+      line-height: 100%;
+      opacity: 0;
+      text-transform: uppercase;
+      transition: 0.5s ease-in-out;
+    }
+  }
+
+  .splitScreen {
+    align-content: center;
+    align-items: center;
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+    justify-content: space-between;
+    position: relative;
+
+    @media screen and (min-width: $medium) {
+      align-items: flex-start;
+      flex-flow: row;
+      height: 300px;
+    }
+
+    > div {
+      height: 100%;
+      width: 100%;
+
+      @media screen and (min-width: $medium) {
+        flex: 0 1 50%;
+      }
+    }
+  }
+
+  .outputSection {
+    background-color: $dark;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 1.5s ease-in;
+  }
+}

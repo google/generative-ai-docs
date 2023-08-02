@@ -1,0 +1,319 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables';
+
+.pinnedCards {
+  align-self: start;
+  background-color: $pin_grey;
+  border-radius: 8px;
+  color: $dark;
+  height: auto;
+  overflow: hidden;
+  transition: height $fadeDuration ease-in-out;
+
+  &.mobile {
+    border-radius: 0;
+    bottom: 0;
+    left: 0;
+    position: fixed;
+    width: 100%;
+  }
+
+  .cardSizer {
+    padding: 15px;
+  }
+
+  @media (min-width: $medium) {
+    border-radius: 10px;
+
+    .cardSizer {
+      padding: 20px;
+    }
+
+    .actions {
+      opacity: 0;
+      transition: opacity $fadeDuration ease-in-out;
+    }
+
+    &:hover {
+      .actions {
+        opacity: 1;
+      }
+    }
+  }
+
+  .cardHeader {
+    align-items: center;
+    color: $dark;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+
+    .arrow {
+      transition: transform $fadeDuration ease-in-out;
+    }
+
+    h3 {
+      font-family: $font_mono;
+      font-size: 14px;
+      hyphens: auto;
+      line-height: 20px;
+
+      svg {
+        flex-shrink: 0;
+        float: left;
+        height: 20px;
+        margin-right: 10px;
+        width: 20px;
+      }
+    }
+
+    .actions {
+      align-items: center;
+      display: flex;
+      flex-shrink: 0;
+      gap: 6px;
+      height: 0;
+      margin-left: 12px;
+
+      button {
+        color: $dark;
+        transition: color $fadeDuration ease-in-out;
+
+        &:hover {
+          color: $light;
+        }
+      }
+    }
+  }
+
+  .displayButtons {
+    cursor: pointer;
+    display: flex;
+    display: flex;
+    justify-content: space-between;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity $fadeDuration ease-in-out;
+  }
+
+  .pinHeader {
+    padding-right: 4rem;
+    position: relative;
+
+    .title {
+      align-items: center;
+      display: flex;
+      font-family: $font_mono;
+      font-size: 1.2rem;
+      hyphens: auto;
+      line-height: 20px;
+      margin-bottom: 0.4rem;
+
+      svg {
+        flex-shrink: 0;
+        float: left;
+        height: 2.4rem;
+        margin-right: 1.6rem;
+        width: 2.4rem;
+      }
+
+      .iconLine {
+        align-items: center;
+        display: flex;
+        font-size: 1.2rem;
+        margin-right: 0.6rem;
+      }
+    }
+  }
+
+  .pinBody {
+    display: flex;
+    margin-bottom: 3rem;
+    padding-left: 2.4rem + 1.6rem;
+  }
+
+  &.collapsed {
+    .cardHeader {
+      .arrow {
+        transform: scaleY(-1);
+      }
+    }
+
+    .pins {
+      .pin {
+        display: none;
+      }
+    }
+  }
+
+  .pins {
+    .pin {
+      &:first-child {
+        margin-top: 20px;
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      &.noPins {
+        justify-content: flex-start;
+        opacity: 0.5;
+      }
+
+      & > svg {
+        flex-shrink: 0;
+        height: 15px;
+        margin-right: 10px;
+        margin-top: 2.5px;
+        width: 10.5px;
+      }
+
+      span.copied {
+        align-items: center;
+        background: $light;
+        border-radius: 100px;
+        color: $dark;
+        display: none;
+        font-family: 'Google Sans Mono';
+        font-size: 12px;
+        font-weight: 700;
+        height: 30px;
+        justify-content: center;
+        letter-spacing: 0;
+        opacity: 0;
+        padding: 0 12px;
+        pointer-events: none;
+        position: absolute;
+        right: 20%;
+        top: 48%;
+      }
+
+      &.copied {
+        & span.copied {
+          animation-duration: 1s;
+          animation-name: copied;
+          display: flex;
+        }
+      }
+
+      p {
+        color: $dark;
+        font-family: $font_text;
+        font-size: 1.5rem;
+        line-height: 2.1rem;
+        text-align: left;
+        transition: color $fadeDuration ease-in-out;
+        width: 100%;
+      }
+
+      &:hover {
+        .pinActions {
+          button {
+            opacity: 1;
+            pointer-events: all;
+          }
+        }
+      }
+
+      .pinActions {
+        align-items: center;
+        display: flex;
+
+        button {
+          color: $dark;
+          margin-left: 12px;
+          opacity: 0;
+
+          transition: opacity $fadeDuration ease-in-out,
+            color $fadeDuration ease-in-out;
+
+          &:hover {
+            color: $mid_grey;
+          }
+        }
+
+        .pinButton {
+          color: $dark;
+          opacity: 1;
+
+          @media screen and (min-width: $medium) {
+            opacity: 0;
+          }
+        }
+
+        .dragButton {
+          cursor: move;
+          opacity: 1;
+
+          @media screen and (min-width: $medium) {
+            opacity: 0;
+          }
+        }
+      }
+
+      &.current {
+        display: flex;
+      }
+    }
+  }
+
+  .pinnedCard {
+    background-color: $pin_grey;
+    position: relative;
+  }
+
+  .preview {
+    transform: translate(-100%, 0);
+  }
+
+  .drawInText {
+    position: relative;
+
+    span {
+      line-height: 21px;
+    }
+
+    span:first-child {
+      position: absolute;
+      top: 0;
+    }
+
+    span:last-child {
+      opacity: 0;
+    }
+  }
+}
+
+@keyframes copied {
+  0% {
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  75% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}

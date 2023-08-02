@@ -1,0 +1,195 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables';
+
+.macroInput {
+  margin-top: 5rem;
+
+  @media screen and (min-width: $medium) {
+    margin-top: 6.25rem;
+  }
+
+  .label {
+    color: $dark;
+    display: block;
+    font-family: $font_mono;
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 2.3rem;
+    white-space: nowrap;
+  }
+
+  .inputBox,
+  .selectBox {
+    border-bottom: 1px solid $dark;
+    position: relative;
+    width: 100%;
+
+    .input,
+    .select {
+      appearance: none;
+      background: none;
+      border: none;
+      color: $dark;
+      font-size: $base_font_size;
+      line-height: 5rem;
+      outline: none;
+      width: 100%;
+
+      &::placeholder {
+        color: $dark;
+        opacity: 0.25;
+        transition: all 0.5s ease-in-out;
+      }
+    }
+
+    .input:global(.hide-placeholder)::placeholder {
+      opacity: 0;
+    }
+
+    .select + svg {
+      pointer-events: none;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  }
+
+  .inputBox {
+    display: flex;
+  }
+
+  .maxLength {
+    color: $dark;
+    display: block;
+    font-family: $font_mono;
+    font-size: 1.1rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 2.3rem;
+    opacity: 0.3;
+    padding-top: 0.8rem;
+    position: absolute;
+    right: 0;
+    text-align: right;
+
+    &.isMaxLength {
+      color: $tomato;
+    }
+  }
+  .fieldset {
+    position: relative;
+    width: 100%;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 3.5rem;
+
+    @media screen and (min-width: $medium) {
+      margin-top: 7rem;
+    }
+
+    button {
+      font-family: $font_mono;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+  }
+
+  // Variations
+  &.alliteration {
+    .fieldsets {
+      display: flex;
+      gap: 3rem;
+    }
+    li:last-child {
+      width: 25%;
+    }
+  }
+  &.fuse {
+    .fieldsets {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+
+      @media screen and (min-width: $medium) {
+        flex-direction: row;
+      }
+    }
+
+    li {
+      width: 100%;
+
+      @media screen and (min-width: $medium) {
+        width: 50%;
+      }
+    }
+  }
+}
+
+.rangeSlider {
+  align-items: center;
+  display: flex;
+  flex-basis: 50%;
+  gap: 9px;
+  margin-right: 35px;
+  width: 100%;
+
+  @media screen and (min-width: $large) {
+    flex-basis: 33%;
+  }
+
+  span {
+    font-family: $font_mono;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  :global(.range-slider .range-slider__thumb[data-disabled]),
+  :global(.range-slider .range-slider__range) {
+    display: none;
+  }
+
+  :global(.range-slider) {
+    background: transparent;
+    border-radius: 0;
+    height: 40px;
+
+    &::after {
+      background: $dark;
+      content: '';
+      height: 1px;
+      left: 0;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 100%;
+    }
+  }
+
+  :global(.range-slider .range-slider__thumb) {
+    background: var(--color-highlight);
+    border: 1px solid $dark;
+    border-radius: 10px;
+    box-sizing: content-box;
+    height: 10px;
+    width: 10px;
+  }
+}
