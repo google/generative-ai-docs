@@ -140,13 +140,13 @@ const AboutScreen = ({onClose = () => {}}: IAbout) => {
             LLMs. We used MakerSuite to prototype all of the tools in TextFX.
           </p>
           <p>
-            To get started using MakerSuite, head over to{' '}
+            To get started using MakerSuite, head{' '}
             <a
-              href="http://makersuite.google.com"
+              href="https://developers.generativeai.google/products/makersuite"
               target="_blank"
               rel="noopener noreferrer"
             >
-              makersuite.google.com
+              here
             </a>
             .
           </p>
