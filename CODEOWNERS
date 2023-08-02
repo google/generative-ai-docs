@@ -5,5 +5,6 @@ demos/palm/web/mood-food @lyleaf @jayjicheng
 demos/palm/web/travel-planner @lyleaf @jayjicheng
 demos/palm/web/list-it @mrayinteractive @aaron-wade
 demos/palm/web/quick-prompt @mrayinteractive @aaron-wade
+demos/palm/web/textfx @mrayinteractive @aaron-wade
 
 site/ @google/generative-ai-site-team

@@ -1,0 +1,494 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables';
+
+:global(.favorites) {
+  .outputCard {
+    .saveButton {
+      display: none;
+    }
+  }
+}
+
+.outputCard {
+  background-color: $cards;
+  border-radius: 8px;
+  color: $light;
+  $dotSize: 0.4rem;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  transition: height $fadeDuration * 2 ease-in-out;
+
+  &.collapsed {
+    .output {
+      display: flex;
+      padding-left: 4rem;
+      padding-right: 4rem;
+    }
+  }
+
+  &.isSingleOutput {
+    .prevButton,
+    .nextButton {
+      display: none;
+    }
+
+    .output {
+      margin-bottom: 0 !important;
+      padding-right: 0;
+    }
+  }
+
+  .cardSizer {
+    padding: 15px;
+  }
+
+  @media (min-width: $medium) {
+    border-radius: 10px;
+
+    .cardSizer {
+      padding: 20px;
+    }
+
+    .actions {
+      opacity: 0;
+      transition: opacity $fadeDuration ease-in-out;
+    }
+
+    &:hover {
+      .actions {
+        opacity: 1;
+      }
+    }
+  }
+
+  .cardHeader {
+    padding-right: 4rem;
+    position: relative;
+
+    @media screen and (min-width: $medium) {
+      padding-right: 7.2rem;
+    }
+
+    .title {
+      align-items: center;
+      display: flex;
+      font-family: $font_mono;
+      font-size: 1.2rem;
+      hyphens: auto;
+      line-height: 20px;
+
+      svg {
+        flex-shrink: 0;
+        float: left;
+        height: 2.4rem;
+        margin-right: 1.6rem;
+        width: 2.4rem;
+      }
+
+      .iconLine {
+        align-items: center;
+        display: flex;
+        font-size: 1.2rem;
+        margin-right: 0.6rem;
+      }
+
+      .temp {
+        color: rgba(192, 186, 242, 0.4);
+        font-size: 1rem;
+        line-height: 2.4rem;
+        text-transform: uppercase;
+      }
+    }
+
+    h3 {
+      font-family: $font_mono;
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 2.7rem;
+      padding-left: 2.4rem + 1.6rem; // icon + icon margin
+
+      &.animationComplete {
+        font-family: $font_text;
+      }
+    }
+
+    .actions {
+      align-items: center;
+      display: flex;
+      flex-shrink: 0;
+      gap: 0.6rem;
+      height: 0;
+      margin-left: 1.2rem;
+      position: absolute;
+      right: 0;
+      top: 0;
+
+      button {
+        color: $mid_grey;
+        transition: color $fadeDuration ease-in-out;
+
+        &:hover {
+          color: $light;
+        }
+      }
+    }
+  }
+
+  .swiperBox {
+    position: relative;
+  }
+
+  .nextButton,
+  .prevButton {
+    align-items: center;
+    background: $mid_grey;
+    border-radius: 20px;
+    color: $dark;
+    display: flex;
+    height: 20px;
+    justify-content: center;
+    margin: 0;
+    position: absolute;
+    top: 0;
+    transition: all $fadeDuration ease-in-out;
+    width: 20px;
+    z-index: 10;
+
+    &:hover {
+      background: $light;
+    }
+
+    svg {
+      color: $dark;
+    }
+  }
+  .prevButton {
+    left: 0;
+  }
+
+  .nextButton {
+    right: 0;
+
+    svg {
+      transform: rotate(180deg);
+    }
+  }
+
+  .displayButtons {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.6rem;
+    opacity: 0;
+    padding-left: 2.4rem + 1.6rem;
+    position: relative;
+    transition: opacity $fadeDuration ease-in-out;
+  }
+
+  .outputActions {
+    align-items: center;
+    display: flex;
+    position: relative;
+
+    .pinned {
+      color: $light;
+    }
+
+    button {
+      color: $mid_grey;
+      transition: color $fadeDuration ease-in-out;
+
+      &:hover {
+        color: $light;
+      }
+    }
+  }
+
+  :global(.swiper-wrapper) {
+    transition: none;
+  }
+  .dotsBox {
+    flex: 0 1 100%;
+    position: relative;
+    width: 100%;
+  }
+
+  .dots {
+    --swiper-pagination-bullet-horizontal-gap: 0;
+    display: block;
+    flex: 0 1 100%;
+    width: 100%;
+
+    :global(.swiper-pagination-bullet) {
+      background-color: $mid_grey;
+      border-radius: 100%;
+      display: inline-block;
+      flex: 0 0 $dotSize;
+      height: $dotSize;
+      margin: 0 4px 0 0 !important;
+      width: $dotSize;
+    }
+
+    &.dynamicBullets {
+      &:global(.swiper-pagination-bullets-dynamic) {
+        box-sizing: content-box;
+        left: 0;
+        padding-right: 8px;
+        position: relative;
+        transform: translate(-12px, 8px);
+      }
+
+      // Antepenultimate bullet
+      :global(.swiper-pagination-bullet-active-prev),
+      :global(.swiper-pagination-bullet-active-next) {
+        opacity: 0.75;
+        transform: scale(1);
+      }
+
+      // Penultimate bullet
+      :global(.swiper-pagination-bullet-active-prev-prev) {
+        opacity: 0;
+      }
+
+      // Last bullet
+      :global(
+          .swiper-pagination-bullet-active-next-next + .swiper-pagination-bullet
+        ) {
+        opacity: 0.25;
+        transform: scale(1);
+      }
+
+      // Last bullet
+      :global(.swiper-pagination-bullet-active-next-next) {
+        opacity: 0.5;
+        transform: scale(1);
+      }
+
+      :global(.swiper-pagination-bullet-active-main) {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  }
+
+  &.simile :global(.swiper-pagination-bullet-active) {
+    background-color: $tennis;
+  }
+  &.explode :global(.swiper-pagination-bullet-active) {
+    background-color: $lavender;
+  }
+  &.unexpect :global(.swiper-pagination-bullet-active) {
+    background-color: $mint;
+  }
+  &.chain :global(.swiper-pagination-bullet-active) {
+    background-color: $cardboard;
+  }
+  &.pov :global(.swiper-pagination-bullet-active) {
+    background-color: $coral;
+  }
+  &.alliteration :global(.swiper-pagination-bullet-active) {
+    background-color: $sky;
+  }
+  &.acronym :global(.swiper-pagination-bullet-active) {
+    background-color: $barbie;
+  }
+
+  &.fuse :global(.swiper-pagination-bullet-active) {
+    background-color: $marigold;
+  }
+  &.scene :global(.swiper-pagination-bullet-active) {
+    background-color: $berry;
+  }
+
+  &.unfold :global(.swiper-pagination-bullet-active) {
+    background-color: $water;
+  }
+
+  .outputs {
+    &.animationComplete {
+      .output {
+        opacity: 1;
+      }
+    }
+
+    .output {
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      position: relative;
+      width: 100%;
+
+      span.copied {
+        align-items: center;
+        background: $mid_grey;
+        border-radius: 100px;
+        color: $dark;
+        display: none;
+        font-family: 'Google Sans Mono';
+        font-size: 12px;
+        font-weight: 700;
+        height: 30px;
+        justify-content: center;
+        letter-spacing: 0;
+        opacity: 0;
+        padding: 0 12px;
+        pointer-events: none;
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translate(-100%, -50%);
+      }
+
+      &.copied {
+        & span.copied {
+          animation-duration: 1s;
+          animation-name: copied;
+          display: flex;
+        }
+      }
+
+      p,
+      .numbers {
+        color: $light;
+        font-family: $font_text;
+        font-size: 1.5rem;
+        line-height: 21px;
+        text-align: left;
+        transition: color $fadeDuration ease-in-out;
+      }
+
+      p {
+        width: 100%;
+      }
+
+      .numbers {
+        color: $mid_grey;
+        display: inline-block;
+        flex-shrink: 0;
+        width: 2.4rem + 1.6rem;
+      }
+
+      &:hover {
+        .outputActions {
+          button {
+            opacity: 1;
+            pointer-events: all;
+          }
+        }
+      }
+
+      .outputActions {
+        button {
+          margin-left: 12px;
+        }
+        .pinButton,
+        .copyButton {
+          color: $mid_grey;
+          opacity: 0;
+
+          transition: opacity $fadeDuration ease-in-out,
+            color $fadeDuration ease-in-out;
+
+          &.pinned {
+            color: $light;
+            opacity: 1;
+          }
+
+          @media screen and (min-width: $medium) {
+            &:hover {
+              color: $light;
+            }
+          }
+        }
+
+        .pinButton {
+          opacity: 1;
+
+          @media screen and (min-width: $medium) {
+            opacity: 0;
+          }
+        }
+      }
+
+      &.current {
+        display: flex;
+      }
+    }
+
+    &.viewAll {
+      .output {
+        display: flex;
+      }
+
+      .numbers {
+        width: 2.4rem + 1.6rem;
+      }
+    }
+  }
+
+  .drawInText {
+    position: relative;
+
+    span {
+      line-height: 21px;
+    }
+
+    span:first-child {
+      position: absolute;
+      top: 0;
+    }
+
+    span:last-child {
+      opacity: 0;
+    }
+  }
+
+  &.loaded {
+    .displayButtons {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .actions {
+      height: auto;
+    }
+
+    .cardHeader {
+      margin-bottom: 20px;
+    }
+  }
+}
+
+@keyframes copied {
+  0% {
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  75% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
