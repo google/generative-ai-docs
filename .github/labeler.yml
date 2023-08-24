@@ -1,0 +1,20 @@
+'status:awaiting review':
+- '**/*'
+
+'examples:list-it':
+- demos/palm/web/list-it/**/*
+
+'examples:mood-food':
+- demos/palm/web/mood-food/**/*
+
+'examples:quick-prompt':
+- demos/palm/web/quick-prompt/**/*
+
+'examples:talking-character':
+- demos/palm/web/talking-character/**/*
+
+'examples:text-fx':
+- demos/palm/web/textfx/**/*
+
+'examples:travel-planner':
+- demos/palm/web/travel-planner/**/*
