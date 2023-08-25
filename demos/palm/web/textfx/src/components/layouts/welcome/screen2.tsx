@@ -63,6 +63,7 @@ const Step2 = () => {
                   src={Step1Image}
                   className={c(styles.fade, styles.fade3)}
                   alt={hig.title}
+                  decoding="async"
                 />
               )}
               {i === 1 && (
@@ -70,6 +71,7 @@ const Step2 = () => {
                   src={Step2Image}
                   className={c(styles.fade, styles.fade3)}
                   alt={hig.title}
+                  decoding="async"
                 />
               )}
               {i === 2 && (
@@ -77,6 +79,7 @@ const Step2 = () => {
                   src={Step3Image}
                   className={c(styles.fade, styles.fade3)}
                   alt={hig.title}
+                  decoding="async"
                 />
               )}
             </li>

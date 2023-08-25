@@ -52,7 +52,7 @@ const WelcomeScreen = ({onNext = () => {}}: IWelcome) => {
               return
             }
 
-            setStep(step + 1)
+            setStep((prevStep) => prevStep + 1)
           }}
         />
       </div>

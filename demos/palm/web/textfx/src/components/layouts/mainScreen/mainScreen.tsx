@@ -81,7 +81,7 @@ const MainScreen = () => {
       '--inputSectionHeight',
       inputSectionHeight + 'px'
     )
-  }, [activeMacro, outputs, pins])
+  }, [activeMacro, outputs.length, pins.length])
 
   useEffect(() => {
     if (!mainScreenRef.current) return

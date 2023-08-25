@@ -33,7 +33,7 @@ export default function AuthGuard({ children }) {
     if (pathname !== requestedLocation) {
       setRequestedLocation(pathname);
     }
-    return <Navigate to={'/'} />;
+    return <Navigate to={'/'} replace={true} />;
   }
 
   return <>{children}</>;

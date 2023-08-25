@@ -22,6 +22,31 @@ import { Circle, CloseOutlined, MapOutlined } from '@mui/icons-material';
 import { Pagination } from 'swiper';
 import MapCard from './MapCard';
 
+const playCardsStyles = {
+  image_stl: {
+    objectFit: "cover",
+    objectPosition: "center center"
+  },
+  division1: {
+    position: 'absolute',
+    width: '100%',
+    height: '30%',
+    background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.2) 31.73%, rgba(255, 255, 255, 0) 68.15%)',
+    top: 0,
+    left: 0,
+  },
+  division2: {
+    position: 'absolute',
+    background: 'linear-gradient(183.73deg, #000000 -21.07%, rgba(0, 0, 0, 0) 94.07%)',
+    mixBlendMode: 'multiply',
+    transform: 'rotate(-180deg)',
+    width: '100%',
+    height: '100%',
+    top: 0,
+    left: 0
+  }
+}
+
 function PlaceCard(props) {
   const { name, geometry, photos, description, onClose } = props;
 
@@ -92,34 +117,15 @@ function PlaceCard(props) {
                           height="100%"
                           width="100%"
                           src={photo}
-                          style={{
-                            objectFit: "cover",
-                            objectPosition: "center center"
-                          }}
+                          style={playCardsStyles.image_stl}
                         />
                         <div
-                          style={{
-                            position: 'absolute',
-                            width: '100%',
-                            height: '30%',
-                            background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.2) 31.73%, rgba(255, 255, 255, 0) 68.15%)',
-                            top: 0,
-                            left: 0,
-                          }}
+                          style={playCardsStyles.division1}
                         >
 
                         </div>
                         <div
-                          style={{
-                            position: 'absolute',
-                            background: 'linear-gradient(183.73deg, #000000 -21.07%, rgba(0, 0, 0, 0) 94.07%)',
-                            mixBlendMode: 'multiply',
-                            transform: 'rotate(-180deg)',
-                            width: '100%',
-                            height: '100%',
-                            top: 0,
-                            left: 0
-                          }}
+                          style={playCardsStyles.division2}
                         >
 
                         </div>
