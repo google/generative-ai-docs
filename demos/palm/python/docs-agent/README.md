@@ -369,7 +369,7 @@ This section provides instructions on how to set up the Docs Agent project on a 
 **Note**: This guide assumes that you're creating a new project directory
 from your `$HOME` directory.
 
-1. Clone the `generative-ai-docs` repo:
+1. Clone the `generative-ai-docs` repo, for example:
 
    ```posix-terminal
    git clone https://github.com/google/generative-ai-docs
@@ -379,13 +379,6 @@ from your `$HOME` directory.
 
    ```posix-terminal
    cd ./generative-ai-docs/demos/palm/python/docs-agent
-   ```
-
-3. (**Optional**) If you plan on contributing to the Docs agent project,
-   run the following command to set up your commit hook:
-
-   ```
-   curl -Lo `git rev-parse --git-dir`/hooks/commit-msg https://gerrit-review.googlesource.com/tools/hooks/commit-msg ; chmod +x `git rev-parse --git-dir`/hooks/commit-msg
    ```
 
 4. Install dependencies using `poetry`:
@@ -624,53 +617,16 @@ To launch the Docs Agent chat app, do the following:
 
 ## Contribute to Docs Agent
 
-The section provides instructions on how to set up an account with Google
-and start contributing to the Docs Agent project.
-
-To set up your account and contribute to the Docs Agent project,
-do the following:
+To contribute to the Docs Agent project, do the following:
 
 1. Visit https://cla.developers.google.com/ to see your current agreements
    or to sign a new one.
 
-1. Clone the `generative-ai-docs` repository on your host machine:
+1. Fork the [`generative-ai-docs`][gen-ai-docs-repo] repository.
 
-   ```
-   git clone https://github.com/google/generative-ai-docs
-   ```
+1. Make changes in your forked reposiotry.
 
-1. Go to the Docs Agent project directory:
-
-   ```
-   cd ./generative-ai-docs/demos/palm/python/docs-agent
-   ```
-
-1. To set up your commit hook, run the following command:
-
-   ```
-   curl -Lo `git rev-parse --git-dir`/hooks/commit-msg https://gerrit-review.googlesource.com/tools/hooks/commit-msg ; chmod +x `git rev-parse --git-dir`/hooks/commit-msg
-   ```
-
-1. Create a new Gerrit change, for example:
-
-   ```
-   git add <files>
-   ```
-
-   ```
-   git commit [--amend]
-   ```
-
-1. Upload the change for review:
-
-   ```
-   git push origin HEAD:refs/for/main
-   ```
-
-## Contributors
-
-Rundong Du (`rundongdu@`), Kyo Lee (`kyol@`), Nick Van der Auwermeulen (`nickvander@`),
-and Meggin Kearney (`mkearney@`).
+1. Create a pull request.
 
 <!-- Reference links -->
 
@@ -692,3 +648,4 @@ and Meggin Kearney (`mkearney@`).
 [flutter-docs-src]: https://github.com/flutter/website/tree/main/src
 [flutter-docs-site]: https://docs.flutter.dev/
 [poetry-known-issue]: https://github.com/python-poetry/poetry/issues/1917
+[gen-ai-docs-repo]: https://github.com/google/generative-ai-docs
