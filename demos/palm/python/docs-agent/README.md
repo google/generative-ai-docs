@@ -427,10 +427,10 @@ plain text files.
 
 To convert Markdown files to plain text files:
 
-1. Go to the project directory, for example:
+1. Go to the Docs Agent project directory, for example:
 
    ```
-   cd $HOME/docs-agent
+   cd $HOME/generative-ai-docs/demos/palm/python/docs-agent
    ```
 
 2. Open the `config.yaml` file using a text editor, for example:
@@ -503,10 +503,10 @@ with the contents of the plain text files and their embeddings (and metadata).
 
 To populate a new vector database:
 
-1. Go to the project directory, for example:
+1. Go to the Docs Agent project directory, for example:
 
    ```
-   cd $HOME/docs-agent
+   cd $HOME/generative-ai-docs/demos/palm/python/docs-agent
    ```
 
 2. Create and populate a new vector database:
@@ -570,10 +570,10 @@ To customize settings in the Docs Agent chat app, do the following:
 
 To launch the Docs Agent chat app, do the following:
 
-1. Go to the project directory, for example:
+1. Go to the Docs Agent project directory, for example:
 
    ```
-   cd $HOME/docs-agent
+   cd $HOME/generative-ai-docs/demos/palm/python/docs-agent
    ```
 
 2. Launch the Docs Agent chat app:
@@ -592,16 +592,16 @@ To launch the Docs Agent chat app, do the following:
    $ poetry run ./chatbot/launch.sh
    This script starts your flask app in a virtual environment
    Installing all dependencies through pip...
-   Using the local vector database created at /home/alice/docs-agent/vector_database
-   Using embedded DuckDB with persistence: data will be stored in: /home/alice/docs-agent/vector_database
+   Using the local vector database created at /home/alice/generative-ai-docs/demos/palm/python/docs-agent/vector_database
+   Using embedded DuckDB with persistence: data will be stored in: /home/alice/generative-ai-docs/demos/palm/python/docs-agent/vector_database
     * Serving Flask app 'chatbot'
     * Debug mode: on
    WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
     * Running on http://example.com:5000
    Press CTRL+C to quit
     * Restarting with stat
-   Using the local vector database created at /home/alice/docs-agent/vector_database
-   Using embedded DuckDB with persistence: data will be stored in: /home/alice/docs-agent/vector_database
+   Using the local vector database created at /home/alice/generative-ai-docs/demos/palm/python/docs-agent/vector_database
+   Using embedded DuckDB with persistence: data will be stored in: /home/alice/generative-ai-docs/demos/palm/python/docs-agent/vector_database
     * Debugger is active!
     * Debugger PIN: 129-640-957
    ```
@@ -622,11 +622,11 @@ To contribute to the Docs Agent project, do the following:
 1. Visit https://cla.developers.google.com/ to see your current agreements
    or to sign a new one.
 
-1. Fork the [`generative-ai-docs`][gen-ai-docs-repo] repository.
+2. Fork the [`generative-ai-docs`][gen-ai-docs-repo] repository.
 
-1. Make changes in your forked reposiotry.
+3. Make changes in your forked reposiotry.
 
-1. Create a pull request.
+4. Create a pull request.
 
 <!-- Reference links -->
 
