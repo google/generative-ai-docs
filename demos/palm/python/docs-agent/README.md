@@ -636,7 +636,7 @@ To contribute to the Docs Agent project, do the following:
 [populate-vector-database]: ./scripts/populate_vector_database.py
 [condition-txt]: ./condition.txt
 [context-source-01]: http://eventhorizontelescope.org
-[fact-check-section]: #using-a-palm-2-model-to-fact_check-its-own-response
+[fact-check-section]: #using-a-palm-2-model-to-fact-check-its-own-response
 [related-questions-section]: #using-a-palm-2-model-to-suggest-related-questions
 [submit-a-rewrite]: #enabling-users-to-submit-a-rewrite-of-a-generated-response
 [like-generate-responses]: #enabling-users-to-like-generated-responses
