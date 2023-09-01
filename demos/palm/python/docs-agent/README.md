@@ -515,7 +515,7 @@ To populate a new vector database:
    python3 ./scripts/populate_vector_database.py
    ```
 
-   This script uses the `output_path` directory from the `input-values.yaml` file
+   This script uses the `output_path` directory from the `config.yaml` file
    to locate plain text files and creates a new directory at
    `$HOME/docs-agent/vector_stores/chroma`, which contains embeddings and metadata.
 
