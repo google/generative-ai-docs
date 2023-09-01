@@ -366,10 +366,10 @@ This section provides instructions on how to set up the Docs Agent project on a 
 
 ### 2. Clone this project repository and install dependencies
 
-**Note**: This guide assumes that you're creating a new project directory
+**Note**: This guide assumes that you're cloning the `generative-ai-docs` repository
 from your `$HOME` directory.
 
-1. Clone the `generative-ai-docs` repo, for example:
+1. Clone the `generative-ai-docs` repository, for example:
 
    ```posix-terminal
    git clone https://github.com/google/generative-ai-docs
@@ -447,8 +447,9 @@ To convert Markdown files to plain text files:
    ```
 
    The example above creates a new directory named `data/plain_docs` in the current
-   project directory (`$HOME/docs-agent`). Then the project uses this `output_path`
-   directory to store the plain text files processed from the input Markdown files.
+   project directory (for instance, `generative-ai-docs/demos/palm/python/docs-agent/data/plain_docs`).
+   Then the project uses this `output_path` directory to store the plain text files processed
+   from the input Markdown files.
 
 4. Under the `input` field, define the following entries to specify the directories
    that contain your source Markdown files.
@@ -515,18 +516,19 @@ To populate a new vector database:
    python3 ./scripts/populate_vector_database.py
    ```
 
-   This script uses the `output_path` directory from the `config.yaml` file
-   to locate plain text files and creates a new directory at
-   `$HOME/docs-agent/vector_stores/chroma`, which contains embeddings and metadata.
+   This script uses the `output_path` directory from the `config.yaml` file to locate
+   plain text files and creates a new directory at
+   `generative-ai-docs/demos/palm/python/docs-agent/vector_stores/chroma`, which
+   contains embeddings and metadata.
 
 3. To test the new vector database, run the following script:
-
-   **Note**: Adjust `QUESTION` in `scripts/test_vector_database.py` to be suitable for
-   the content in your database.
 
    ```
    python3 ./scripts/test_vector_database.py
    ```
+
+   **Note**: Adjust `QUESTION` in `scripts/test_vector_database.py` to be suitable for
+   the content in your database.
 
 The next step is to launch the Docs Agent chat app to use the new vector database. See
 the [Start the Docs Agent chat app][start-the-app-steps] section below.
