@@ -1,7 +1,7 @@
 # Docs Agent
 
-The Docs Agent project is for [PaLM API][genai-doc-site] users who want to check out and set
-up the Docs Agent sample app and [contribute][contribute-to-docs-agent] to the Docs project.
+The Docs Agent demo enables [PaLM API][genai-doc-site] users to launch a chat application
+on a Linux-based host machine using their own set of documents as a source dataset.
 
 **Note**: If you're interested in setting up and launching the Docs Agent sample app on your
 host machine, see the [Set up Docs Agent][set-up-docs-agent] section below.
