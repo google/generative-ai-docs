@@ -446,8 +446,8 @@ To convert Markdown files to plain text files:
    output_path: "data/plain_docs"
    ```
 
-   The example above creates a new directory named `data/plain_docs` in the current
-   project directory (for instance, `generative-ai-docs/demos/palm/python/docs-agent/data/plain_docs`).
+   The example above creates a new directory named `data/plain_docs` in the current project
+   directory (which results in `generative-ai-docs/demos/palm/python/docs-agent/data/plain_docs`).
    Then the project uses this `output_path` directory to store the plain text files processed
    from the input Markdown files.
 
