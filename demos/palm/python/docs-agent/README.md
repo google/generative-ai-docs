@@ -29,12 +29,6 @@ embeddings techniques on top of a publicly available LLM model such as PaLM 2.
 
 **Figure 1**. Docs Agent uses a vector database to retrieve context for augmenting prompts.
 
-However, once you launch this chatbot using your own set of documents, you may soon realize
-that your existing documents alone are not sufficient for this chatbot to be effective in
-production. Besides continuing to enhance the quality of your documents, you may want to
-consider setting up a type of reinforcement learning process for improving the system and
-refining your dataset using real-world feedback from users.
-
 ## Main features
 
 The key features of the Docs Agent sample app are:
@@ -630,6 +624,11 @@ To contribute to the Docs Agent project, do the following:
 
 4. Create a pull request.
 
+## Contributors
+
+Nick Van der Auwermeulen (`@nickvander`), Rundong Du (`@rundong08`),
+Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
+
 <!-- Reference links -->
 
 [contribute-to-docs-agent]: #contribute-to-docs-agent
@@ -645,7 +644,7 @@ To contribute to the Docs Agent project, do the following:
 [populate-db-steps]: #populate-a-new-vector-database-from-markdown-files
 [start-the-app-steps]: #start-the-docs-agent-chat-app
 [launch-script]: ./chatbot/launch.sh
-[genai-doc-site]: https://developers.generativeai.google/
+[genai-doc-site]: https://developers.generativeai.google/products/palm
 [chroma-docs]: https://docs.trychroma.com/
 [flutter-docs-src]: https://github.com/flutter/website/tree/main/src
 [flutter-docs-site]: https://docs.flutter.dev/

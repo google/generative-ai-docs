@@ -274,7 +274,7 @@ for root, dirs, files in os.walk(PLAIN_TEXT_DIR):
                                         ids=str_uuid_file,
                                     )
                                     print("Added content.")
-                                    new_count +=1
+                                    new_count += 1
                                     file_update = True
                         i += 1
                     else:

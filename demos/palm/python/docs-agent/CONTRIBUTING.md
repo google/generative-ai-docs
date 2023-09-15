@@ -1,28 +1,32 @@
-# Contributing to Docs Agent
+# How to Contribute
 
-Docs Agent lets anyone contribute to the project, regardless of their employer.
-The Docs Agent project reviews and encourages well-tested, high-quality
-contributions from anyone who wants to contribute to Docs Agent.
+We would love to accept your patches and contributions to this project.
 
-## Contributor License Agreement
+## Before you begin
 
-Contributions to this project must be accompanied by a Contributor License
-Agreement (CLA).
+### Sign our Contributor License Agreement
 
-To see any Contributor License Agreements on file or to sign a CLA,
-go to <https://cla.developers.google.com/>.
+Contributions to this project must be accompanied by a
+[Contributor License Agreement](https://cla.developers.google.com/about) (CLA).
+You (or your employer) retain the copyright to your contribution; this simply
+gives us permission to use and redistribute your contributions as part of the
+project.
 
-For more information about the Google CLA,
-see [Contributor License Agreements](https://cla.developers.google.com/about).
+If you or your current employer have already signed the Google CLA (even if it
+was for a different project), you probably don't need to do it again.
 
-## Contributing changes and submitting code reviews
+Visit <https://cla.developers.google.com/> to see your current agreements or to
+sign a new one.
 
-All changes require review, including changes by project members.
+### Review our Community Guidelines
 
-For detailed instructions on how to contribute changes,
-see README.md.
+This project follows [Google's Open Source Community
+Guidelines](https://opensource.google/conduct/).
 
-## Community guidelines
+## Contribution process
 
-This project observes Google's
-[Open Source Community Guidelines](https://opensource.google/conduct/).
+### Code Reviews
+
+All submissions, including submissions by project members, require review. We
+use [GitHub pull requests](https://docs.github.com/articles/about-pull-requests)
+for this purpose.
