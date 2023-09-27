@@ -1,6 +1,9 @@
 'status:awaiting review':
 - '**/*'
 
+'demos:doc-agent':
+- demos/palm/python/docs-agent/**/*
+
 'examples:list-it':
 - demos/palm/web/list-it/**/*
 
