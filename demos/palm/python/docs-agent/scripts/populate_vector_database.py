@@ -108,10 +108,7 @@ else:
     MODEL = os.path.join(BASE_DIR, "models/all-mpnet-base-v2")
     emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=MODEL)
 
-chroma_client = chromadb.Client(
-    Settings(chroma_db_impl="duckdb+parquet", persist_directory=LOCAL_VECTOR_DB_DIR)
-)
-
+chroma_client = chromadb.PersistentClient(path=LOCAL_VECTOR_DB_DIR)
 
 # Create embed function for PaLM
 # API call limit to 5 qps
@@ -175,6 +172,8 @@ for root, dirs, files in os.walk(PLAIN_TEXT_DIR):
                 # Using the full path avoids mismatches
                 full_file_name = FULL_BASE_DIR + clean_filename + file
                 metadata_dict_extra = {}
+                # Flag to see if there is a predefined URL from frontmatter
+                final_url = False
                 # Reads the metadata associated with files
                 for key in index:
                     if full_file_name in index[key]:
@@ -197,6 +196,10 @@ for root, dirs, files in os.walk(PLAIN_TEXT_DIR):
                                 index[key][full_file_name]["metadata"], delimiter="_"
                             )
                             metadata_dict_extra = dict(metadata_dict_extra)
+                            # Extracts user specified URL
+                            if "URL" in metadata_dict_extra:
+                                final_url = True
+                                final_url_value = metadata_dict_extra["URL"]
                         else:
                             metadata_dict_extra = {}
                         if "UUID" in index[key][full_file_name]:
@@ -216,6 +219,9 @@ for root, dirs, files in os.walk(PLAIN_TEXT_DIR):
                 # Remove .md at the end of URLs by default.
                 match3 = re.search(r"(.*)\.md$", url)
                 url = match3[1]
+                # Replaces the URL if it comes from frontmatter
+                if (final_url):
+                    url = final_url_value
                 # Creates a dictionary with basic metadata values
                 # (i.e. source, URL, and md_hash)
                 metadata_dict_main = {
@@ -287,7 +293,6 @@ for root, dirs, files in os.walk(PLAIN_TEXT_DIR):
                     print("[Warning] Empty file!")
                 print("")
                 auto.close()
-chroma_client.persist()
 # results = collection.query(
 #     query_texts=["What are some differences between apples and oranges?"],
 #     n_results=3,

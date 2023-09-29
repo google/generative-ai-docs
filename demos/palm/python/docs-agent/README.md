@@ -487,14 +487,15 @@ To convert Markdown files to plain text files:
 
 ### 2. Populate a new vector database
 
-**Important**: If the `vector_stores/chroma` directory already exists, delete
-(or move) the `chroma` directory before populating a new vector database. Also,
-if the Docs Agent chat app is already running using this `chroma` directory, shut down
-the app before deleting the directory.
-
 Once you have plain text files processed and stored in the `output_path` directory,
 you can run the `populat_vector_database.py` script to populate a vector database
 with the contents of the plain text files and their embeddings (and metadata).
+
+**Important**: For a clean setup, if the `vector_stores/chroma` directory already
+exists, delete (or move) the `chroma` directory before populating a new vector
+database. (Otherwise, new entries will be added to your existing vector database.)
+Also, if the Docs Agent chat app is already running using this `chroma` directory,
+shut down the app before deleting the directory.
 
 To populate a new vector database:
 

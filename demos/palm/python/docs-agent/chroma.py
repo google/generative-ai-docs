@@ -42,12 +42,7 @@ class Chroma:
     """Chroma wrapper"""
 
     def __init__(self, chroma_dir) -> None:
-        self.client = chromadb.Client(
-            Settings(
-                chroma_db_impl="duckdb+parquet",
-                persist_directory=chroma_dir,
-            )
-        )
+        self.client = chromadb.PersistentClient(path=chroma_dir)
 
     def list_collections(self):
         return self.client.list_collections()

@@ -153,6 +153,9 @@ def process_page_and_section_titles(markdown_text):
         page_title = data["title"]
         markdown_text = data.content
         metadata = data.metadata
+    if "URL" in data:
+        final_url = data["URL"]
+        metadata["URL"] = final_url
     for line in markdown_text.split("\n"):
         new_line = ""
         skip_this_line = False
@@ -173,7 +176,7 @@ def process_page_and_section_titles(markdown_text):
             # Detect Markdown heading levels
             if heading == "#":
                 page_title = captured_title.strip()
-                metadata = {"title": page_title}
+                metadata["title"] = page_title
                 subsection_title = ""
                 section_title = ""
             elif heading == "##":
