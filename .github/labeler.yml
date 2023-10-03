@@ -1,23 +1,23 @@
 'status:awaiting review':
 - '**/*'
 
-'demos:doc-agent':
+'demos:docs-agent':
 - demos/palm/python/docs-agent/**/*
 
-'examples:list-it':
+'demos:list-it':
 - demos/palm/web/list-it/**/*
 
-'examples:mood-food':
+'demos:mood-food':
 - demos/palm/web/mood-food/**/*
 
-'examples:quick-prompt':
+'demos:quick-prompt':
 - demos/palm/web/quick-prompt/**/*
 
-'examples:talking-character':
+'demos:talking-character':
 - demos/palm/web/talking-character/**/*
 
-'examples:text-fx':
+'demos:text-fx':
 - demos/palm/web/textfx/**/*
 
-'examples:travel-planner':
+'demos:travel-planner':
 - demos/palm/web/travel-planner/**/*
