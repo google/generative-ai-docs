@@ -27,19 +27,19 @@ from palm import PaLM
 
 from scripts import read_config
 
-### Set up the PaLM API key from the environment ###
+# Set up the PaLM API key from the environment.
 API_KEY = os.getenv("PALM_API_KEY")
 if API_KEY is None:
     sys.exit("Please set the environment variable PALM_API_KEY to be your API key.")
 
-### Select your PaLM API endpoint ###
+# Select your PaLM API endpoint.
 PALM_API_ENDPOINT = "generativelanguage.googleapis.com"
 
 palm = PaLM(api_key=API_KEY, api_endpoint=PALM_API_ENDPOINT)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-### Set up the path to the chroma vector database ###
+# Set up the path to the chroma vector database.
 LOCAL_VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_stores/chroma")
 COLLECTION_NAME = "docs_collection"
 
@@ -48,34 +48,16 @@ if IS_CONFIG_FILE:
     config_values = read_config.ReadConfig()
     LOCAL_VECTOR_DB_DIR = config_values.returnConfigValue("vector_db_dir")
     COLLECTION_NAME = config_values.returnConfigValue("collection_name")
+    CONDITION_TEXT = config_values.returnConfigValue("condition_text")
+    FACT_CHECK_QUESTION = config_values.returnConfigValue("fact_check_question")
+    MODEL_ERROR_MESSAGE = config_values.returnConfigValue("model_error_message")
 
-### Set up the path to the `condition.txt` file that holds custom condition text.  ###
-CONDITION_FILE = os.path.join(BASE_DIR, "condition.txt")
-
-### Select the number of contents to be used for providing context
+# Select the number of contents to be used for providing context.
 NUM_RETURNS = 5
 
 
 class DocsAgent:
     """DocsAgent class"""
-
-    prompt_condition = (
-        "Answer the question below as truthfully as possible, "
-        "and if you're unsure of the answer, say \"Sorry, I don't know.\""
-    )
-    text_model_error_response = (
-        "I'm a large language model. "
-        "I'm currently not able to help you with that question. "
-        "You may rephrase your question with more specifics and try again."
-    )
-    chat_model_error_response = (
-        "I'm a large language model. "
-        "I'm currently not able to help you with that question."
-    )
-    palm_none_response = (
-        "PaLM is not able to answer this question at the moment. "
-        "You may rephrase the question and ask again."
-    )
 
     def __init__(self):
         # Initialize the Chroma vector database
@@ -84,8 +66,10 @@ class DocsAgent:
         )
         self.chroma = Chroma(LOCAL_VECTOR_DB_DIR)
         self.collection = self.chroma.get_collection(COLLECTION_NAME)
-        # Update PaLM's condition string
-        self.update_condition_from_file()
+        # Update PaLM's custom prompt strings
+        self.prompt_condition = CONDITION_TEXT
+        self.fact_check_question = FACT_CHECK_QUESTION
+        self.model_error_message = MODEL_ERROR_MESSAGE
 
     # Use this method for talking to PaLM (Text)
     def ask_text_model_with_context(self, context, question):
@@ -98,11 +82,11 @@ class DocsAgent:
                 temperature=0.0,
             )
         except google.api_core.exceptions.InvalidArgument:
-            return self.text_model_error_response
+            return self.model_error_message
         if response.result is None:
             print("Block reason: " + str(response.filters))
             print("Safety feedback: " + str(response.safety_feedback))
-            return self.palm_none_response
+            return self.model_error_message
         return response.result
 
     # Use this method for talking to PaLM (Chat)
@@ -114,7 +98,7 @@ class DocsAgent:
                 temperature=0.05,
             )
         except google.api_core.exceptions.InvalidArgument:
-            return self.chat_model_error_response
+            return self.model_error_message
 
         if response.last is None:
             return self.palm_none_response
@@ -122,15 +106,7 @@ class DocsAgent:
 
     # Use this method for asking PaLM (Text) for fact-checking
     def ask_text_model_to_fact_check(self, context, prev_response):
-        question = (
-            "Can you compare the following body of text "
-            "to the context provided in this prompt and "
-            "write a short message that warns the readers about "
-            "which part of the text below they should consider "
-            "fact-checking for themselves? "
-            "(please keep your response concise and mention "
-            "only one important point):\n\n"
-        )
+        question = self.fact_check_question + "\n\nText: "
         question += prev_response
         return self.ask_text_model_with_context(context, question)
 
@@ -143,9 +119,3 @@ class DocsAgent:
         new_context = ""
         new_context += self.prompt_condition + "\n" + context
         return new_context
-
-    # Update the condition string for PaLM from the `condition.txt` file
-    def update_condition_from_file(self):
-        with open(CONDITION_FILE, "r", encoding="utf-8") as text_file:
-            self.prompt_condition = text_file.read()
-            text_file.close()
