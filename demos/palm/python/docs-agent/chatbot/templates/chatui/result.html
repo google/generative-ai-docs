@@ -8,9 +8,9 @@
     {{ response_in_html | safe }}
   </span>
   <h4>Important:</h4>
-  {{ fact_checked_answer | safe }}
+  {{ fact_checked_response_in_html | safe }}
   <p id="fact-check-url">To verify this information, please check out:</p>
-  {{ fact_link | safe }}
+  {{ fact_check_url | safe }}
 </div>
 <div class="related-questions">
   <h3>Related questions</h3>
@@ -25,7 +25,7 @@
     {{ context | safe }}
     <span class="reference-content">
       <h4>Reference:</h4>
-      {{ metadatas | safe }}
+      {{ clickable_urls | safe }}
     </span>
   </div>
 </section>
@@ -43,7 +43,7 @@
     {{ response_in_html | safe }}
   </span>
   <h4>Rewrite:</h4>
-  <textarea id="edit-text-area">{{ response_in_markdown | safe }}</textarea>
+  <textarea id="edit-text-area">{{ response | safe }}</textarea>
   <label for="user-id">User ID:</label>
   <input type="text" id="user-id" name="user-id" placeholder="Optional">
   <br>
