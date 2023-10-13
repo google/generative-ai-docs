@@ -10,6 +10,9 @@
 'demos:mood-food':
 - demos/palm/web/mood-food/**/*
 
+'demos:pipet':
+- demos/palm/node/pipet-code-agent/**/*
+
 'demos:quick-prompt':
 - demos/palm/web/quick-prompt/**/*
 
