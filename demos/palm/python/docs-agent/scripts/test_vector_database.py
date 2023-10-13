@@ -83,9 +83,7 @@ def embed_palm(texts: Documents) -> Embeddings:
 ai_console = Console(width=160)
 ai_console.rule("Fold")
 
-chroma_client = chromadb.Client(
-    Settings(chroma_db_impl="duckdb+parquet", persist_directory=LOCAL_VECTOR_DB_DIR)
-)
+chroma_client = chromadb.PersistentClient(path=LOCAL_VECTOR_DB_DIR)
 
 if EMBEDDINGS_TYPE == "PALM":
     PALM_EMBEDDING_MODEL = "models/embedding-gecko-001"
