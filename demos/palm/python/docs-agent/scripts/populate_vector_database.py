@@ -37,7 +37,7 @@ import read_config
 #   (see `markdown_to_plain_text.py`)
 #
 # Do the following:
-# 1. If you are not using a `input-values.yaml` file,
+# 1. If you are not using the config.yaml file,
 #    edit PLAIN_TEXT_DIR in this script (see below).
 # 2. Run:
 #    $ python3 ./scripts/populate-vector-database.py
@@ -48,7 +48,7 @@ import read_config
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ### Select the input directory of plain text files, this will be overridden by
-### `input-values.yaml`
+### the config.yaml file.
 ### Set up the path to the local LLM ###
 LOCAL_VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_stores/chroma")
 COLLECTION_NAME = "docs_collection"
