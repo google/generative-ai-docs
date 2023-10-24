@@ -1,1 +1,1 @@
-/usr/local/google/home/nickvander/docs-agent-github3/third_party/docs-agent/g2docsmd-html/exportmd.gs
+../third_party/docs-agent/g2docsmd-html/exportmd.gs
