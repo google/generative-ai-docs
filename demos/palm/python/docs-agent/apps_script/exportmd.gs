@@ -1,1 +1,1 @@
-../third_party/docs-agent/g2docsmd-html/exportmd.gs
+../third_party/g2docsmd-html/exportmd.gs
