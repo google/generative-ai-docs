@@ -37,7 +37,7 @@ CHUNK_SIZE = 3000
 #### Input variables for the script ####
 #
 # Note: The hardcoded values below are overwritten
-#       if the `input-values.yaml` file is found.
+#       if the config.yaml file is found.
 #
 # MY_INPUT_PATH: An array of directories that contain source Markdown files.
 # URL_PREFIX: An array of prefixes to be used to create URLs for source Markdown files.
@@ -50,7 +50,7 @@ URL_PREFIX = [
 ]
 MY_OUTPUT_PATH = "data/plain_docs"
 
-#### Read the `input-values-yaml` file ####
+#### Read the config.yaml file ####
 # At a minimum, INPUT_YAML must configure the following values:
 # output_path: The target directory where processed plain text files will be stored.
 # input:
@@ -97,16 +97,16 @@ def markdown_to_text(markdown_string):
     # Remove [][] in Markdown
     text = re.sub(r"\[(.*?)\]\[(.*?)\]", "\\1", text)
 
-    # Remove {: } in devsite Markdown
+    # Remove {: } in Markdown
     text = re.sub(r"\{:(.*?)\}", "", text)
 
-    # Remove {. } in g3doc Markdown
+    # Remove {. } in Markdown
     text = re.sub(r"\{.(.*?)\}", "", text)
 
-    # Remove a single line `sh` in g3doc Markdown
+    # Remove a single line `sh` in Markdown
     text = re.sub(r"(?m)^sh$", "", text)
 
-    # Remove a single line ````sh` in g3doc Markdown
+    # Remove a single line ````sh` in Markdown
     # text = re.sub(r'(?m)^```sh$', '', text)
 
     # Remove code snippets
@@ -377,7 +377,7 @@ for input_counter in range(input_len):
     full_file_metadata = {}
     file_index = []
     exclude = []
-    # Process `input-values.yaml` into input variables.
+    # Process config.yaml into input variables.
     if IS_CONFIG_FILE:
         # Reads all the input values defined in the configuration file
         config_values = config.returnConfigValue("input")
