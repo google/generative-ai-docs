@@ -73,10 +73,10 @@ input:
 condition_text: "You are a helpful chatbot answering questions from users. Read
 the following context first and answer the question at the end:"
 
-fact_check_question: "Can you compare the following text to the context provided
-in this prompt and write a short message that warns the readers about which part
-of the text they should consider fact-checking? (Please keep your response
-concise and focus on only one important item.)"
+fact_check_question: "Can you compare the text below to the context provided
+in this prompt above and write a short message that warns the readers about
+which part of the text they should consider fact-checking? (Please keep your
+response concise and focus on only one important item.)"
 
 model_error_message: "PaLM is not able to answer this question at the
 moment. Rephrase the question and try asking again."
