@@ -143,13 +143,13 @@ def ask_model(question):
     # 3. Add the custom condition text to the context.
     # 4. Send the prompt (condition + context + question) to the language model.
     query_result = docs_agent.query_vector_store(question)
-    context = markdown.markdown(query_result.fetch_formatted(Format.CONTEXT))
-    context_with_prefix = docs_agent.add_instruction_to_context(context)
-    response = docs_agent.ask_text_model_with_context(context_with_prefix, question)
+    context = query_result.fetch_formatted(Format.CONTEXT)
+    context_with_instruction = docs_agent.add_instruction_to_context(context)
+    response = docs_agent.ask_text_model_with_context(context_with_instruction, question)
 
     ### PROMPT 2: FACT-CHECK THE PREVIOUS RESPONSE.
     fact_checked_response = docs_agent.ask_text_model_to_fact_check(
-        context_with_prefix, response
+        context_with_instruction, response
     )
 
     ### PROMPT 3: GET 5 RELATED QUESTIONS.
@@ -176,10 +176,12 @@ def ask_model(question):
 
     ### PREPARE OTHER ELEMENTS NEEDED BY UI.
     # - Create a uuid for this request.
+    # - Convert the context returned from the database into HTML for rendering.
     # - Convert the first response from the model into HTML for rendering.
     # - Convert the fact-check response from the model into HTML for rendering.
     # - A workaround to get the server's URL to work with the rewrite and like features.
     new_uuid = uuid.uuid1()
+    context_in_html = markdown.markdown(context)
     response_in_html = markdown.markdown(response)
     fact_checked_response_in_html = markdown.markdown(fact_checked_response)
     server_url = request.url_root.replace("http", "https")
@@ -190,7 +192,7 @@ def ask_model(question):
     return render_template(
         "chatui/index.html",
         question=question,
-        context=context,
+        context_in_html=context_in_html,
         response=response,
         response_in_html=response_in_html,
         clickable_urls=clickable_urls,

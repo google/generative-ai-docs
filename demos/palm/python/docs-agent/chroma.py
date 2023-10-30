@@ -69,9 +69,9 @@ class Chroma:
             )
         elif embedding_model is None or embedding_model == "palm/embedding-gecko-001":
             if embedding_model is None:
-                logging.warning(
-                    "Embedding model is not stored in the metadata of "
-                    "the collection %s. Using PaLM as default.",
+                logging.info(
+                    "Embedding model is not specified in the metadata of "
+                    "the collection %s. Using the default PaLM embedding model.",
                     name,
                 )
             palm = PaLM(embed_model="models/embedding-gecko-001", find_models=False)
@@ -138,7 +138,7 @@ class ChromaQueryResultItem:
 
     def format(self, format_type: Format, ref_index: int = None):
         d = {
-            "document": self.document,
+            "document": self.document.strip(),
             "ref_index": ref_index,
             "url": self.metadata.get("url", None),
             "distance": self.distance,

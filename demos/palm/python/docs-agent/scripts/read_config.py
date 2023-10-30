@@ -43,11 +43,11 @@ class ReadConfig:
             with open(INPUT_YAML, "r", encoding="utf-8") as inp_yaml:
                 self.config_values = yaml.safe_load(inp_yaml)
                 self.IS_CONFIG_FILE = True
-                print("Configuration defined in: " + INPUT_YAML)
+                print("Reading the config file: " + INPUT_YAML)
                 # Check that the required keys exist
                 self.validateKeys()
         except FileNotFoundError:
-            print("The file " + INPUT_YAML + " does not exist.")
+            print("The config file " + INPUT_YAML + " does not exist.")
             # Exits the scripts if there is no valid config file
             return sys.exit(1)
 

@@ -125,6 +125,10 @@ The following list summarizes the tasks and features of the Docs Agent sample ap
   the responses. (See the
   [Enabling users to submit a rewrite of a generated response][submit-a-rewrite] and
   [Enabling users to like generated responses][like-generate-responses] sections.)
+- **Convert Google Docs, PDF, and Gmail into Markdown files**: This feature uses
+  Apps Script to convert Google Docs, PDF, and Gmail into Markdown files, which then
+  can be used as input datasets for Docs Agent. For more information, see the
+  [`README`][apps-script-readme] file in the `apps_script` directory.
 
 ## Flow of events
 
@@ -205,10 +209,10 @@ by the PaLM model:
 - Additional condition (for fact-checking):
 
   ```
-  Can you compare the following text to the context provided in this prompt and write
-  a short message that warns the readers about which part of the text they should
-  consider fact-checking? (Please keep your response concise and focus on only
-  one important item.)
+  Can you compare the text below to the context provided
+  in this prompt above and write a short message that warns the readers about
+  which part of the text they should consider fact-checking? (Please keep your
+  response concise and focus on only one important item.)"
   ```
 
 - Previously generated response
@@ -597,20 +601,18 @@ To launch the Docs Agent chat app, do the following:
 
    ```
    $ poetry run ./chatbot/launch.sh
-   This script starts your flask app in a virtual environment
-   Installing all dependencies through pip...
-   Using the local vector database created at /home/alice/generative-ai-docs/demos/palm/python/docs-agent/vector_database
-   Using embedded DuckDB with persistence: data will be stored in: /home/alice/generative-ai-docs/demos/palm/python/docs-agent/vector_database
+   Reading the config file: /home/alice/docs-agent/config.yaml
+   Reading the config file: /home/alice/docs-agent/config.yaml
     * Serving Flask app 'chatbot'
     * Debug mode: on
-   WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+   INFO:werkzeug:WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
     * Running on http://example.com:5000
-   Press CTRL+C to quit
-    * Restarting with stat
-   Using the local vector database created at /home/alice/generative-ai-docs/demos/palm/python/docs-agent/vector_database
-   Using embedded DuckDB with persistence: data will be stored in: /home/alice/generative-ai-docs/demos/palm/python/docs-agent/vector_database
-    * Debugger is active!
-    * Debugger PIN: 129-640-957
+   INFO:werkzeug:Press CTRL+C to quit
+   INFO:werkzeug: * Restarting with stat
+   Reading the config file: /home/alice/docs-agent/config.yaml
+   Reading the config file: /home/alice/docs-agent/config.yaml
+   WARNING:werkzeug: * Debugger is active!
+   INFO:werkzeug: * Debugger PIN: 825-594-989
    ```
 
    Notice the line that shows the URL of this server (`http://example.com:5000` in

@@ -73,7 +73,7 @@ class DocsAgent:
 
     # Use this method for talking to PaLM (Text)
     def ask_text_model_with_context(self, context, question):
-        new_prompt = f"{context}\nQuestion: {question}"
+        new_prompt = f"{context}\n\nQuestion: {question}"
         try:
             response = palm.generate_text(
                 prompt=new_prompt,
@@ -101,7 +101,7 @@ class DocsAgent:
             return self.model_error_message
 
         if response.last is None:
-            return self.palm_none_response
+            return self.model_error_message
         return response.last
 
     # Use this method for asking PaLM (Text) for fact-checking
@@ -117,5 +117,5 @@ class DocsAgent:
     # Add specific instruction as a prefix to the context
     def add_instruction_to_context(self, context):
         new_context = ""
-        new_context += self.prompt_condition + "\n" + context
+        new_context += self.prompt_condition + "\n\n" + context
         return new_context
