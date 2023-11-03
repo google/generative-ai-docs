@@ -1,29 +1,30 @@
 # Docs Agent
 
 The Docs Agent project enables [PaLM API][genai-doc-site] users to launch a chat application
-on a Linux-based host machine using their own set of documents as a source dataset.
+on a Linux host machine using their documents as a dataset.
 
-**Note**: If you're interested in setting up and launching the Docs Agent sample app on your
-host machine, see the [Set up Docs Agent][set-up-docs-agent] section below.
+**Note**: If you want to set up and launch the Docs Agent sample app on your host machine,
+check out the [Set up Docs Agent][set-up-docs-agent] section below.
 
 ## Overview
 
-The Docs Agent sample app is being developed to demonstrate an AI-powered chatbot application
+The Docs Agent project is being developed to demonstrate an AI-powered chatbot application
 (including a backend server and web UI) that can answer questions specific to any product,
-service, or topic that has a great quantity of information available as documentation (which
-can be from various sources such as Markdown, HTML, Google Docs, chat conversations, etc.).
+service, or topic that has a large amount of information available in documentation (which
+can be from various sources such as Markdown, HTML, Google Docs, Gmail, PDF, etc.).
 
 The main goal of the Docs Agent project is:
 
-- You can supply your own set of documents to enable a PaLM 2 model to synthesize useful,
+- You can supply your own set of documents to enable a PaLM 2 model to generate useful,
   relevant, and accurate responses that are grounded on the documented information.
 
 The Docs Agent sample app is designed to be easily set up and configured in a Linux environment
 and is required that you have access to Google’s [PaLM API][genai-doc-site].
 
-Keep in mind that this approach is not to “fine-tune” an LLM (large language model)
-itself, but the Docs Agent sample app uses a mixture of prompt engineering and
-embeddings techniques on top of a publicly available LLM model such as PaLM 2.
+Keep in mind that this approach does not involve “fine-tuning” an LLM (large language model).
+Instead, the Docs Agent sample app uses a mixture of prompt engineering and embedding techniques,
+also known as Retrieval Augmented Generation (RAG), on top of a publicly available LLM model
+like  PaLM 2.
 
 ![Docs Agent architecture](docs/images/docs-agent-architecture-01.png)
 
@@ -309,6 +310,10 @@ The project includes Apps Script files that allow you to convert various sources
 (including Google Docs and PDF) from your Google Drive and Gmail into Markdown files. You can then
 use these Markdown files as additional input sources for Docs Agent. For more information, see the
 [`README`][apps-script-readme] file in the `apps_script` directory.
+
+![Docs Agent pre-processing flow](docs/images/docs-agent-pre-processing-01.png)
+
+**Figure 7**. Docs Agent's pre-processing flow for various doc types.
 
 ## Issues identified
 
