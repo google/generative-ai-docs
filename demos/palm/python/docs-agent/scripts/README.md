@@ -7,6 +7,10 @@ generated embeddings in the vector database:
 - [`markdown_to_plain_text.py`][markdown-to-plain-text]
 - [`populate_vector_database.py`][populate-vector-database]
 
+![Docs Agent pre-processing flow](../docs/images/docs-agent-pre-processing-01.png)
+
+**Figure 1**. Docs Agent's pre-processing flow from source documents to the vector database.
+
 ## Steps in the markdown_to_plain_text.py script
 
 When processing Markdown files to plain text using the
