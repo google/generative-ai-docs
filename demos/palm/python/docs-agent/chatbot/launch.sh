@@ -35,4 +35,4 @@ export FLASK_PORT=$port
 export FLASK_APP=$name
 export FLASK_DEBUG=true
 
-flask run --host=$HOSTNAME --port=$FLASK_PORT
+flask run --host=localhost --port=$FLASK_PORT
