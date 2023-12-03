@@ -35,4 +35,5 @@ export FLASK_PORT=$port
 export FLASK_APP=$name
 export FLASK_DEBUG=true
 
+#This ensures that the host is set to "localhost" directly in the flask run command.
 flask run --host=localhost --port=$FLASK_PORT
