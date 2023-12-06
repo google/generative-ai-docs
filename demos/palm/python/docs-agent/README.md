@@ -591,8 +591,16 @@ To launch the Docs Agent chat app, do the following:
    ```
    cd $HOME/generative-ai-docs/demos/palm/python/docs-agent
    ```
+   
+1. Set the HOSTNAME as an environment variable. In most cases, you want to use localhost:
 
-2. Launch the Docs Agent chat app:
+   ```
+   export HOSTNAME=localhost
+   ```
+   **Tip**: To avoid repeating these `export` lines, add them to your
+   `$HOME/.bashrc` file.
+   
+3. Launch the Docs Agent chat app:
 
    ```
    poetry run ./chatbot/launch.sh
@@ -623,7 +631,7 @@ To launch the Docs Agent chat app, do the following:
    Notice the line that shows the URL of this server (`http://example.com:5000` in
    the example above).
 
-3. Open the URL above on a browser.
+4. Open the URL above on a browser.
 
    Now, users can start asking questions related to the source dataset.
 
