@@ -67,6 +67,11 @@ li {
   margin: 0 0 0.3em;
 }
 
+code {
+    font-family: math;
+    color: darkgreen;
+}
+
 /* ======= Style layout by ID ======= */
 
 #callout-box {

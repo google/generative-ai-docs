@@ -52,6 +52,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ### Set up the path to the local LLM ###
 LOCAL_VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_stores/chroma")
 COLLECTION_NAME = "docs_collection"
+PALM_API_ENDPOINT = "generativelanguage.googleapis.com"
+EMBEDDING_MODEL = None
 
 IS_CONFIG_FILE = True
 if IS_CONFIG_FILE:
@@ -60,6 +62,8 @@ if IS_CONFIG_FILE:
     input_len = config_values.returnInputCount()
     LOCAL_VECTOR_DB_DIR = config_values.returnConfigValue("vector_db_dir")
     COLLECTION_NAME = config_values.returnConfigValue("collection_name")
+    PALM_API_ENDPOINT = config_values.returnConfigValue("api_endpoint")
+    EMBEDDING_MODEL = config_values.returnConfigValue("embedding_model")
 
 ### Select the file index that is generated with your plain text files, same directory
 INPUT_FILE_INDEX = "file_index.json"
@@ -94,13 +98,24 @@ except FileNotFoundError:
     msg = "The file " + FULL_INDEX_PATH + "does not exist."
 
 if EMBEDDINGS_TYPE == "PALM":
-    palm.configure(api_key=API_KEY)
-    # This returns models/embedding-gecko-001"
+    palm.configure(api_key=API_KEY, client_options={"api_endpoint": PALM_API_ENDPOINT})
+    # Scan the list of PaLM models.
     models = [
         m for m in palm.list_models() if "embedText" in m.supported_generation_methods
     ]
-    # MODEL = "models/embedding-gecko-001"
-    MODEL = models[0]
+    if EMBEDDING_MODEL != None:
+        # If `embedding_model` is specified in the `config.yaml` file, select that model.
+        found_model = False
+        for m in models:
+            if m.name == EMBEDDING_MODEL:
+                MODEL = m
+                print("[INFO] Embedding model is set to " + str(m.name) + "\n")
+                found_model = True
+        if found_model is False:
+            sys.exit("[ERROR] Cannot find the embedding model: " + str(EMBEDDING_MODEL))
+    else:
+        # By default, pick the first model on the list (likely "models/embedding-gecko-001")
+        MODEL = models[0]
 elif EMBEDDINGS_TYPE == "LOCAL":
     MODEL = os.path.join(BASE_DIR, "models/all-mpnet-base-v2")
     emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=MODEL)
@@ -109,6 +124,7 @@ else:
     emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=MODEL)
 
 chroma_client = chromadb.PersistentClient(path=LOCAL_VECTOR_DB_DIR)
+
 
 # Create embed function for PaLM
 # API call limit to 5 qps
@@ -220,7 +236,7 @@ for root, dirs, files in os.walk(PLAIN_TEXT_DIR):
                 match3 = re.search(r"(.*)\.md$", url)
                 url = match3[1]
                 # Replaces the URL if it comes from frontmatter
-                if (final_url):
+                if final_url:
                     url = final_url_value
                 # Creates a dictionary with basic metadata values
                 # (i.e. source, URL, and md_hash)

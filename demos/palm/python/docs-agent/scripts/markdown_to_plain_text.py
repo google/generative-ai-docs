@@ -192,7 +192,7 @@ def process_page_and_section_titles(markdown_text):
                 new_line = (
                     '# The "'
                     + page_title
-                    + '" page contains the following content:\n\n'
+                    + '" page includes the following information:\n'
                 )
 
             if section_title:
@@ -201,7 +201,7 @@ def process_page_and_section_titles(markdown_text):
                     + page_title
                     + '" page has the "'
                     + section_title
-                    + '" section that contains the following content:\n'
+                    + '" section that includes the following information:\n'
                 )
 
             if subsection_title:
@@ -212,7 +212,7 @@ def process_page_and_section_titles(markdown_text):
                     + section_title
                     + '" section has the "'
                     + subsection_title
-                    + '" subsection that contains the following content:\n'
+                    + '" subsection that includes the following information:\n'
                 )
 
         if skip_this_line is False:

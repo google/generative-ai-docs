@@ -25,6 +25,7 @@ from flask import (
     json,
 )
 import markdown
+import markdown.extensions.fenced_code
 from bs4 import BeautifulSoup
 import urllib
 import os
@@ -145,7 +146,9 @@ def ask_model(question):
     query_result = docs_agent.query_vector_store(question)
     context = query_result.fetch_formatted(Format.CONTEXT)
     context_with_instruction = docs_agent.add_instruction_to_context(context)
-    response = docs_agent.ask_text_model_with_context(context_with_instruction, question)
+    response = docs_agent.ask_text_model_with_context(
+        context_with_instruction, question
+    )
 
     ### PROMPT 2: FACT-CHECK THE PREVIOUS RESPONSE.
     fact_checked_response = docs_agent.ask_text_model_to_fact_check(
@@ -153,14 +156,21 @@ def ask_model(question):
     )
 
     ### PROMPT 3: GET 5 RELATED QUESTIONS.
-    # 1. Prepare a new question asking the model to come up with 5 related questions.
-    # 2. Ask the language model with the new question.
-    # 3. Parse the model's response into a list in HTML format.
+    # 1. Use the response from Prompt 1 as context and add a custom condition.
+    # 2. Prepare a new question asking the model to come up with 5 related questions.
+    # 3. Ask the language model with the new question.
+    # 4. Parse the model's response into a list in HTML format.
+    new_condition = "Read the context below and answer the user's question at the end."
+    new_context_with_instruction = docs_agent.add_custom_instruction_to_context(
+        new_condition, response
+    )
     new_question = (
         "What are 5 questions developers might ask after reading the context?"
     )
     new_response = markdown.markdown(
-        docs_agent.ask_text_model_with_context(response, new_question)
+        docs_agent.ask_text_model_with_context(
+            new_context_with_instruction, new_question
+        )
     )
     related_questions = parse_related_questions_response_to_html_list(new_response)
 
@@ -181,8 +191,8 @@ def ask_model(question):
     # - Convert the fact-check response from the model into HTML for rendering.
     # - A workaround to get the server's URL to work with the rewrite and like features.
     new_uuid = uuid.uuid1()
-    context_in_html = markdown.markdown(context)
-    response_in_html = markdown.markdown(response)
+    context_in_html = markdown.markdown(context, extensions=["fenced_code"])
+    response_in_html = markdown.markdown(response, extensions=["fenced_code"])
     fact_checked_response_in_html = markdown.markdown(fact_checked_response)
     server_url = request.url_root.replace("http", "https")
 
