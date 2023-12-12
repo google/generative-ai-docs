@@ -47,7 +47,7 @@ class Chroma:
     def list_collections(self):
         return self.client.list_collections()
 
-    def get_collection(self, name, embedding_function=None):
+    def get_collection(self, name, embedding_function=None, embedding_model=None):
         if embedding_function is not None:
             return ChromaCollection(
                 self.client.get_collection(name, embedding_function=embedding_function),
@@ -55,9 +55,17 @@ class Chroma:
             )
         # Read embedding meta information from the collection
         collection = self.client.get_collection(name, lambda x: None)
-        embedding_model = None
-        if collection.metadata:
+        if embedding_model is None and collection.metadata:
             embedding_model = collection.metadata.get("embedding_model", None)
+            if embedding_model is None:
+                # If embedding_model is not found in the metadata,
+                # use `models/embedding-gecko-001` by default.
+                logging.info(
+                    "Embedding model is not specified in the metadata of "
+                    "the collection %s. Using the default PaLM embedding model.",
+                    name,
+                )
+                embedding_model = "models/embedding-gecko-001"
 
         if embedding_model == "local/all-mpnet-base-v2":
             base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -67,24 +75,19 @@ class Chroma:
                     model_name=local_model_dir
                 )
             )
-        elif embedding_model is None or embedding_model == "palm/embedding-gecko-001":
-            if embedding_model is None:
-                logging.info(
-                    "Embedding model is not specified in the metadata of "
-                    "the collection %s. Using the default PaLM embedding model.",
-                    name,
-                )
-            palm = PaLM(embed_model="models/embedding-gecko-001", find_models=False)
-            # We can not redefine embedding_function with def and
-            # have to assign a lambda to it
-            # pylint: disable-next=unnecessary-lambda-assignment
-            embedding_function = lambda texts: [palm.embed(text) for text in texts]
-
         else:
-            raise ChromaEmbeddingModelNotSupportedError(
-                f"Embedding model {embedding_model} specified by collection {name} "
-                "is not supported."
-            )
+            print("Embedding model: " + str(embedding_model))
+            try:
+                palm = PaLM(embed_model=embedding_model, find_models=False)
+                # We cannot redefine embedding_function with def and
+                # have to assign a lambda to it
+                # pylint: disable-next=unnecessary-lambda-assignment
+                embedding_function = lambda texts: [palm.embed(text) for text in texts]
+            except:
+                raise ChromaEmbeddingModelNotSupportedError(
+                    f"Embedding model {embedding_model} specified by collection {name} "
+                    "is not supported."
+                )
 
         return ChromaCollection(
             self.client.get_collection(name, embedding_function=embedding_function),

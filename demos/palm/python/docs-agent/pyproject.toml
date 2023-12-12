@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "docs-agent"
-version = "0.1.5"
+version = "0.1.6"
 description = ""
 authors = ["Docs Agent contributors"]
 readme = "README.md"

@@ -24,7 +24,7 @@ and is required that you have access to Google’s [PaLM API][genai-doc-site].
 Keep in mind that this approach does not involve “fine-tuning” an LLM (large language model).
 Instead, the Docs Agent sample app uses a mixture of prompt engineering and embedding techniques,
 also known as Retrieval Augmented Generation (RAG), on top of a publicly available LLM model
-like  PaLM 2.
+like PaLM 2.
 
 ![Docs Agent architecture](docs/images/docs-agent-architecture-01.png)
 
@@ -210,10 +210,10 @@ by the PaLM model:
 - Additional condition (for fact-checking):
 
   ```
-  Can you compare the text below to the context provided
-  in this prompt above and write a short message that warns the readers about
-  which part of the text they should consider fact-checking? (Please keep your
-  response concise and focus on only one important item.)"
+  Can you compare the text below to the information provided in this prompt above
+  and write a short message that warns the readers about which part of the text they
+  should consider fact-checking? (Please keep your response concise and focus on only
+  one important item.)"
   ```
 
 - Previously generated response
@@ -266,8 +266,7 @@ The following is the exact structure of this prompt:
 - Condition:
 
   ```
-  You are a helpful chatbot answering questions from users. Read the following context first
-  and answer the question at the end:
+  Read the context below and answer the question at the end:
   ```
 
 - Context:
@@ -578,8 +577,10 @@ To customize settings in the Docs Agent chat app, do the following:
    condition for your custom dataset, for example:
 
    ```
-   condition_text: "You are a helpful chatbot answering questions from developers working on
-   Flutter apps. Read the following context first and answer the question at the end:"
+   condition_text: "You are a helpful chatbot answering questions from **Flutter app developers**.
+   Read the context below first and answer the user's question at the end.
+   In your answer, provide a summary in three or five sentences. (BUT DO NOT USE
+   ANY INFORMATION YOU KNOW ABOUT THE WORLD.)"
    ```
 
 ### 2. Launch the Docs Agent chat app

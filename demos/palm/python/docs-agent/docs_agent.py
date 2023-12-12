@@ -34,14 +34,15 @@ if API_KEY is None:
 
 # Select your PaLM API endpoint.
 PALM_API_ENDPOINT = "generativelanguage.googleapis.com"
-
-palm = PaLM(api_key=API_KEY, api_endpoint=PALM_API_ENDPOINT)
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+EMBEDDING_MODEL = None
 
 # Set up the path to the chroma vector database.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_stores/chroma")
 COLLECTION_NAME = "docs_collection"
+
+# Set the log level for the DocsAgent class: NORMAL or VERBOSE
+LOG_LEVEL = "NORMAL"
 
 IS_CONFIG_FILE = True
 if IS_CONFIG_FILE:
@@ -51,9 +52,15 @@ if IS_CONFIG_FILE:
     CONDITION_TEXT = config_values.returnConfigValue("condition_text")
     FACT_CHECK_QUESTION = config_values.returnConfigValue("fact_check_question")
     MODEL_ERROR_MESSAGE = config_values.returnConfigValue("model_error_message")
+    LOG_LEVEL = config_values.returnConfigValue("log_level")
+    PALM_API_ENDPOINT = config_values.returnConfigValue("api_endpoint")
+    EMBEDDING_MODEL = config_values.returnConfigValue("embedding_model")
 
 # Select the number of contents to be used for providing context.
 NUM_RETURNS = 5
+
+# Initialize the PaLM instance.
+palm = PaLM(api_key=API_KEY, api_endpoint=PALM_API_ENDPOINT)
 
 
 class DocsAgent:
@@ -65,7 +72,9 @@ class DocsAgent:
             "Using the local vector database created at %s", LOCAL_VECTOR_DB_DIR
         )
         self.chroma = Chroma(LOCAL_VECTOR_DB_DIR)
-        self.collection = self.chroma.get_collection(COLLECTION_NAME)
+        self.collection = self.chroma.get_collection(
+            COLLECTION_NAME, embedding_model=EMBEDDING_MODEL
+        )
         # Update PaLM's custom prompt strings
         self.prompt_condition = CONDITION_TEXT
         self.fact_check_question = FACT_CHECK_QUESTION
@@ -74,6 +83,9 @@ class DocsAgent:
     # Use this method for talking to PaLM (Text)
     def ask_text_model_with_context(self, context, question):
         new_prompt = f"{context}\n\nQuestion: {question}"
+        # Print the prompt for debugging if the log level is VERBOSE.
+        if LOG_LEVEL == "VERBOSE":
+            self.print_the_prompt(new_prompt)
         try:
             response = palm.generate_text(
                 prompt=new_prompt,
@@ -119,3 +131,24 @@ class DocsAgent:
         new_context = ""
         new_context += self.prompt_condition + "\n\n" + context
         return new_context
+
+    # Add custom instruction as a prefix to the context
+    def add_custom_instruction_to_context(self, condition, context):
+        new_context = ""
+        new_context += condition + "\n\n" + context
+        return new_context
+
+    # Generate an embedding given text input
+    def generate_embedding(self, text):
+        return palm.embed(text)
+
+    # Print the prompt on the terminal for debugging
+    def print_the_prompt(self, prompt):
+        print("#########################################")
+        print("#              PROMPT                   #")
+        print("#########################################")
+        print(prompt)
+        print("#########################################")
+        print("#           END OF PROMPT               #")
+        print("#########################################")
+        print("\n")
