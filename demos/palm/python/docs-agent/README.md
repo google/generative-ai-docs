@@ -628,7 +628,7 @@ To launch the Docs Agent chat app, do the following:
    Notice the line that shows the URL of this server (`http://example.com:5000` in
    the example above).
 
-4. Open the URL above on a browser.
+3. Open the URL above on a browser.
 
    Now, users can start asking questions related to the source dataset.
 
