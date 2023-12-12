@@ -602,6 +602,10 @@ To launch the Docs Agent chat app, do the following:
    **Note**: The Docs Agent chat app runs on port 5000 by default. If you have an application
    already running on port 5000 on your host machine, you can use the `-p` flag to specify
    a different port (for example, `poetry run ./chatbot/launch.sh -p 5050`).
+   
+   **Note**: If this ```poetry run ./chatbot/launch.sh``` command fails to run, check the ```HOSTNAME```
+   environment variable on your host machine (for example, ```echo $HOSTNAME). If this variable is unset,
+   try setting it to ```localhost``` by running ```export HOSTNAME=localhost```
 
    Once the app starts running, this command prints output similar to the following:
 
@@ -624,7 +628,7 @@ To launch the Docs Agent chat app, do the following:
    Notice the line that shows the URL of this server (`http://example.com:5000` in
    the example above).
 
-3. Open the URL above on a browser.
+4. Open the URL above on a browser.
 
    Now, users can start asking questions related to the source dataset.
 
