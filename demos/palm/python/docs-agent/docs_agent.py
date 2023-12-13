@@ -34,6 +34,7 @@ if API_KEY is None:
 
 # Select your PaLM API endpoint.
 PALM_API_ENDPOINT = "generativelanguage.googleapis.com"
+LANGUAGE_MODEL = None
 EMBEDDING_MODEL = None
 
 # Set up the path to the chroma vector database.
@@ -54,13 +55,34 @@ if IS_CONFIG_FILE:
     MODEL_ERROR_MESSAGE = config_values.returnConfigValue("model_error_message")
     LOG_LEVEL = config_values.returnConfigValue("log_level")
     PALM_API_ENDPOINT = config_values.returnConfigValue("api_endpoint")
+    LANGUAGE_MODEL = config_values.returnConfigValue("language_model")
     EMBEDDING_MODEL = config_values.returnConfigValue("embedding_model")
 
 # Select the number of contents to be used for providing context.
 NUM_RETURNS = 5
 
 # Initialize the PaLM instance.
-palm = PaLM(api_key=API_KEY, api_endpoint=PALM_API_ENDPOINT)
+if LANGUAGE_MODEL != None and EMBEDDING_MODEL != None:
+    if "gemini" in LANGUAGE_MODEL:
+        palm = PaLM(
+            api_key=API_KEY,
+            api_endpoint=PALM_API_ENDPOINT,
+            content_model=LANGUAGE_MODEL,
+            embed_model=EMBEDDING_MODEL,
+        )
+    else:
+        palm = PaLM(
+            api_key=API_KEY,
+            api_endpoint=PALM_API_ENDPOINT,
+            text_model=LANGUAGE_MODEL,
+            embed_model=EMBEDDING_MODEL,
+        )
+elif EMBEDDING_MODEL != None:
+    palm = PaLM(
+        api_key=API_KEY, api_endpoint=PALM_API_ENDPOINT, embed_model=EMBEDDING_MODEL
+    )
+else:
+    palm = PaLM(api_key=API_KEY, api_endpoint=PALM_API_ENDPOINT)
 
 
 class DocsAgent:
@@ -79,8 +101,11 @@ class DocsAgent:
         self.prompt_condition = CONDITION_TEXT
         self.fact_check_question = FACT_CHECK_QUESTION
         self.model_error_message = MODEL_ERROR_MESSAGE
+        # Models settings
+        self.language_model = LANGUAGE_MODEL
+        self.embedding_model = EMBEDDING_MODEL
 
-    # Use this method for talking to PaLM (Text)
+    # Use this method for talking to a PaLM text model
     def ask_text_model_with_context(self, context, question):
         new_prompt = f"{context}\n\nQuestion: {question}"
         # Print the prompt for debugging if the log level is VERBOSE.
@@ -101,7 +126,22 @@ class DocsAgent:
             return self.model_error_message
         return response.result
 
-    # Use this method for talking to PaLM (Chat)
+    # Use this method for talking to a Gemini content model
+    def ask_content_model_with_context(self, context, question):
+        new_prompt = context + "\n\nQuestion: " + question
+        # Print the prompt for debugging if the log level is VERBOSE.
+        if LOG_LEVEL == "VERBOSE":
+            self.print_the_prompt(new_prompt)
+        try:
+            response = palm.generate_content(new_prompt)
+        except google.api_core.exceptions.InvalidArgument:
+            return self.model_error_message
+        for chunk in response:
+            if str(chunk.candidates[0].content) == "":
+                return self.model_error_message
+        return response.text
+
+    # Use this method for talking to a PaLM chat model
     def ask_chat_model_with_context(self, context, question):
         try:
             response = palm.chat(
@@ -116,11 +156,17 @@ class DocsAgent:
             return self.model_error_message
         return response.last
 
-    # Use this method for asking PaLM (Text) for fact-checking
+    # Use this method for asking a PaLM text model for fact-checking
     def ask_text_model_to_fact_check(self, context, prev_response):
         question = self.fact_check_question + "\n\nText: "
         question += prev_response
         return self.ask_text_model_with_context(context, question)
+
+    # Use this method for asking a Gemini content model for fact-checking
+    def ask_content_model_to_fact_check(self, context, prev_response):
+        question = self.fact_check_question + "\n\nText: "
+        question += prev_response
+        return self.ask_content_model_with_context(context, question)
 
     # Query the local Chroma vector database using the user question
     def query_vector_store(self, question):
@@ -141,6 +187,14 @@ class DocsAgent:
     # Generate an embedding given text input
     def generate_embedding(self, text):
         return palm.embed(text)
+
+    # Get the name of the language model used in this Docs Agent setup
+    def get_language_model_name(self):
+        return self.language_model
+
+    # Get the name of the embedding model used in this Docs Agent setup
+    def get_embedding_model_name(self):
+        return self.embedding_model
 
     # Print the prompt on the terminal for debugging
     def print_the_prompt(self, prompt):

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "docs-agent"
-version = "0.1.6"
+version = "0.2.0"
 description = ""
 authors = ["Docs Agent contributors"]
 readme = "README.md"
@@ -17,7 +17,7 @@ ratelimit = "^2.2.1"
 absl-py = "^1.4.0"
 python-frontmatter = "^1.0.0"
 flatdict = "^4.0.1"
-google-generativeai = "^0.1.0"
+google-generativeai = "^0.3.1"
 grpcio = "^1.57.0"
 grpcio-tools = "^1.57.0"
 uuid = "^1.30"

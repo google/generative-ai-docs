@@ -76,7 +76,6 @@ class Chroma:
                 )
             )
         else:
-            print("Embedding model: " + str(embedding_model))
             try:
                 palm = PaLM(embed_model=embedding_model, find_models=False)
                 # We cannot redefine embedding_function with def and

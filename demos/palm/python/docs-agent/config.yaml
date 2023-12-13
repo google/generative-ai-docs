@@ -23,7 +23,8 @@
 # embedding_model: The PaLM embedding model used to generate embeddings.
 #
 api_endpoint: "generativelanguage.googleapis.com"
-embedding_model: "models/embedding-gecko-001"
+language_model: "models/gemini-pro"
+embedding_model: "models/embedding-001"
 
 
 ### Docs Agent environment

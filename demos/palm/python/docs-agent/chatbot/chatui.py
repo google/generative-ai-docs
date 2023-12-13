@@ -146,14 +146,24 @@ def ask_model(question):
     query_result = docs_agent.query_vector_store(question)
     context = query_result.fetch_formatted(Format.CONTEXT)
     context_with_instruction = docs_agent.add_instruction_to_context(context)
-    response = docs_agent.ask_text_model_with_context(
-        context_with_instruction, question
-    )
+    if "gemini" in docs_agent.get_language_model_name():
+        response = docs_agent.ask_content_model_with_context(
+            context_with_instruction, question
+        )
+    else:
+        response = docs_agent.ask_text_model_with_context(
+            context_with_instruction, question
+        )
 
     ### PROMPT 2: FACT-CHECK THE PREVIOUS RESPONSE.
-    fact_checked_response = docs_agent.ask_text_model_to_fact_check(
-        context_with_instruction, response
-    )
+    if "gemini" in docs_agent.get_language_model_name():
+        fact_checked_response = docs_agent.ask_content_model_to_fact_check(
+            context_with_instruction, response
+        )
+    else:
+        fact_checked_response = docs_agent.ask_text_model_to_fact_check(
+            context_with_instruction, response
+        )
 
     ### PROMPT 3: GET 5 RELATED QUESTIONS.
     # 1. Use the response from Prompt 1 as context and add a custom condition.

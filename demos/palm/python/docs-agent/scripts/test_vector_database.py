@@ -34,12 +34,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Set the directory path to locate the Chroma vector database
 LOCAL_VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_stores/chroma")
 COLLECTION_NAME = "docs_collection"
+EMBEDDING_MODEL = None
 
 IS_CONFIG_FILE = True
 if IS_CONFIG_FILE:
     config_values = read_config.ReadConfig()
     LOCAL_VECTOR_DB_DIR = config_values.returnConfigValue("vector_db_dir")
     COLLECTION_NAME = config_values.returnConfigValue("collection_name")
+    EMBEDDING_MODEL = config_values.returnConfigValue("embedding_model")
 
 # Set a test question
 QUESTION = "What are some differences between apples and oranges?"
@@ -71,7 +73,13 @@ API_CALL_PERIOD = 60
 @sleep_and_retry
 @limits(calls=API_CALLS, period=API_CALL_PERIOD)
 def embed_palm_api_call(text: Document) -> Embedding:
-    return palm.generate_embeddings(model=PALM_EMBEDDING_MODEL, text=text)["embedding"]
+    if PALM_EMBEDDING_MODEL == "models/embedding-001":
+        # Use the `embed_content()` method if it's the new Gemini embedding model.
+        return palm.embed_content(model=PALM_EMBEDDING_MODEL, content=text)["embedding"]
+    else:
+        return palm.generate_embeddings(model=PALM_EMBEDDING_MODEL, text=text)[
+            "embedding"
+        ]
 
 
 def embed_palm(texts: Documents) -> Embeddings:
@@ -86,7 +94,10 @@ ai_console.rule("Fold")
 chroma_client = chromadb.PersistentClient(path=LOCAL_VECTOR_DB_DIR)
 
 if EMBEDDINGS_TYPE == "PALM":
-    PALM_EMBEDDING_MODEL = "models/embedding-gecko-001"
+    if EMBEDDING_MODEL is None:
+        PALM_EMBEDDING_MODEL = "models/embedding-gecko-001"
+    else:
+        PALM_EMBEDDING_MODEL = EMBEDDING_MODEL
     emb_fn = embed_palm
 elif EMBEDDINGS_TYPE == "LOCAL":
     emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
