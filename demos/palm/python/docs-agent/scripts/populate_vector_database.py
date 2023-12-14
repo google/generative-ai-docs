@@ -101,7 +101,10 @@ if EMBEDDINGS_TYPE == "PALM":
     palm.configure(api_key=API_KEY, client_options={"api_endpoint": PALM_API_ENDPOINT})
     # Scan the list of PaLM models.
     models = [
-        m for m in palm.list_models() if "embedText" in m.supported_generation_methods
+        m
+        for m in palm.list_models()
+        if "embedText" in m.supported_generation_methods
+        or "embedContent" in m.supported_generation_methods
     ]
     if EMBEDDING_MODEL != None:
         # If `embedding_model` is specified in the `config.yaml` file, select that model.
@@ -132,9 +135,16 @@ chroma_client = chromadb.PersistentClient(path=LOCAL_VECTOR_DB_DIR)
 @limits(calls=API_CALLS, period=API_CALL_PERIOD)
 def embed_function(texts: Documents) -> Embeddings:
     # Embed the documents using any supported method
-    return [
-        palm.generate_embeddings(model=MODEL, text=text)["embedding"] for text in texts
-    ]
+    if str(MODEL.name) == "models/embedding-001":
+        # Use the new `embed_content()` method if it's the new Gemini embedding model.
+        return [
+            palm.embed_content(model=MODEL, content=text)["embedding"] for text in texts
+        ]
+    else:
+        return [
+            palm.generate_embeddings(model=MODEL, text=text)["embedding"]
+            for text in texts
+        ]
 
 
 if EMBEDDINGS_TYPE == "PALM":

@@ -81,6 +81,7 @@ class PaLM:
         api_endpoint=DEFAULT_ENDPOINT,
         chat_model=None,
         text_model=None,
+        content_model=None,
         embed_model=None,
         find_models=True,
     ) -> None:
@@ -94,13 +95,14 @@ class PaLM:
         self.api_endpoint = api_endpoint
         self.chat_model = chat_model
         self.text_model = text_model
+        self.content_model = content_model
         self.embed_model = embed_model
 
         # Check whether the specified models are supported
         supported_models = set(
             model.name for model in google.generativeai.list_models()
         )
-        for model in (chat_model, text_model, embed_model):
+        for model in (chat_model, text_model, content_model, embed_model):
             if model and model not in supported_models:
                 raise PaLMUnsupportedModelError(model, api_endpoint)
 
@@ -108,6 +110,7 @@ class PaLM:
         if (not find_models) or (
             chat_model is not None
             and text_model is not None
+            and content_model is not None
             and embed_model is not None
         ):
             return
@@ -116,6 +119,7 @@ class PaLM:
             if (
                 self.chat_model is None
                 and "generateMessage" in model.supported_generation_methods
+                and "chat" in model.name
             ):
                 self.chat_model = model.name
             if (
@@ -124,8 +128,13 @@ class PaLM:
             ):
                 self.text_model = model.name
             if (
-                self.embed_model is None
-                and "embedText" in model.supported_generation_methods
+                self.content_model is None
+                and "generateContent" in model.supported_generation_methods
+            ):
+                self.content_model = model.name
+            if self.embed_model is None and (
+                "embedText" in model.supported_generation_methods
+                or "embedContent" in model.supported_generation_methods
             ):
                 self.embed_model = model.name
 
@@ -144,10 +153,24 @@ class PaLM:
         return google.generativeai.generate_text(*args, model=self.text_model, **kwargs)
 
     @sleep_and_retry
+    @limits(calls=MAX_TEXT_PER_MINUTE, period=MINUTE)
+    def generate_content(self, text):
+        if self.content_model is None:
+            raise PaLMNoModelError(func_name="generate_content", attr="content_model")
+        model = google.generativeai.GenerativeModel(model_name=self.content_model)
+        return model.generate_content(text)
+
+    @sleep_and_retry
     @limits(calls=MAX_EMBED_PER_MINUTE, period=MINUTE)
     def embed(self, text: str) -> List[float]:
         if self.embed_model is None:
             raise PaLMNoModelError(func_name="embed", attr="embed_model")
-        return google.generativeai.generate_embeddings(
-            model=self.embed_model, text=text
-        )["embedding"]
+        if self.embed_model == "models/embedding-001":
+            # Use the `embed_content()` method if it's the new Gemini embedding model.
+            return google.generativeai.embed_content(
+                model=self.embed_model, content=text
+            )["embedding"]
+        else:
+            return google.generativeai.generate_embeddings(
+                model=self.embed_model, text=text
+            )["embedding"]
