@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
     - "site/en/**"
+    - "templates/**"
   # Allow manual runs
   workflow_dispatch:
 
@@ -28,7 +29,7 @@ jobs:
           readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
         else
           # Manual run, check everything
-          readarray -t changed_notebooks < <(find site/en/ -name '*.ipynb')
+          readarray -t changed_notebooks < <(find site/en/ templates/ -name '*.ipynb')
         fi
         if [[ ${#changed_notebooks[@]} == 0 ]]; then
           echo "No notebooks modified in this pull request."
@@ -52,7 +53,7 @@ jobs:
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
           # Only check notebooks modified in this pull request
-          readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
+          readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' |grep -v '^templates/' || true)
         else
           # Manual run, check everything
           readarray -t changed_notebooks < <(find site/en/ -name '*.ipynb')
