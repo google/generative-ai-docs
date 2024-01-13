@@ -43,7 +43,8 @@ npm start
 
 ## Learn more
 
-Google AI also provides a
-[JavaScript SDK](https://github.com/google/generative-ai-js) for interacting
-with Gemini. To learn more about using Gemini in your Node.js applications, see
+You can also use the
+[Google AI JavaScript SDK](https://github.com/google/generative-ai-js) to
+interact with Gemini. To learn more about using Gemini in your Node.js
+applications, see
 [Quickstart: Get started with the Gemini API in Node.js applications](https://ai.google.dev/tutorials/node_quickstart).
