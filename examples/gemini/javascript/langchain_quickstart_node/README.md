@@ -9,6 +9,8 @@ following resources:
 
 * [LangChain.js: Google](https://js.langchain.com/docs/integrations/platforms/google)
 * [LangChain.js: ChatGoogleGenerativeAI](https://js.langchain.com/docs/integrations/chat/google_generativeai)
+* [LangChain.js: Text embedding models: Google AI](https://js.langchain.com/docs/integrations/text_embedding/google_generativeai)
+* [LangChain.js: GoogleGenerativeAIEmbeddings](https://api.js.langchain.com/classes/langchain_google_genai.GoogleGenerativeAIEmbeddings.html)
 
 ## Setup
 
@@ -53,3 +55,7 @@ You can also use the
 interact with Gemini. To learn more about using Gemini in your Node.js
 applications, see
 [Quickstart: Get started with the Gemini API in Node.js applications](https://ai.google.dev/tutorials/node_quickstart).
+
+To learn more about the Gemini embedding service, see the
+[embeddings guide](https://ai.google.dev/docs/embeddings_guide).
+
