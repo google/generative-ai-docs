@@ -35,6 +35,11 @@ your [API key](https://ai.google.dev/tutorials/setup):
    curl -o image.jpg https://t0.gstatic.com/licensed-image?q=tbn:ANd9GcQ_Kevbk21QBRy-PgB4kQpS79brbmmEG7m3VOTShAn4PecDU5H5UxrJxE3Dw1JiaG17V88QIol19-3TM2wCHw
    ```
 
+3. Install the package dependencies:
+   ```
+   npm install
+   ```
+
 ## Run
 
 ```
