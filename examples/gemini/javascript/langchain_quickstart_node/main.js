@@ -15,7 +15,7 @@
  */
 
 import { readFile } from 'node:fs/promises';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { HumanMessage } from '@langchain/core/messages';
 
 /**
@@ -70,12 +70,25 @@ async function invokeGeminiProVision() {
 }
 
 /**
- * Runs the example functions. The functions are asynchronous, so either might
- * return first.
+ * Creates an embedding model, embeds text data, and logs the result.
+ */
+async function embedText() {
+  const model = new GoogleGenerativeAIEmbeddings({
+    modelName: 'embedding-001',
+  });
+  const text = 'The quick brown fox jumps over the lazy dog.';
+  const result = await model.embedQuery(text);
+  console.log(result, result.length)
+}
+
+/**
+ * Runs the example functions. The functions are asynchronous, so we don't know
+ * the order in which they'll return.
  */
 async function run() {
   invokeGeminiPro();
   invokeGeminiProVision();
+  embedText();
 }
 
 run();
