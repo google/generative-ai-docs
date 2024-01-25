@@ -1,1 +1,0 @@
-../third_party/g2docsmd-html/exportmd.gs
