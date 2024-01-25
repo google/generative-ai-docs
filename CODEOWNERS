@@ -1,11 +1,11 @@
 * @google/generative-ai-admin
 
-demos/palm/web/talking-character @lyleaf @jayjicheng @blownhither
-demos/palm/web/mood-food @lyleaf @jayjicheng
-demos/palm/web/travel-planner @lyleaf @jayjicheng
-demos/palm/web/list-it @mrayinteractive @aaron-wade
-demos/palm/web/quick-prompt @mrayinteractive @aaron-wade
-demos/palm/web/textfx @mrayinteractive @aaron-wade
+# demos/palm/web/talking-character
+# demos/palm/web/mood-food
+# demos/palm/web/travel-planner
+# demos/palm/web/list-it
+# demos/palm/web/quick-prompt
+# demos/palm/web/textfx
 demos/palm/python/docs-agent @nickvander @rundong08 @Meggin @kyolee415
 demos/palm/node/pipet-code-agent @joefernandez @shilpakancharla @markmcd
 

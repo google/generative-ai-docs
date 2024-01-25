@@ -6,6 +6,9 @@ the [Generative AI developer site](https://developers.generativeai.google/).
 To contribute to the site documentation, please read
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
+To contribute as a demo app maintainer, please read
+[DEMO_MAINTAINERS.md](DEMO_MAINTAINERS.md).
+
 To file an issue, please use the
 [GitHub issue tracker](https://github.com/google/generative-ai-docs/issues/new).
 
