@@ -26,6 +26,6 @@ If you're interested and commited to maintaining one of the demos, please comple
 | [quick-prompt](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/quick-prompt)  |   |
 | [talking-character](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/talking-character)  |   |
 | [textfx](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/textfx)  |   |
-| [travel-planner](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/travel-planner)  |   |
+| [travel-planner](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/travel-planner)  | @ghat0tkach  |
 | [docs-agent](https://github.com/google/generative-ai-docs/tree/main/demos/palm/python/docs-agent)  | @nickvander @rundong08 @Meggin @kyolee415  |
 | [pipet-code-agent](https://github.com/google/generative-ai-docs/tree/main/demos/palm/node/pipet-code-agent)  | @joefernandez @shilpakancharla @markmcd  |
