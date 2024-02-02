@@ -16,7 +16,7 @@
 
 """Hello World for Docs Agent"""
 
-from chroma import Format
+from modules.chroma import Format
 from docs_agent import DocsAgent
 
 # This `hello_world` script contains the minimal set of function calls
@@ -45,7 +45,21 @@ context = result.fetch_formatted(Format.CONTEXT)
 # Add instruction (see `condition.txt`) as a prefix to the context.
 context_with_prefix = docs_agent.add_instruction_to_context(context)
 
-print("\nSending the prompt to PaLM 2...")
+print("\nSending prompts to Google's language models...")
+
+# Pass the context and question to the `gemini-pro` model.
+if "gemini" in docs_agent.get_language_model_name():
+    response_gemini = docs_agent.ask_content_model_with_context(
+        context_with_prefix, question
+    )
+    print("\n[Genmini answer]:")
+    print(response_gemini)
+
+# Pass the context and question to the `aqa` model
+if docs_agent.check_if_aqa_is_used():
+    response_aqa = docs_agent.ask_aqa_model(question)
+    print("\n[AQA answer]:")
+    print(response_aqa)
 
 # Pass the context and question to PaLM 2's `text-bison-001` model.
 response_text = docs_agent.ask_text_model_with_context(context_with_prefix, question)

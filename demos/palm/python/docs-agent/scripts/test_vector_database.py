@@ -108,8 +108,12 @@ else:
         model_name=LOCAL_LLM
     )
 
+embedding_function_gemini_retrieval = embedding_functions.GoogleGenerativeAiEmbeddingFunction(
+    api_key=API_KEY, model_name=EMBEDDING_MODEL,
+    task_type="RETRIEVAL_QUERY")
+
 collection = chroma_client.get_collection(
-    name=COLLECTION_NAME, embedding_function=emb_fn
+    name=COLLECTION_NAME, embedding_function=embedding_function_gemini_retrieval
 )
 
 results = collection.query(query_texts=[QUESTION], n_results=NUM_RETURNS)

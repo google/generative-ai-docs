@@ -35,7 +35,7 @@ import pytz
 import uuid
 from scripts import read_config
 
-from chroma import Format
+from modules.chroma import Format
 from docs_agent import DocsAgent
 
 
@@ -146,7 +146,9 @@ def ask_model(question):
     query_result = docs_agent.query_vector_store(question)
     context = query_result.fetch_formatted(Format.CONTEXT)
     context_with_instruction = docs_agent.add_instruction_to_context(context)
-    if "gemini" in docs_agent.get_language_model_name():
+    if docs_agent.check_if_aqa_is_used():
+        response = docs_agent.ask_aqa_model(question)
+    elif "gemini" in docs_agent.get_language_model_name():
         response = docs_agent.ask_content_model_with_context(
             context_with_instruction, question
         )
@@ -196,11 +198,20 @@ def ask_model(question):
 
     ### PREPARE OTHER ELEMENTS NEEDED BY UI.
     # - Create a uuid for this request.
+    # - (Optional) Prepare the AQA model's JSON response into HTML for rendering.
     # - Convert the context returned from the database into HTML for rendering.
     # - Convert the first response from the model into HTML for rendering.
     # - Convert the fact-check response from the model into HTML for rendering.
     # - A workaround to get the server's URL to work with the rewrite and like features.
     new_uuid = uuid.uuid1()
+    aqa_response_in_html = ""
+    if docs_agent.check_if_aqa_is_used():
+        aqa_response_json = docs_agent.get_saved_aqa_response_json()
+        if aqa_response_json:
+            aqa_response_in_html = "Grounding attributions:<br/><br/>"
+            aqa_response_in_html += str(aqa_response_json.answer.grounding_attributions)
+            aqa_response_in_html += "<br/><br/>Answerable probability: "
+            aqa_response_in_html += str(aqa_response_json.answerable_probability)
     context_in_html = markdown.markdown(context, extensions=["fenced_code"])
     response_in_html = markdown.markdown(response, extensions=["fenced_code"])
     fact_checked_response_in_html = markdown.markdown(fact_checked_response)
@@ -222,6 +233,7 @@ def ask_model(question):
         product=product,
         server_url=server_url,
         uuid=new_uuid,
+        aqa_response_in_html=aqa_response_in_html,
     )
 
 
