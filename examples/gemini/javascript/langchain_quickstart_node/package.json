@@ -1,0 +1,17 @@
+{
+  "name": "gemini-langchain-quickstart-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "private": true,
+  "dependencies": {
+    "@langchain/google-genai": "^0.0.7"
+  }
+}
