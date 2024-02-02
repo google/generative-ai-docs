@@ -20,12 +20,22 @@ let loadingDiv = document.getElementById('loading-div');
 
 if (askButton != null){
   askButton.addEventListener('click',function (){
-    console.log("here");
     if (loadingDiv.classList.contains("hidden")){
       loadingDiv.classList.remove("hidden");
-      console.log("there");
     }
   });
+}
+
+// Display the "aqa-box" div only if the aqa json response is included.
+let aqaContent = document.getElementById('aqa-content');
+let aqaBox = document.getElementById('aqa-box');
+
+if (aqaContent != null){
+  if (aqaContent.innerText.trim() != ""){
+    if (aqaBox.classList.contains("hidden")){
+      aqaBox.classList.remove("hidden");
+    }
+  }
 }
 
 // Toggle the hidden class on the `rewrite-box` div.
@@ -144,3 +154,4 @@ if (rewriteSubmitButton != null){
     rewriteSubmitButton.classList.add("disable");
   }, false);
 }
+

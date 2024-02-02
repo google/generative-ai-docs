@@ -327,3 +327,13 @@ code {
   margin-bottom: 0;
 }
 
+.accordion #aqa-label {
+  padding: 2px;
+  background: #add1e8;
+  border-radius: 0px;
+}
+
+.accordion .content #aqa-content{
+  background: #d4d4d4;
+}
+

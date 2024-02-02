@@ -130,6 +130,11 @@ The following list summarizes the tasks and features of the Docs Agent sample ap
   Apps Script to convert Google Docs, PDF, and Gmail into Markdown files, which then
   can be used as input datasets for Docs Agent. For more information, see the
   [`README`][apps-script-readme] file in the `apps_script` directory.
+- **Use Gemini's Semantic Retrieval API and AQA model**: You can set up Docs Agent
+  to use Gemini's [Semantic Retrieval API][semantic-api] and [AQA model][aqa-model].
+  This API enables you to upload your source documents online, instead of using
+  a local vector database, and use Gemini's `aqa` model that is specifically
+  created for question-answering.
 
 ## Flow of events
 
@@ -314,6 +319,41 @@ use these Markdown files as additional input sources for Docs Agent. For more in
 
 **Figure 7**. Docs Agent's pre-processing flow for various doc types.
 
+### Using the Semantic Retrieval API and AQA model
+
+Docs Agent provides options to use Gemini's [Semantic Retrieval API][semantic-api] for storing text
+chunks in Google Cloud's online storage (and using this online storage for context retrieval),
+in combination with using the [AQA model][aqa-model] for question-answering.
+
+To use the Semantic Retrieval API, update the `config.yaml` file to include the following settings:
+
+```
+db_type: "ONLINE_STORAGE"
+is_aqa_used: "YES"
+```
+
+The setup above uses both the Semantic Retrieval API to store text chunks online and the AQA model.
+
+**Note**: At the moment, when `db_type` is set to `ONLINE_STORAGE`, running the
+`populate_vector_database.py` script will also create and popluate a local vector database using
+Chroma as well as creating and populating a corpus online using the Semantic Retrieval API.
+
+However, if you want to use only the AQA model for question-answering, but without creating a
+corpus online, update the `config.yaml` file to include the following settings instead:
+
+```
+db_type: "LOCAL_DB"
+is_aqa_used: "YES"
+```
+
+The setup above uses the AQA model with your local Chroma vector database. (For more information,
+see the [More Options: AQA Using Inline Passages][inline-passages] section on the
+_Semantic Retriever Quickstart_ page.)
+
+**Note**: To use the Semantic Retrieval API, you need to complete the OAuth setup for your Google
+Cloud project from your host machine. For detailed instructions, see the
+[Authentication with OAuth quickstart][oauth-quickstart] page.
+
 ## Issues identified
 
 The following issues have been identified and need to be worked on:
@@ -497,11 +537,14 @@ To convert Markdown files to plain text files:
 6. Run the Python script:
 
    ```
-   python3 scripts/markdown_to_plain_text.py
+   python3 scripts/files_to_plain_text.py
    ```
 
    For a large number of Markdown files, it may take a few minutes to process
    Markdown files.
+
+   **Important**: The `markdown_to_plain_text.py` script is being deprecated in
+   favor of the [`files_to_plain_text.py`][files-to-plain-text] script.
 
 ### 2. Populate a new vector database
 
@@ -675,3 +718,7 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [scripts-readme]: ./scripts/README.md
 [config-yaml]: config.yaml
 [gen-ai-docs-repo]: https://github.com/google/generative-ai-docs
+[semantic-api]: https://ai.google.dev/docs/semantic_retriever
+[aqa-model]: https://ai.google.dev/models/gemini#model_variations
+[oauth-quickstart]: https://ai.google.dev/docs/oauth_quickstart
+[inline-passages]: https://ai.google.dev/docs/semantic_retriever#more_options_aqa_using_inline_passages

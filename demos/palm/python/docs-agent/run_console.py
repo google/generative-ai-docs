@@ -22,7 +22,7 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 import sys
 
-from chroma import Format
+from modules.chroma import Format
 from docs_agent import DocsAgent
 
 # Set logging level to WARNING or above to disable progress bar
