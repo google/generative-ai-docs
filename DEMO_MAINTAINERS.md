@@ -16,6 +16,7 @@ While we would love to accept any meaningful contributions to the demos, some ta
 If you're interested and commited to maintaining one of the demos, please complete the following:
 - Read through the [Contributing Guide](https://github.com/google/generative-ai-docs/blob/main/CONTRIBUTING.md)
 - Submit a PR to add your GitHub handle next to the demo you're interested in maintaining, in the section below
+- Start work on the responsibilities above. Maintainers that don't maintain will be removed.
 
 ## Active Maintainers
 
