@@ -374,6 +374,38 @@ The following issues have been identified and need to be worked on:
 
 This section provides instructions on how to set up the Docs Agent project on a Linux host machine.
 
+### 0. (Optional) Authorize credentials for Docs Agent
+
+**This step is needed only if you plan to use Gemini's AQA model.** For more information on this
+feature, see the
+[Using the Semantic Retrieval API and AQA model](#using-the-semantic-retrieval-api-and-aqa-model)
+section above.
+
+1. Download the `client_secret.json` file from your Google Cloud Project (GCP) account.
+
+   See [Authorize credentials for a desktop application][authorize-credentials]
+   on the _AI for Developers_ doc site.
+
+2. Copy the `client_secret.json` file to your host machine.
+
+3. To authenticate credentials, run the following command in the directory of
+   the host machine where the `client_secret.json` file is located:
+
+   ```
+   gcloud auth application-default login --client-id-file=client_secret.json --scopes='https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/generative-language.retriever'
+   ```
+
+   This command opens a browser and asks to log in using your Google account.
+
+   **Note**: If the `gcloud` command doesn’t exist, install the Google Cloud SDK
+   on your host machine: `sudo apt install google-cloud-sdk`
+
+4. Follow the instructions on the browser and click **Allow** to authenticate.
+
+   This saves the authenticated credentials for Docs Agent
+   (`application_default_credentials.json`) in the `$HOME/.config/gcloud/`
+   directory of your host machine.
+
 ### 1. Prerequisites
 
 1. Update the Linux package repositories on the host machine:
@@ -700,6 +732,7 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [contribute-to-docs-agent]: #contribute-to-docs-agent
 [set-up-docs-agent]: #set-up-docs-agent
 [markdown-to-plain-text]: ./scripts/markdown_to_plain_text.py
+[files-to-plain-text]: ./scripts/files_to_plain_text.py
 [populate-vector-database]: ./scripts/populate_vector_database.py
 [context-source-01]: http://eventhorizontelescope.org
 [fact-check-section]: #using-a-language-model-to-fact-check-its-own-response
@@ -722,3 +755,4 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [aqa-model]: https://ai.google.dev/models/gemini#model_variations
 [oauth-quickstart]: https://ai.google.dev/docs/oauth_quickstart
 [inline-passages]: https://ai.google.dev/docs/semantic_retriever#more_options_aqa_using_inline_passages
+[authorize-credentials]: https://ai.google.dev/docs/oauth_quickstart#authorize-credentials
