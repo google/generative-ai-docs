@@ -103,7 +103,7 @@ const deduplicate = outputs => {
 }
 
 // Remove duplicates in an array of strings, but for each element
-// only the segment occuring BEFORE the specified character is evaluated
+// only the segment occurring BEFORE the specified character is evaluated
 const deduplicateBasedOnSegmentBeforeChar = (outputs, char) => {
   const segments = []
   outputs.forEach(item => {
@@ -121,7 +121,7 @@ const deduplicateBasedOnSegmentBeforeChar = (outputs, char) => {
 }
 
 // Remove duplicates in an array of strings, but for each element,
-// only the segment occuring AFTER the specified character is evaluated
+// only the segment occurring AFTER the specified character is evaluated
 const deduplicateBasedOnSegmentAfterChar = (outputs, char) => {
   const segments = []
   outputs.forEach(item => {

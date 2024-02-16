@@ -1,5 +1,9 @@
 # What's new in Docs Agent
 
+## January 2024
+
+* **Milestone: Docs Agent uses AQA model and Semantric Retrieval API**
+
 ## December 2023
 
 * **Milestone: Docs Agent uses Gemini model.**
