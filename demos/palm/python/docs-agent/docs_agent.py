@@ -93,9 +93,12 @@ elif EMBEDDING_MODEL != None:
 else:
     palm = PaLM(api_key=API_KEY, api_endpoint=PALM_API_ENDPOINT)
 
-embedding_function_gemini_retrieval = embedding_functions.GoogleGenerativeAiEmbeddingFunction(
-    api_key=API_KEY, model_name="models/embedding-001",
-    task_type="RETRIEVAL_QUERY")
+embedding_function_gemini_retrieval = (
+    embedding_functions.GoogleGenerativeAiEmbeddingFunction(
+        api_key=API_KEY, model_name="models/embedding-001", task_type="RETRIEVAL_QUERY"
+    )
+)
+
 
 class DocsAgent:
     """DocsAgent class"""
@@ -107,8 +110,9 @@ class DocsAgent:
         )
         self.chroma = Chroma(LOCAL_VECTOR_DB_DIR)
         self.collection = self.chroma.get_collection(
-            COLLECTION_NAME, embedding_model=EMBEDDING_MODEL,
-            embedding_function=embedding_function_gemini_retrieval
+            COLLECTION_NAME,
+            embedding_model=EMBEDDING_MODEL,
+            embedding_function=embedding_function_gemini_retrieval,
         )
         # Update PaLM's custom prompt strings
         self.prompt_condition = CONDITION_TEXT
@@ -121,12 +125,21 @@ class DocsAgent:
         self.is_aqa_used = IS_AQA_USED
         self.db_type = DB_TYPE
         # AQA model setup
-        self.generative_service_client = glm.GenerativeServiceClient()
-        self.retriever_service_client = glm.RetrieverServiceClient()
-        self.permission_service_client = glm.PermissionServiceClient()
+        self.generative_service_client = {}
+        self.retriever_service_client = {}
+        self.permission_service_client = {}
         self.corpus_display = PRODUCT_NAME + " documentation"
         self.corpus_name = "corpora/" + PRODUCT_NAME.lower().replace(" ", "-")
         self.aqa_response_buffer = ""
+        self.set_up_aqa_model_environment()
+
+    # Set up the AQA model environment
+    def set_up_aqa_model_environment(self):
+        if IS_AQA_USED == "YES":
+            self.generative_service_client = glm.GenerativeServiceClient()
+            self.retriever_service_client = glm.RetrieverServiceClient()
+            self.permission_service_client = glm.PermissionServiceClient()
+        return
 
     # Use this method for talking to a PaLM text model
     def ask_text_model_with_context(self, context, question):
@@ -203,7 +216,11 @@ class DocsAgent:
         elif LOG_LEVEL == "DEBUG":
             self.print_the_prompt(verbose_prompt)
             print(aqa_response)
-        return aqa_response.answer.content.parts[0].text
+        try:
+            return aqa_response.answer.content.parts[0].text
+        except:
+            self.aqa_response_buffer = ""
+            return self.model_error_message
 
     # Use this method for talking to Gemini's AQA model using a corpus
     def ask_aqa_model_using_corpora(self, question):
@@ -243,7 +260,11 @@ class DocsAgent:
             self.print_the_prompt(verbose_prompt)
         elif LOG_LEVEL == "DEBUG":
             print(aqa_response)
-        return aqa_response.answer.content.parts[0].text
+        try:
+            return aqa_response.answer.content.parts[0].text
+        except:
+            self.aqa_response_buffer = ""
+            return self.model_error_message
 
     def ask_aqa_model(self, question):
         response = ""
@@ -322,6 +343,27 @@ class DocsAgent:
     # Get the save response of the aqa model
     def get_saved_aqa_response_json(self):
         return self.aqa_response_buffer
+
+    # Retrieve the URL metadata from the AQA model's response
+    def get_aqa_response_url(self):
+        url = ""
+        try:
+            # Get the metadata from the first attributed passages for the source
+            chunk_resource_name = (
+                self.aqa_response_buffer.answer.grounding_attributions[
+                    0
+                ].source_id.semantic_retriever_chunk.chunk
+            )
+            get_chunk_response = self.retriever_service_client.get_chunk(
+                name=chunk_resource_name
+            )
+            metadata = get_chunk_response.custom_metadata
+            for m in metadata:
+                if m.key == "url":
+                    url = m.string_value
+        except:
+            url = "URL unknown"
+        return url
 
     # Print the prompt on the terminal for debugging
     def print_the_prompt(self, prompt):
