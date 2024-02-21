@@ -22,7 +22,7 @@ If you're interested and commited to maintaining one of the demos, please comple
 
 | Demo  | Maintainers |
 | ------------- | ------------- |
-| [list-it](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/list-it)  |   |
+| [list-it](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/list-it)  | @bupd |
 | [mood-food](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/mood-food)  |   |
 | [quick-prompt](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/quick-prompt)  |   |
 | [talking-character](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/talking-character)  |   |

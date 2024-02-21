@@ -86,10 +86,15 @@ class AQA:
             document_resource_name = get_document_response.name
         return document_resource_name
 
-    def create_a_chunk(self, doc_name, text):
+    def create_a_chunk(self, doc_name, text, url):
         response = ""
         try:
+            # Create a chunk.
             chunk = glm.Chunk(data={"string_value": text})
+            # Add metadata.
+            chunk.custom_metadata.append(
+                glm.CustomMetadata(key="url", string_value=url)
+            )
             create_chunk_requests = []
             create_chunk_requests.append(
                 glm.CreateChunkRequest(parent=doc_name, chunk=chunk)
@@ -118,10 +123,10 @@ class AQA:
                 else:
                     text_02 += line + "\n"
                 i += 1
-            self.create_a_chunk(doc_name, text_01)
-            self.create_a_chunk(doc_name, text_02)
+            self.create_a_chunk(doc_name, text_01, url)
+            self.create_a_chunk(doc_name, text_02, url)
         return response
 
     def create_a_doc_chunk(self, corpus_name, page_title, page_url, text):
         doc_name = self.create_a_doc(corpus_name, page_title, page_url)
-        return self.create_a_chunk(doc_name, text)
+        return self.create_a_chunk(doc_name, text, page_url)
