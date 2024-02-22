@@ -35,7 +35,7 @@ import pytz
 import uuid
 from scripts import read_config
 
-from chroma import Format
+from modules.chroma import Format
 from docs_agent import DocsAgent
 
 
@@ -146,7 +146,9 @@ def ask_model(question):
     query_result = docs_agent.query_vector_store(question)
     context = query_result.fetch_formatted(Format.CONTEXT)
     context_with_instruction = docs_agent.add_instruction_to_context(context)
-    if "gemini" in docs_agent.get_language_model_name():
+    if docs_agent.check_if_aqa_is_used():
+        response = docs_agent.ask_aqa_model(question)
+    elif "gemini" in docs_agent.get_language_model_name():
         response = docs_agent.ask_content_model_with_context(
             context_with_instruction, question
         )
@@ -190,17 +192,33 @@ def ask_model(question):
     clickable_urls = markdown.markdown(
         query_result.fetch_formatted(Format.CLICKABLE_URL)
     )
-    fact_check_url = markdown.markdown(
-        query_result.fetch_nearest_formatted(Format.CLICKABLE_URL)
-    )
+    fact_check_url = ""
+    if docs_agent.check_if_aqa_is_used() and docs_agent.get_db_type() == "ONLINE_STORAGE":
+        aqa_response_url = docs_agent.get_aqa_response_url()
+        fact_check_url = (
+            '<a href="' + aqa_response_url + '">' + aqa_response_url + "</a>"
+        )
+    else:
+        fact_check_url = markdown.markdown(
+            query_result.fetch_nearest_formatted(Format.CLICKABLE_URL)
+        )
 
     ### PREPARE OTHER ELEMENTS NEEDED BY UI.
     # - Create a uuid for this request.
+    # - (Optional) Prepare the AQA model's JSON response into HTML for rendering.
     # - Convert the context returned from the database into HTML for rendering.
     # - Convert the first response from the model into HTML for rendering.
     # - Convert the fact-check response from the model into HTML for rendering.
     # - A workaround to get the server's URL to work with the rewrite and like features.
     new_uuid = uuid.uuid1()
+    aqa_response_in_html = ""
+    if docs_agent.check_if_aqa_is_used():
+        aqa_response_json = docs_agent.get_saved_aqa_response_json()
+        if aqa_response_json:
+            aqa_response_in_html = "Grounding attributions:<br/><br/>"
+            aqa_response_in_html += str(aqa_response_json.answer.grounding_attributions)
+            aqa_response_in_html += "<br/><br/>Answerable probability: "
+            aqa_response_in_html += str(aqa_response_json.answerable_probability)
     context_in_html = markdown.markdown(context, extensions=["fenced_code"])
     response_in_html = markdown.markdown(response, extensions=["fenced_code"])
     fact_checked_response_in_html = markdown.markdown(fact_checked_response)
@@ -222,6 +240,7 @@ def ask_model(question):
         product=product,
         server_url=server_url,
         uuid=new_uuid,
+        aqa_response_in_html=aqa_response_in_html,
     )
 
 
@@ -230,6 +249,21 @@ def ask_model(question):
 def parse_related_questions_response_to_html_list(response):
     soup = BeautifulSoup(response, "html.parser")
     for item in soup.find_all("li"):
+        # In case there are code tags, remove the tag and just replace with
+        # plain text
+        if item.find("code"):
+            text = item.find("code").text
+            item.code.replace_with(text)
+        # In case there are <p> tags within the <li> strip <p>
+        if item.find("p"):
+            text = item.find("p").text
+            link = soup.new_tag(
+                "a",
+                href=url_for("chatui.question", ask=urllib.parse.quote_plus(text)),
+            )
+            link.string = text
+            item.string = ""
+            item.append(link)
         if item.string is not None:
             link = soup.new_tag(
                 "a",
@@ -252,10 +286,19 @@ def log_question(uid, user_question, response):
     print("Question: " + user_question.strip() + "\n")
     print("Response:")
     print(response.strip() + "\n")
+    if docs_agent.check_if_aqa_is_used():
+        aqa_response = docs_agent.get_saved_aqa_response_json()
+        try:
+            probability = aqa_response.answerable_probability
+        except:
+            probability = 0.0
+        print("Answerable probability: " + str(probability) + "\n")
     with open("chatui_logs.txt", "a", encoding="utf-8") as log_file:
         log_file.write("[" + date.strftime(date_format) + "][UID " + str(uid) + "]\n")
         log_file.write("# " + user_question.strip() + "\n\n")
         log_file.write(response.strip() + "\n\n")
+        if docs_agent.check_if_aqa_is_used():
+            log_file.write("Answerable probability: " + str(probability) + "\n\n")
         log_file.close()
 
 

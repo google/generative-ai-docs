@@ -21,11 +21,13 @@ import sys
 
 from absl import logging
 import google.api_core
+import google.ai.generativelanguage as glm
+from chromadb.utils import embedding_functions
 
-from chroma import Chroma
-from palm import PaLM
+from modules.chroma import Chroma, Format
+from modules.palm import PaLM
 
-from scripts import read_config
+from scripts import read_config, markdown_splitter, tokenCount
 
 # Set up the PaLM API key from the environment.
 API_KEY = os.getenv("PALM_API_KEY")
@@ -36,11 +38,15 @@ if API_KEY is None:
 PALM_API_ENDPOINT = "generativelanguage.googleapis.com"
 LANGUAGE_MODEL = None
 EMBEDDING_MODEL = None
+AQA_MODEL = "models/aqa"
 
 # Set up the path to the chroma vector database.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_stores/chroma")
 COLLECTION_NAME = "docs_collection"
+PRODUCT_NAME = ""
+DB_TYPE = "LOCAL_DB"
+IS_AQA_USED = "NO"
 
 # Set the log level for the DocsAgent class: NORMAL or VERBOSE
 LOG_LEVEL = "NORMAL"
@@ -50,6 +56,7 @@ if IS_CONFIG_FILE:
     config_values = read_config.ReadConfig()
     LOCAL_VECTOR_DB_DIR = config_values.returnConfigValue("vector_db_dir")
     COLLECTION_NAME = config_values.returnConfigValue("collection_name")
+    PRODUCT_NAME = config_values.returnConfigValue("product_name")
     CONDITION_TEXT = config_values.returnConfigValue("condition_text")
     FACT_CHECK_QUESTION = config_values.returnConfigValue("fact_check_question")
     MODEL_ERROR_MESSAGE = config_values.returnConfigValue("model_error_message")
@@ -57,6 +64,8 @@ if IS_CONFIG_FILE:
     PALM_API_ENDPOINT = config_values.returnConfigValue("api_endpoint")
     LANGUAGE_MODEL = config_values.returnConfigValue("language_model")
     EMBEDDING_MODEL = config_values.returnConfigValue("embedding_model")
+    DB_TYPE = config_values.returnConfigValue("db_type")
+    IS_AQA_USED = config_values.returnConfigValue("is_aqa_used")
 
 # Select the number of contents to be used for providing context.
 NUM_RETURNS = 5
@@ -84,6 +93,12 @@ elif EMBEDDING_MODEL != None:
 else:
     palm = PaLM(api_key=API_KEY, api_endpoint=PALM_API_ENDPOINT)
 
+embedding_function_gemini_retrieval = (
+    embedding_functions.GoogleGenerativeAiEmbeddingFunction(
+        api_key=API_KEY, model_name="models/embedding-001", task_type="RETRIEVAL_QUERY"
+    )
+)
+
 
 class DocsAgent:
     """DocsAgent class"""
@@ -95,7 +110,9 @@ class DocsAgent:
         )
         self.chroma = Chroma(LOCAL_VECTOR_DB_DIR)
         self.collection = self.chroma.get_collection(
-            COLLECTION_NAME, embedding_model=EMBEDDING_MODEL
+            COLLECTION_NAME,
+            embedding_model=EMBEDDING_MODEL,
+            embedding_function=embedding_function_gemini_retrieval,
         )
         # Update PaLM's custom prompt strings
         self.prompt_condition = CONDITION_TEXT
@@ -104,6 +121,25 @@ class DocsAgent:
         # Models settings
         self.language_model = LANGUAGE_MODEL
         self.embedding_model = EMBEDDING_MODEL
+        self.aqa_model = AQA_MODEL
+        self.is_aqa_used = IS_AQA_USED
+        self.db_type = DB_TYPE
+        # AQA model setup
+        self.generative_service_client = {}
+        self.retriever_service_client = {}
+        self.permission_service_client = {}
+        self.corpus_display = PRODUCT_NAME + " documentation"
+        self.corpus_name = "corpora/" + PRODUCT_NAME.lower().replace(" ", "-")
+        self.aqa_response_buffer = ""
+        self.set_up_aqa_model_environment()
+
+    # Set up the AQA model environment
+    def set_up_aqa_model_environment(self):
+        if IS_AQA_USED == "YES":
+            self.generative_service_client = glm.GenerativeServiceClient()
+            self.retriever_service_client = glm.RetrieverServiceClient()
+            self.permission_service_client = glm.PermissionServiceClient()
+        return
 
     # Use this method for talking to a PaLM text model
     def ask_text_model_with_context(self, context, question):
@@ -140,6 +176,103 @@ class DocsAgent:
             if str(chunk.candidates[0].content) == "":
                 return self.model_error_message
         return response.text
+
+    # Use this method for talking to Gemini's AQA model using inline passages
+    def ask_aqa_model_using_local_vector_store(self, question):
+        user_query_content = glm.Content(parts=[glm.Part(text=question)])
+        answer_style = "VERBOSE"  # or ABSTRACTIVE, EXTRACTIVE
+
+        # Retrieve a list of context from the local vector database
+        result = self.query_vector_store(question)
+        verbose_prompt = "Question: " + question + "\n"
+
+        # Create the grounding inline passages
+        grounding_passages = glm.GroundingPassages()
+        for i in range(NUM_RETURNS):
+            returned_context = result.fetch_at_formatted(i, Format.CONTEXT)
+            new_passage = glm.Content(parts=[glm.Part(text=returned_context)])
+            index_id = str("{:03d}".format(i + 1))
+            grounding_passages.passages.append(
+                glm.GroundingPassage(content=new_passage, id=index_id)
+            )
+            verbose_prompt += "\nID: " + index_id + "\n" + returned_context + "\n"
+
+        # Create a request to the AQA model
+        req = glm.GenerateAnswerRequest(
+            model=AQA_MODEL,
+            contents=[user_query_content],
+            inline_passages=grounding_passages,
+            answer_style=answer_style,
+        )
+        try:
+            aqa_response = self.generative_service_client.generate_answer(req)
+            self.aqa_response_buffer = aqa_response
+        except:
+            self.aqa_response_buffer = ""
+            return self.model_error_message
+
+        if LOG_LEVEL == "VERBOSE":
+            self.print_the_prompt(verbose_prompt)
+        elif LOG_LEVEL == "DEBUG":
+            self.print_the_prompt(verbose_prompt)
+            print(aqa_response)
+        try:
+            return aqa_response.answer.content.parts[0].text
+        except:
+            self.aqa_response_buffer = ""
+            return self.model_error_message
+
+    # Use this method for talking to Gemini's AQA model using a corpus
+    def ask_aqa_model_using_corpora(self, question):
+        answer_style = "VERBOSE"  # or ABSTRACTIVE, EXTRACTIVE
+
+        # Prepare parameters for the AQA model
+        content = glm.Content(parts=[glm.Part(text=question)])
+        retriever_config = glm.SemanticRetrieverConfig(
+            source=self.corpus_name, query=content
+        )
+
+        # Create a request to the AQA model
+        req = glm.GenerateAnswerRequest(
+            model=AQA_MODEL,
+            contents=[content],
+            semantic_retriever=retriever_config,
+            answer_style=answer_style,
+        )
+        try:
+            aqa_response = self.generative_service_client.generate_answer(req)
+            self.aqa_response_buffer = aqa_response
+        except:
+            self.aqa_response_buffer = ""
+            return self.model_error_message
+
+        if LOG_LEVEL == "VERBOSE":
+            verbose_prompt = "[question]\n" + question + "\n"
+            verbose_prompt += (
+                "\n[answerable_probability]\n"
+                + str(aqa_response.answerable_probability)
+                + "\n"
+            )
+            for attribution in aqa_response.answer.grounding_attributions:
+                verbose_prompt += "\n[grounding_attributions]\n" + str(
+                    aqa_response.answer.grounding_attributions[0].content.parts[0].text
+                )
+            self.print_the_prompt(verbose_prompt)
+        elif LOG_LEVEL == "DEBUG":
+            print(aqa_response)
+        try:
+            return aqa_response.answer.content.parts[0].text
+        except:
+            self.aqa_response_buffer = ""
+            return self.model_error_message
+
+    def ask_aqa_model(self, question):
+        response = ""
+        if self.db_type == "ONLINE_STORAGE":
+            response = self.ask_aqa_model_using_corpora(question)
+        else:
+            response = self.ask_aqa_model_using_local_vector_store(question)
+        return response
 
     # Use this method for talking to a PaLM chat model
     def ask_chat_model_with_context(self, context, question):
@@ -195,6 +328,42 @@ class DocsAgent:
     # Get the name of the embedding model used in this Docs Agent setup
     def get_embedding_model_name(self):
         return self.embedding_model
+
+    # Get the type of the database used in this Docs Agent setup
+    def get_db_type(self):
+        return self.db_type
+
+    # Return true if the aqa model used in this Docs Agent setup
+    def check_if_aqa_is_used(self):
+        if self.is_aqa_used == "YES":
+            return True
+        else:
+            return False
+
+    # Get the save response of the aqa model
+    def get_saved_aqa_response_json(self):
+        return self.aqa_response_buffer
+
+    # Retrieve the URL metadata from the AQA model's response
+    def get_aqa_response_url(self):
+        url = ""
+        try:
+            # Get the metadata from the first attributed passages for the source
+            chunk_resource_name = (
+                self.aqa_response_buffer.answer.grounding_attributions[
+                    0
+                ].source_id.semantic_retriever_chunk.chunk
+            )
+            get_chunk_response = self.retriever_service_client.get_chunk(
+                name=chunk_resource_name
+            )
+            metadata = get_chunk_response.custom_metadata
+            for m in metadata:
+                if m.key == "url":
+                    url = m.string_value
+        except:
+            url = "URL unknown"
+        return url
 
     # Print the prompt on the terminal for debugging
     def print_the_prompt(self, prompt):

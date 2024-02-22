@@ -27,6 +27,18 @@
       <h4>Reference:</h4>
       {{ clickable_urls | safe }}
     </span>
+    <br/>
+    <div class="hidden" id="aqa-box">
+      <section class="accordion">
+        <input type="checkbox" name="collapse" id="handle2">
+        <h2 class="handle">
+          <label for="handle2" id="aqa-label">AQA response JSON</label>
+        </h2>
+        <div class="content" id="aqa-content">
+        {{ aqa_response_in_html | safe }}
+        </div>
+      </section>
+    </div>
   </div>
 </section>
 <div>

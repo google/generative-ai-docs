@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "docs-agent"
-version = "0.2.0"
+version = "0.2.2"
 description = ""
 authors = ["Docs Agent contributors"]
 readme = "README.md"
@@ -11,7 +11,6 @@ rich = "^13.3.5"
 Markdown = "^3.4.3"
 beautifulsoup4 = "^4.12.2"
 protobuf = ">=3.20"
-chromadb = "==0.4.13"
 sentence-transformers = "^2.2.2"
 ratelimit = "^2.2.1"
 absl-py = "^1.4.0"
@@ -22,6 +21,7 @@ grpcio = "^1.57.0"
 grpcio-tools = "^1.57.0"
 uuid = "^1.30"
 pytz = ">=2020.1"
+chromadb = "^0.4.22"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.13.2"
