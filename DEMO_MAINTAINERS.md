@@ -14,9 +14,10 @@ While we would love to accept any meaningful contributions to the demos, some ta
 ## Next Steps
 
 If you're interested and commited to maintaining one of the demos, please complete the following:
-- Read through the [Contributing Guide](https://github.com/google/generative-ai-docs/blob/main/CONTRIBUTING.md)
-- Submit a PR to add your GitHub handle next to the demo you're interested in maintaining, in the section below
-- Start work on the responsibilities above. Maintainers that don't maintain will be removed.
+- Read through the [Contributing Guide](https://github.com/google/generative-ai-docs/blob/main/CONTRIBUTING.md).
+- Start work on the responsibilities above.
+- Once you have some progress demonstrated, submit a PR to add your GitHub handle next to the demo you're interested in maintaining, in the section below.
+- Non-responsive maintainers will be removed without notice.
 
 ## Active Maintainers
 
@@ -27,6 +28,6 @@ If you're interested and commited to maintaining one of the demos, please comple
 | [quick-prompt](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/quick-prompt)  |   |
 | [talking-character](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/talking-character)  |   |
 | [textfx](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/textfx)  |   |
-| [travel-planner](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/travel-planner)  | @ghat0tkach  |
+| [travel-planner](https://github.com/google/generative-ai-docs/tree/main/demos/palm/web/travel-planner)  |  |
 | [docs-agent](https://github.com/google/generative-ai-docs/tree/main/demos/palm/python/docs-agent)  | @nickvander @rundong08 @Meggin @kyolee415  |
 | [pipet-code-agent](https://github.com/google/generative-ai-docs/tree/main/demos/palm/node/pipet-code-agent)  | @joefernandez @shilpakancharla @markmcd  |
