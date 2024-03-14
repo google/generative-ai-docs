@@ -7,6 +7,9 @@ generated embeddings in the vector database:
 - [`markdown_to_plain_text.py`][markdown-to-plain-text]
 - [`populate_vector_database.py`][populate-vector-database]
 
+**Important**: The `markdown_to_plain_text.py` script is being deprecated in
+favor of the [`files_to_plain_text.py`][files-to-plain-text] script.
+
 ![Docs Agent pre-processing flow](../docs/images/docs-agent-pre-processing-01.png)
 
 **Figure 1**. Docs Agent's pre-processing flow from source documents to the vector database.
@@ -76,5 +79,6 @@ When processing plain text chunks to embeddings using the
 <!-- Reference links -->
 
 [markdown-to-plain-text]: markdown_to_plain_text.py
+[files-to-plain-text]: files_to_plain_text.py
 [populate-vector-database]: populate_vector_database.py
 [config-yaml]: ../config.yaml

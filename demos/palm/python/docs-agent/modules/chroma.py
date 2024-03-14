@@ -27,7 +27,7 @@ from chromadb.utils import embedding_functions
 from chromadb.api.models import Collection
 from chromadb.api.types import QueryResult
 
-from palm import PaLM
+from modules.palm import PaLM
 
 
 class Error(Exception):
@@ -50,11 +50,11 @@ class Chroma:
     def get_collection(self, name, embedding_function=None, embedding_model=None):
         if embedding_function is not None:
             return ChromaCollection(
-                self.client.get_collection(name, embedding_function=embedding_function),
+                self.client.get_collection(name=name, embedding_function=embedding_function),
                 embedding_function,
             )
         # Read embedding meta information from the collection
-        collection = self.client.get_collection(name, lambda x: None)
+        collection = self.client.get_collection(name=name)
         if embedding_model is None and collection.metadata:
             embedding_model = collection.metadata.get("embedding_model", None)
             if embedding_model is None:
@@ -66,7 +66,6 @@ class Chroma:
                     name,
                 )
                 embedding_model = "models/embedding-gecko-001"
-
         if embedding_model == "local/all-mpnet-base-v2":
             base_dir = os.path.dirname(os.path.abspath(__file__))
             local_model_dir = os.path.join(base_dir, "models/all-mpnet-base-v2")
@@ -76,6 +75,7 @@ class Chroma:
                 )
             )
         else:
+            print("Embedding model: " + str(embedding_model))
             try:
                 palm = PaLM(embed_model=embedding_model, find_models=False)
                 # We cannot redefine embedding_function with def and
@@ -89,7 +89,7 @@ class Chroma:
                 )
 
         return ChromaCollection(
-            self.client.get_collection(name, embedding_function=embedding_function),
+            self.client.get_collection(name=name, embedding_function=embedding_function),
             embedding_function,
         )
 
@@ -179,6 +179,12 @@ class ChromaQueryResult:
 
     def fetch_nearest_formatted(self, format_type: Format):
         return self.fetch_nearest().format(format_type)
+
+    def fetch_at(self, index):
+        return ChromaQueryResultItem(self.result, index)
+
+    def fetch_at_formatted(self, index, format_type: Format):
+        return self.fetch_at(index).format(format_type)
 
 
 class ChromaCollection:

@@ -43,13 +43,22 @@ embedding_model: "models/embedding-001"
 #                  the Chroma vector database.
 #
 # log_level:       The verbosity level of logs printed on the terminal
-#                  by the chatbot app: NORMAL or VERBOSE
+#                  by the chatbot app: NORMAL, VERBOSE, or DEBUG
+#
+# db_type:         Use a local vector database or an online storage
+#                  using the Semantic Retrieval API:
+#                  LOCAL_DB or ONLINE_STORAGE
+#
+# is_aqa_used:     Use Gemini's AQA model for question-answering:
+#                  NO or YES
 #
 product_name: "My product"
 output_path: "data/plain_docs"
 vector_db_dir: "vector_stores/chroma"
 collection_name: "docs_collection"
 log_level: "NORMAL"
+db_type: "LOCAL_DB"
+is_aqa_used: "NO"
 
 
 ### Documentation sources
@@ -96,6 +105,6 @@ about which part of the text they should consider fact-checking? (Please keep
 your response concise, focus on only one important item, but DO NOT USE BOLD
 TEXT IN YOUR RESPONSE.)"
 
-model_error_message: "PaLM is not able to answer this question at the moment.
+model_error_message: "Gemini is not able to answer this question at the moment.
 Rephrase the question and try asking again."
 
