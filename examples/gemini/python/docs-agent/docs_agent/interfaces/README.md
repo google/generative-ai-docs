@@ -130,7 +130,7 @@ from your `$HOME` directory.
 2. Go to the Docs Agent project directory:
 
    ```posix-terminal
-   cd  generative-ai-docs/examples/gemini/python/docs-agent
+   cd generative-ai-docs/examples/gemini/python/docs-agent
    ```
 
 3. Install dependencies using `poetry`:
