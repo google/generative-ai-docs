@@ -3,6 +3,8 @@
 ## January 2024
 
 * **Milestone: Docs Agent uses AQA model and Semantric Retrieval API**
+* Started Logs Agent experiments
+* Benchmark score up ~2.5% with enhancements to embeddings
 
 ## December 2023
 

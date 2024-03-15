@@ -1,22 +1,4 @@
-/**
- * Copyright 2023 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/* Original script is from:
-https://github.com/lmmx/gdocs2md-html/blob/master/exportmd.gs
-and commit: 0d86cfa
+/*
 Parsing from mangini/gdocs2md.
 Modified by clearf to add files to the google directory structure.
 Modified by lmmx to write Markdown, going back to HTML-incorporation.
@@ -619,7 +601,7 @@ function switchHandler(input_switches, potential_switches, optional_storage_name
 
 }
 
-function convertDocumentToMarkdown(document, destination_folder, frontmatter_input, optional_switches) {
+function convertDocumentToMarkdown(document, destination_folder, optional_switches) {
   // if returning a string, force_save_images will make the script continue - experimental
   var possible_switches = ['return_string', 'force_save_images'];
   var property_name = 'conversion_switches';
@@ -632,13 +614,8 @@ function convertDocumentToMarkdown(document, destination_folder, frontmatter_inp
 
   var image_prefix = script_properties.getProperty("image_folder_prefix");
   var numChildren = document.getActiveSection().getNumChildren();
-  if (frontmatter_input != "") {
-    var text = frontmatter_input;
-  }
-  else {
-    var text = ""
-  }
-  var md_filename = sanitizeFileName(document.getName()) + ".md";
+  var text = "";
+  var md_filename = document.getName()+".md";
   var image_foldername = document.getName()+"_images";
   var inSrc = false;
   var inClass = false;
@@ -747,7 +724,7 @@ function convertDocumentToMarkdown(document, destination_folder, frontmatter_inp
     }
    DriveApp.removeFile(saved_file) // Removes from google drive root.
   }
-return saved_file;
+
 }
 
 function escapeHTML(text) {
@@ -761,9 +738,6 @@ function standardQMarks(text) {
 // Process each child element (not just paragraphs).
 function processParagraph(index, element, inSrc, imageCounter, listCounters, image_path) {
   // First, check for things that require no processing.
-  if (element.getType() === DocumentApp.ElementType.UNSUPPORTED) {
-    return null;
-  }
   if (element.getNumChildren()==0) {
     return null;
   }
@@ -793,11 +767,6 @@ function processParagraph(index, element, inSrc, imageCounter, listCounters, ima
       textElements.push("  </tr>\n");
     }
     textElements.push("</table>\n");
-  }
-
-  // Need to handle this element type, return null for now
-  if (element.getType() === DocumentApp.ElementType.CODE_SNIPPET) {
-    return null
   }
 
   // Process various types (ElementType).
@@ -842,38 +811,12 @@ function processParagraph(index, element, inSrc, imageCounter, listCounters, ima
 
       result.images.push({ "blob" : blob } )
 
-    // Need to fix this case TODO
-    } else if (t === DocumentApp.ElementType.INLINE_DRAWING) {
-
-      imageCounter++;
-      if (!return_string || force_save_images) {
-        textElements.push('![](' + "drawing" + '/' + " name" + ')');
-      } else {
-        textElements.push('![](' + "drawing" + ')');
-      }
-      //result.images.push( {
-      //  "bytes": blob.getBytes(),
-      //  "type": contentType,
-      //  "name": name});
-
-      // result.images.push({ "blob" : blob } )
-
-    }
-     else if (t === DocumentApp.ElementType.PAGE_BREAK) {
+    } else if (t === DocumentApp.ElementType.PAGE_BREAK) {
       // ignore
     } else if (t === DocumentApp.ElementType.HORIZONTAL_RULE) {
       textElements.push('* * *\n');
     } else if (t === DocumentApp.ElementType.FOOTNOTE) {
       textElements.push(' ('+element.getChild(i).getFootnoteContents().getText()+')');
-    // Fixes for new elements
-    } else if (t === DocumentApp.ElementType.DATE) {
-      textElements.push(' ('+element.getChild(i)+')');
-    } else if (t === DocumentApp.ElementType.RICH_LINK) {
-      textElements.push(' ('+element.getChild(i).getUrl()+')');
-    } else if (t === DocumentApp.ElementType.PERSON) {
-      textElements.push(element.getChild(i).getName() + ', ');
-    } else if (t === DocumentApp.ElementType.UNSUPPORTED) {
-      textElements.push(' <UNSUPPORTED> ');
     } else {
       throw "Paragraph "+index+" of type "+element.getType()+" has an unsupported child: "
       +t+" "+(element.getChild(i)["getText"] ? element.getChild(i).getText():'')+" index="+index;
@@ -885,17 +828,10 @@ function processParagraph(index, element, inSrc, imageCounter, listCounters, ima
     return result;
   }
 
-// Fix for unrecognized command getIndentFirstLine
-  var ind_f = 0;
-  var ind_s = 0;
-  var ind_e = 0;
-  if (t === DocumentApp.ElementType.PARAGRAPH) {
-
-    var ind_f = element.getIndentFirstLine();
-    var ind_s = element.getIndentStart();
-    var ind_e = element.getIndentEnd();
-  }
-  var i_fse = [ind_f,ind_s,ind_e];
+  var ind_f = element.getIndentFirstLine();
+  var ind_s = element.getIndentStart();
+  var ind_e = element.getIndentEnd();
+  var i_fse = ['ind_f','ind_s','ind_e'];
   var indents = {};
   for (indt=0;indt<i_fse.length;indt++) {
     var indname = i_fse[indt];
@@ -940,7 +876,7 @@ function processParagraph(index, element, inSrc, imageCounter, listCounters, ima
   }
 
   var indent_prefix = '> ';
-  var indent_alt_prefix = '> <sub>';
+# var indent_alt_prefix = '> <sub>';
   if (inIndent && !inSrc) {
     if (/^#*\s/.test(result.text)) { // don't subscript-prefix header prefix
       result.text = indent_alt_prefix + result.text;

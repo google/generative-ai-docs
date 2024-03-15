@@ -6,11 +6,11 @@ compatible with Docs Agent.
 
 The steps are:
 
-1. [Prepare a Google Drive folder](#1-prepare-a-google-driver-folder).
-2. [Mount Google Drive on your host machine](#2-mount-google-drive-on-your-host-machine).
-3. [Create an Apps Script project](#3-create-an-apps-script-project).
-4. [Edit and run main.gs on Apps Script](#4-edit-and-run-maings-on-apps-script).
-5. [Update config.yaml to include the mounted directory](#5-update-configyaml-to-include-the-mounted-directory).
+1. [Prepare a Google Drive folder](#1_prepare-a-google-driver-folder).
+2. [Mount Google Drive on your host machine](#2_mount-google-drive-on-your-host-machine).
+3. [Create an Apps Script project](#3_create-an-apps-script-project).
+4. [Edit and run main.gs on Apps Script](#4_edit-and-run-main_gs-on-apps-script).
+5. [Update config.yaml to include the mounted directory](#5_update-config_yaml-to-include-the-mounted-directory).
 
 ## 1. Prepare a Google Drive folder
 
@@ -134,7 +134,7 @@ Do the following:
 
    ```
    input:
-   - path: "/home/user/DriveFileStream/My Drive/my source Google Docs-output"
+   - path: "/usr/local/home/user01/DriveFileStream/My Drive/my source Google Docs-output"
      url_prefix: "docs.google.com"
    ```
 
@@ -146,9 +146,9 @@ Do the following:
 
    ```
    input:
-   - path: "/home/user/DriveFileStream/My Drive/my source Google Docs-output"
+   - path: "/usr/local/home/user01/DriveFileStream/My Drive/my source Google Docs-output"
      url_prefix: "docs.google.com"
-   - path: "/home/user/DriveFileStream/My Drive/psa-output"
+   - path: "/usr/local/home/user01/DriveFileStream/My Drive/psa-output"
      url_prefix: "mail.google.com"
    ```
 

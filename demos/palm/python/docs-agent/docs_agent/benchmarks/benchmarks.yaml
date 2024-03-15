@@ -1,0 +1,52 @@
+#
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+### Configuration for Docs Agent benchmark tests ###
+
+# Source docs: https://github.com/flutter/website/tree/main/src (flutter.dev)
+#
+# These questions and target answers are captured from https://docs.flutter.dev/resources/faq.
+#
+# For this benchmark testing, use a config.yaml setup similar to the following:
+#
+# inputs:
+#   - path: "/usr/local/home/user01/website/src/ui"
+#     url_prefix: "https://docs.flutter.dev/ui"
+#   - path: "/usr/local/home/user01/website/src/tools"
+#     url_prefix: "https://docs.flutter.dev/tools"
+
+
+benchmarks:
+  - question: "What is inside the Flutter SDK?"
+    target_answer: "Flutter includes: * Heavily optimized, mobile-first 2D rendering engine with excellent support for text * Modern react-style framework * Rich set of widgets implementing Material Design and iOS-style * APIs for unit and integration tests * Interop and plugin APIs to connect to the system and 3rd-party SDKs * Headless test runner for running tests on Windows, Linux, and Mac * Flutter DevTools (also called Dart DevTools) for testing, debugging, and profiling your app * Command-line tools for creating, building, testing, and compiling your apps"
+  - question: "Does Flutter work with any editors or IDEs?"
+    target_answer: "We provide plugins for VS Code, Android Studio, and IntelliJ IDEA. See editor configuration for setup details, and VS Code and Android Studio/IntelliJ for tips on how to use the plugins. Alternatively, you can use the flutter command from a terminal, along with one of the many editors that support editing Dart."
+  - question: "Does Flutter come with a framework?"
+    target_answer: "Yes! Flutter ships with a modern react-style framework. Flutter’s framework is designed to be layered and customizable (and optional). Developers can choose to use only parts of the framework, or even replace upper layers of the framework entirely."
+  - question: "Does Flutter come with widgets?"
+    target_answer: "Yes! Flutter ships with a set of high-quality Material Design and Cupertino (iOS-style) widgets, layouts, and themes. Of course, these widgets are only a starting point. Flutter is designed to make it easy to create your own widgets, or customize the existing widgets."
+  - question: "Does Flutter support Material Design?"
+    target_answer: "Yes! The Flutter and Material teams collaborate closely, and Material is fully supported. For more information, check out the Material 2 and Material 3 widgets in the widget catalog."
+  - question: "Does Flutter come with a testing framework?"
+    target_answer: "Yes, Flutter provides APIs for writing unit and integration tests. Learn more about testing with Flutter. We use our own testing capabilities to test our SDK, and we measure our test coverage on every commit."
+  - question: "Does Flutter come with debugging tools?"
+    target_answer: "Yes, Flutter comes with Flutter DevTools (also called Dart DevTools). For more information, see Debugging with Flutter and the Flutter DevTools docs."
+  - question: "Does Flutter come with a dependency injection framework?"
+    target_answer: "We don’t ship with an opinionated solution, but there are a variety of packages that offer dependency injection and service location, such as injectable, get_it, kiwi, and riverpod."
+  - question: "What technology is Flutter built with?"
+    target_answer: "Flutter is built with C, C++, Dart, Skia (a 2D rendering engine), and Impeller (the default rendering engine on iOS). See this architecture diagram for a better picture of the main components. For a more detailed description of the layered architecture of Flutter, read the architectural overview."
+  - question: "What language is Flutter written in?"
+    target_answer: "Dart, a fast-growing modern language optimized for client apps. The underlying graphics framework and the Dart virtual machine are implemented in C/C++."
