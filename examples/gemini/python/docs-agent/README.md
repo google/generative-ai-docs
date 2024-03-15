@@ -67,8 +67,8 @@ The following list summarizes the tasks and features supported by Docs Agent:
   to create, populate, update and delete online corpora using the Semantic Retrieval AI.
   For the list of all available Docs Agent command lines, see the
   [Docs Agent CLI reference][cli-reference] page.
-- **Run the Docs Agent CLI from anywhere on a terminal**: You can set up the
-  Docs Agent CLI to ask questions to the Gemini model from anywhere on a terminal.
+- **Run the Docs Agent CLI from anywhere in a terminal**: You can set up the
+  Docs Agent CLI to ask questions to the Gemini model from anywhere in a terminal.
   For more information, see the [Set up Docs Agent CLI][cli-readme] page.
 
 For more information on Docs Agent's architecture and features,
@@ -174,41 +174,32 @@ Authorize Google Cloud credentials on your host machine:
    (`application_default_credentials.json`) in the `$HOME/.config/gcloud/`
    directory of your host machine.
 
-### 4. Clone the Docs Agent project repository
+### 4. Clone the Docs Agent project
 
 **Note**: This guide assumes that you're creating a new project directory
 from your `$HOME` directory.
 
-Clone the Docs Agent repository and install dependencies:
+Clone the Docs Agent project and install dependencies:
 
-1. Clone the following internal repo:
-
-   ```posix-terminal
-   git clone sso://doc-llm-internal/docs-agent
-   ```
-
-2. Go to the project directory:
+1. Clone the following repo:
 
    ```posix-terminal
-   cd docs-agent
+   git clone https://github.com/google/generative-ai-docs.git
    ```
 
-3. (**Optional**) If you plan on contributing to the `docs-agent` repo,
-   run the following command to set up your commit hook:
+2. Go to the Docs Agent project directory:
 
-   ```
-   curl -Lo `git rev-parse --git-dir`/hooks/commit-msg https://gerrit-review.googlesource.com/tools/hooks/commit-msg ; chmod +x `git rev-parse --git-dir`/hooks/commit-msg
+   ```posix-terminal
+   cd generative-ai-docs/examples/gemini/python/docs-agent
    ```
 
-4. Install dependencies using `poetry`:
+3. Install dependencies using `poetry`:
 
    ```posix-terminal
    poetry install
    ```
 
-   This may take some time to complete.
-
-5. Enter the `poetry` shell environment:
+4. Enter the `poetry` shell environment:
 
    ```posix-terminal
    poetry shell
@@ -234,7 +225,7 @@ Update settings in the Docs Agent project to use your custom dataset:
 1. Go to the Docs Agent project home directory, for example:
 
    ```
-   cd $HOME/docs-agent
+   cd $HOME/generative-ai-docs/examples/gemini/python/docs-agent
    ```
 
 2. Open the [`config.yaml`][config-yaml] file using a text editor, for example:
@@ -315,7 +306,7 @@ To populate a new vector database:
 1. Go to the Docs Agent project home directory, for example:
 
    ```
-   cd $HOME/docs-agent
+   cd $HOME/generative-ai-docs/examples/gemini/python/docs-agent
    ```
 
 2. Process Markdown files into small text chunks:
@@ -349,7 +340,7 @@ To start the Docs Agent chat app:
 1. Go to the Docs Agent project home directory, for example:
 
    ```
-   cd $HOME/docs-agent
+   cd $HOME/generative-ai-docs/examples/gemini/python/docs-agent
    ```
 
 2. Launch the Docs Agent chat app:
@@ -390,56 +381,6 @@ To start the Docs Agent chat app:
    Now, users can start asking questions related to your product.
 
 **The Docs Agent chat app is all set!**
-
-## Contribute to Docs Agent
-
-The section provides instructions on how to set up your account with the Docs Agent
-repository so that you can start contributing to the Docs Agent project.
-
-To set up your account for the Docs Agent repository, do the following:
-
-1. To create an account on Gerrit Code Review, open the following page
-   on a browser:
-
-   ```
-   https://doc-llm-internal-review.git.corp.google.com/
-   ```
-
-1. Click **Create account**.
-
-1. Clone the `docs-agent` repository on your host machine:
-
-   ```
-   git clone sso://doc-llm-internal/docs-agent
-   ```
-
-1. Go to the project directory:
-
-   ```
-   cd docs-agent
-   ```
-
-1. To set up your commit hook, run the following command:
-
-   ```
-   curl -Lo `git rev-parse --git-dir`/hooks/commit-msg https://gerrit-review.googlesource.com/tools/hooks/commit-msg ; chmod +x `git rev-parse --git-dir`/hooks/commit-msg
-   ```
-
-1. Create a new Gerrit change, for example:
-
-   ```
-   git add <files>
-   ```
-
-   ```
-   git commit [--amend]
-   ```
-
-1. Upload the change for review:
-
-   ```
-   git push origin HEAD:refs/for/main
-   ```
 
 ## Contributors
 
