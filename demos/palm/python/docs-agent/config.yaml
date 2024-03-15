@@ -14,97 +14,37 @@
 # limitations under the License.
 #
 
-### Configuration for Docs Agent ###
-
-### PaLM environment
-#
-# api_endpoint:    The PaLM API endpoint used by Docs Agent.
-#
-# embedding_model: The PaLM embedding model used to generate embeddings.
-#
-api_endpoint: "generativelanguage.googleapis.com"
-language_model: "models/gemini-pro"
-embedding_model: "models/embedding-001"
-
-
-### Docs Agent environment
-#
-# product_name:    The name of your product to appears on the chatbot UI.
-#
-# output_path:     The directory where plain text files will be stored
-#                  after documentation source files are processed by
-#                  the `markdown-to-plain-text.py` script.
-#                  Use a relative path to Doc Agent' home directory.
-#
-# vector_db_dir:   The directory where dataset collections for the Chroma
-#                  vector database are stored.
-#
-# collection_name: The name used to identify a dataset collection by
-#                  the Chroma vector database.
-#
-# log_level:       The verbosity level of logs printed on the terminal
-#                  by the chatbot app: NORMAL, VERBOSE, or DEBUG
-#
-# db_type:         Use a local vector database or an online storage
-#                  using the Semantic Retrieval API:
-#                  LOCAL_DB or ONLINE_STORAGE
-#
-# is_aqa_used:     Use Gemini's AQA model for question-answering:
-#                  NO or YES
-#
-product_name: "My product"
-output_path: "data/plain_docs"
-vector_db_dir: "vector_stores/chroma"
-collection_name: "docs_collection"
-log_level: "NORMAL"
-db_type: "LOCAL_DB"
-is_aqa_used: "NO"
-
-
-### Documentation sources
-#
-# List your documentation sources under the `input` field:
-#
-# path (Required):         The directory where the source Markdown files
-#                          are stored.
-#
-# url_prefix (Required):   The prefix used to create URLs for the source
-#                          files. Even if URLs don't exist for the source,
-#                          you still need to provide a mock string.
-#
-# exclude_path (Optional): The sub-directory to be excluded from the `path`
-#                          directory when processing source files.
-#
-input:
-  - path: "data/example/markdown-src-01"
-    url_prefix: "https://example.com/markdown-src-01"
-  - path: "data/example/markdown-src-02"
-    url_prefix: "https://example.com/makrdown-src-02"
-    exclude_path: "/reference/changelogs/"
-
-
-### Docs Agent prompts
-#
-# condition_text:      The condition added at the top of each prompt to
-#                      language models.
-#
-# fact_check_question: The additional condition used in promopts when asking
-#                      language models to "fact check" their own responses.
-#
-# model_error_message: The error message returned to the user when language
-#                      models are unable to provide responses.
-#
-condition_text: "You are a helpful chatbot answering questions from users.
-Read the context below first and answer the user's question at the end.
-In your answer, provide a summary in three or five sentences. (BUT DO NOT USE
-ANY INFORMATION YOU KNOW ABOUT THE WORLD.)"
-
-fact_check_question: "Can you compare the text below to the information
-provided in this prompt above and write a short message that warns the readers
-about which part of the text they should consider fact-checking? (Please keep
-your response concise, focus on only one important item, but DO NOT USE BOLD
-TEXT IN YOUR RESPONSE.)"
-
-model_error_message: "Gemini is not able to answer this question at the moment.
-Rephrase the question and try asking again."
-
+configs:
+  - product_name: "Flutter"
+    models:
+      - language_model: "models/aqa"
+        embedding_model: "models/embedding-001"
+        api_endpoint: "generativelanguage.googleapis.com"
+        embedding_api_call_limit: 1400
+        embedding_api_call_period: 60
+    docs_agent_config: "normal"
+    markdown_splitter: "token_splitter"
+    log_level: "NORMAL"
+    db_type: "google_semantic_retriever"
+    db_configs:
+      - db_type: "chroma"
+        vector_db_dir: "vector_stores/chroma"
+        collection_name: "docs_collection"
+      - db_type: "google_semantic_retriever"
+        corpus_name: "corpora/flutter-dev"
+    output_path: "data/plain_docs"
+    inputs:
+      - path: "/usr/local/home/user01/website/src"
+        url_prefix: "https://docs.flutter.dev/"
+    conditions:
+      - condition_text: "You are a helpful chatbot answering questions from users.
+        Read the context below first and answer the user's question at the end.
+        In your answer, provide a summary in three or five sentences. (BUT DO NOT USE
+        ANY INFORMATION YOU KNOW ABOUT THE WORLD.)"
+        fact_check_question: "Can you compare the text below to the information
+        provided in this prompt above and write a short message that warns the readers
+        about which part of the text they should consider fact-checking? (Please keep
+        your response concise, focus on only one important item, but DO NOT USE BOLD
+        TEXT IN YOUR RESPONSE.)"
+        model_error_message: "Gemini is not able to answer this question at the moment.
+        Rephrase the question and try asking again."
