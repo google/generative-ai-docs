@@ -2,7 +2,7 @@
 
 Pipet Code Agent is an AI-powered code assistance tool, built as an extension
 for Microsoft [Visual Studio Code](https://code.visualstudio.com/) (VS Code).
-Pipet uses the Google PaLM API to help you write code comments and review your
+Pipet uses the Google Gemini API to help you write code comments and review your
 code by adding commands to the command pallete of VS Code.
 
 ![pipet-code-agent](./pipet-snippet.png)
@@ -10,7 +10,7 @@ code by adding commands to the command pallete of VS Code.
 Pipet is provided as a development project, so you must configure and build
 it if you want to run it in your VS Code instance. For more information
 about building, configuring, running, and extending this project, see the
-[Build AI Code Assistant with Pipet Code Agent](https://developers.generativeai.google/develop/sample-apps/pipet-code-agent) tutorial.
+[Build AI Code Assistant with Pipet Code Agent](https://ai.google.dev/examples/pipet-code-agent) tutorial.
 
 ## Project setup
 
@@ -19,8 +19,8 @@ for development and testing. The general steps are Installing some prerequisite
 software, setting a few environment variables, cloning the project from the code
 repository, and running the configuration installation.
 
-Note: You need a Google PaLM API Key to be able to run the project, which you
-can obtain from the [Google PaLM API](https://developers.generativeai.google/tutorials/setup) page.
+Note: You need a Google Gemini API Key to be able to run the project, which you
+can obtain from the [Google Gemini API](https://ai.google.dev/tutorials/setup) page.
 
 ### Install the prerequisites
 
@@ -64,7 +64,7 @@ You should now be able to test your installation by running Pipet Code Agent as
 a development extension in VS Code on your device. The test opens a separate VS
 Code **Extension Development Host** window where the new extension is available.
 In this new window, you configure the API Key the extension uses to access the
-Google PaLM API.
+Google Gemini API.
 
 To configure and test your setup:
 
@@ -76,13 +76,13 @@ To configure and test your setup:
 1.  Run the extension in debug mode by selecting **Run > Start Debugging**.
     This step opens a separate VS Code **Extension Development Host** window.
 1.  Open the VS Code settings by selecting **Code > Settings > Settings**.
-1.  Get a [Google PaLM API Key](https://developers.generativeai.google/tutorials/setup)
+1.  Get a [Google Gemini API Key](https://ai.google.dev/tutorials/setup)
     from the Generative AI Developer site, and copy the key string.
 1.  Set the API key as a configuration setting. In **Search Settings**
-    field, type `pipet`, select the **User** tab, and in the **Google > Palm:
+    field, type `pipet`, select the **User** tab, and in the **Google > Gemini
     Api Key** setting, click the **Edit in settings.json** link, and add your
-    PaLM API key:\
-    `"google.palm.apiKey": "your-api-key-here"`
+    Gemini API key:\
+    `"google.gemini.apiKey": "your-api-key-here"`
 1.  Save the changes to the `settings.json` file and close the settings tabs.
 
 **Caution:** Treat your API Key like a password and protect it appropriately. Don't
@@ -100,4 +100,4 @@ To test the extension commands:
 ## Resources
 
 - Project code tutorial:
-[Build AI Code Assistant with Pipet Code Agent](https://developers.generativeai.google/develop/sample-apps/pipet-code-agent) tutorial.
+[Build AI Code Assistant with Pipet Code Agent](https://ai.google.dev/examples/pipet-code-agent) tutorial.
