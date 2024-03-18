@@ -24,22 +24,22 @@
     ],
     "configuration": [
       {
-        "title": "Pipet Code Agent: Google PaLM",
+        "title": "Pipet Code Agent: Google Gemini",
         "properties": {
-          "google.palm.apiKey": {
+          "google.gemini.apiKey": {
             "type": [
               "string",
               "null"
             ],
             "default": null,
-            "markdownDescription": "Enter your [API Key](https://makersuite.google.com/app/apikey) for Google PaLM."
+            "markdownDescription": "Enter your [API Key](https://aistudio.google.com/app/apikey) for Gemini."
           },
-          "google.palm.textModel": {
+          "google.gemini.textModel": {
             "type": [
               "string"
             ],
-            "default": "models/text-bison-001",
-            "markdownDescription": "Provide the name of the model you want to use. Choose from the [base models](https://developers.generativeai.google/models/language) or your own [tuned model](https://developers.generativeai.google/guide/model_tuning_guidance)."
+            "default": "models/gemini-1.0-pro-latest",
+            "markdownDescription": "Provide the name of the model you want to use. Choose from the [base models](https://ai.google.dev/models/gemini) or your own [tuned model](https://ai.google.dev/docs/model_tuning_guidance)."
           }
         }
       }
@@ -67,8 +67,7 @@
     "typescript": "^5.1.3"
   },
   "dependencies": {
-    "@google-ai/generativelanguage": "^0.2.0",
-    "dotenv": "^16.1.4",
-    "google-auth-library": "^8.8.0"
+    "@google/generative-ai": "^0.3.0",
+    "dotenv": "^16.1.4"
   }
 }
