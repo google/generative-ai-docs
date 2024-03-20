@@ -1,0 +1,117 @@
+<div class="question">
+  <h2>Question</h2>
+  <p>{{ question | replace("+", " ") | replace("%3F", "?")}}</p>
+</div>
+<div class="response-text" id="response-box">
+  {% if search_result[0].probability %}
+  <h2>AQA's answer</h2>
+  {% else %}
+  <h2>Gemini's answer</h2>
+  {% endif %}
+  <span id="gemini-response">
+    {{ md_to_html(response) | safe }}
+  </span>
+  <!-- {% if fact_checked_response %}
+  <h4>Important - Fact checker results:</h4>
+  <span id="gemini-response">
+  {{md_to_html(fact_checked_response) | safe}}
+  </span>
+  <br>
+    {% for item in fact_checked_response.checks %}
+        <p>Claim: {{item.claim}}</p>
+        <p>Reason: {{item.reason}}</p>
+        Handle various cases when model returns urls, section names, and page names
+        {% if (item.section_name != "" and item.section_name != None) and (item.page_name != "" and item.page_name != None) and (item.URL != "" and item.URL != None and "URL" in item)%}
+          {% set section_url = named_link_html(item.URL, item.section_name) %}
+          {% set page_url = named_link_html(trim_section_for_page_link(item.URL), item.page_name) %}
+          <p>{{section_url | safe}} from the {{page_url | safe}} page.</p>
+        {% elif (item.URL == "" or item.URL == None) and (item.section_name != "" or item.page_name != "") %}
+          {% if item.section_name == "" %}
+            <p>From the {{item.section_name}} section.</p>
+          {% elif item.page_name == "" %}
+            <p>From the {{item.page_name}} page.</p>
+          {% else %}
+            <p>{{item.section_name}} from the {{item.page_name}} page.</p>
+          {% endif %}
+        {% else %}
+      {% endif %}
+    {% endfor %}
+  {% elif fact_checked_response == "" %}
+    <p>The answer that I gave you was based on accurate information from the
+       context. Keep in mind that you still should review my sources if something
+       doesn't seem accurate.</p>
+  {% endif %} -->
+  <p id="source-para">To verify this information, please check out my sources:</p>
+  <div class="sources">
+    <ol>
+    {% for source in search_result %}
+      {% set section_url = named_link_html(source.section.url, source.section.section_title) %}
+      {% set page_url = named_link_html(trim_section_for_page_link(source.section.url), source.section.page_title) %}
+      {% if search_result|length > 1 %}
+      <li>
+      {% endif %}
+        <p>{{section_url | safe}} from the {{page_url | safe}} page.</p>
+        <section class="accordion-source">
+          <input type="checkbox" name="collapse" id="source-{{source.section.page_title}}-{{source.section.section_title}}-{{loop.index}}">
+          <h2 class="handle">
+            <label for="source-{{source.section.page_title}}-{{source.section.section_title}}-{{loop.index}}">Content</label>
+          </h2>
+          <div class="content">
+            {{md_to_html(source.section.content) | safe}}
+          </div>
+          {% if source.distance %}
+          <p id="distance-para">Distance: {{source.distance}}</p>
+          {% elif source.probability %}
+          <p id="probability-para">Probability: {{source.probability}}</p>
+          {% endif %}
+        </section>
+      {% if search_result|length > 1 %}
+      </li>
+      {% endif %}
+    {% endfor %}
+    </ol>
+  </div>
+</div>
+<div class="related-questions">
+  <h3>Related questions</h3>
+  {{ related_questions | safe }}
+</div>
+{% if search_result[0].distance %}
+<section class="accordion">
+  <input type="checkbox" name="collapse" id="handle1">
+  <h2 class="handle">
+    <label for="handle1">Context</label>
+  </h2>
+  <div class="content">
+    {{ md_to_html(final_context) | safe }}
+  </div>
+</section>
+{% else %}
+{% endif %}
+<div>
+  <input type="button" value="Rewrite this response" id="rewrite-button">
+  <input type="button" class="notselected" value="Like this response &#128077;" id="like-button">
+</div>
+<div class="rewrite hidden" id="rewrite-box">
+  <h4 id="rewrite-question-header">Question:</h4>
+  <span id="rewrite-question-span">
+    <p>{{ question | replace("+", " ") | replace("%3F", "?")}}</p>
+  </span>
+  <h4 id="rewrite-response-header">Gemini's response:</h4>
+  <span id="rewrite-original-response-span">
+    {{ md_to_html(response) | safe }}
+  </span>
+  <h4>Rewrite:</h4>
+  <textarea id="edit-text-area">{{ response | safe }}</textarea>
+  <label for="user-id">User ID:</label>
+  <input type="text" id="user-id" name="user-id" placeholder="Optional">
+  <br>
+  <span id="submit-box">
+    <input type="button" value="Submit" id="submit-button">
+  </span>
+  <span id="submit-result">
+  </span>
+</div>
+<div class="hidden" id="uuid-box">
+  {{ uuid | safe }}
+</div>
