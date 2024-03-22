@@ -52,9 +52,9 @@ To download and configure the project code:
 so you have only the files for the Docs Agent project.\
     `cd generative-ai-docs/`\
     `git sparse-checkout init --cone`\
-    `git sparse-checkout set demos/palm/javascript/pipet-code-agent/`
+    `git sparse-checkout set examples/gemini/node/pipet-code-agent/`
 1.  Navigate to the Pipet Code Agent project root directory.\
-    `cd generative-ai-docs/demos/palm/javascript/pipet-code-agent/`
+    `cd generative-ai-docs/examples/gemini/node/pipet-code-agent/`
 1.  Run the install command to download dependencies and configure the project:\
     `npm install`
 
