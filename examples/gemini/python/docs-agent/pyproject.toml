@@ -30,7 +30,7 @@ flask = "^2.3.2"
 ipython = "^8.13.2"
 pylint = "^2.17.4"
 black = "^23.3.0"
-deptry = "^0.13.0"
+deptry = "^0.15.0"
 
 [tool.deptry.per_rule_ignores]
 DEP003 = ["docs_agent"]
