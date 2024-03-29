@@ -15,8 +15,7 @@
  */ 
 
 import * as vscode from 'vscode';
-import { TextServiceClient } from '@google-ai/generativelanguage';
-import { GoogleAuth } from 'google-auth-library';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 const CODE_LABEL = 'Here is the code:';
 const REVIEW_LABEL = 'Here is the review:';
 const PROMPT = `
@@ -45,18 +44,17 @@ There are duplicate lines of code in this control structure.
 
 export async function generateReview() {
   vscode.window.showInformationMessage('Generating code review...');
-  const modelName = vscode.workspace.getConfiguration().get<string>('google.palm.textModel');
+  const modelName = vscode.workspace.getConfiguration().get<string>('google.gemini.textModel', 'models/gemini-1.0-pro-latest');
 
   // Get API Key from local user configuration
-  const apiKey = vscode.workspace.getConfiguration().get<string>('google.palm.apiKey');
+  const apiKey = vscode.workspace.getConfiguration().get<string>('google.gemini.apiKey');
   if (!apiKey) {
     vscode.window.showErrorMessage('API key not configured. Check your settings.');
     return;
   }
 
-  const palm = new TextServiceClient({
-    authClient: new GoogleAuth().fromAPIKey(apiKey),
-  });
+  const genai = new GoogleGenerativeAI(apiKey);
+  const model = genai.getGenerativeModel({model: modelName});
 
   // Text selection
   const editor = vscode.window.activeTextEditor;
@@ -75,18 +73,9 @@ export async function generateReview() {
     ${REVIEW_LABEL}
     `;
 
-  const [rawResponse, ...rest] = await palm.generateText({
-    model: modelName,
-    prompt: { text: fullPrompt },
-  });
-
-  if (!rawResponse.candidates?.[0]?.output) {
-    console.error('No candidates', rawResponse);
-    vscode.window.showErrorMessage('No review candidates returned. Check debug logs.');
-    return;
-  }
-
-  const comment = rawResponse.candidates[0].output.trim();
+  const result = await model.generateContent(fullPrompt);
+  const response = await result.response;
+  const comment = response.text();  
 
   // Insert before selection
   editor.edit((editBuilder) => {

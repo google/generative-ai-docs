@@ -1,0 +1,81 @@
+{
+  "name": "flutter-theme-agent",
+  "displayName": "Flutter Theme Agent",
+  "description": "Extension for generating Flutter ThemeData classes",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "flutter-theme-agent.generateTheme",
+        "title": "Flutter Theme Agent: Create a Flutter ThemeData object."
+      },
+      {
+        "command": "flutter-theme-agent.generateTextTheme",
+        "title": "Flutter Theme Agent: Create a Flutter TextTheme."
+      },
+      {
+        "command": "flutter-theme-agent.generateColorScheme",
+        "title": "Flutter Theme Agent: Create a Flutter ColorScheme."
+      },
+      {
+        "command": "flutter-theme-agent.generateButtonStyle",
+        "title": "Flutter Theme Agent: Create a Flutter ButtonStyle."
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Flutter Theme Agent: Google AI",
+        "properties": {
+          "google.ai.apiKey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": null,
+            "markdownDescription": "Enter your [API Key](https://ai.google.dev/tutorials/setup) for Google AI."
+          },
+          "google.ai.model": {
+            "type": [
+              "string"
+            ],
+            "default": "gemini-pro",
+            "markdownDescription": "Provide the name of the Google AI model you want to use. Choose from the [base models](https://ai.google.dev/models)."
+          }
+        }
+      }
+    ]
+  },
+
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "20.2.5",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/parser": "^5.59.8",
+    "@vscode/test-electron": "^2.3.2",
+    "eslint": "^8.41.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.1.3"
+  }
+}

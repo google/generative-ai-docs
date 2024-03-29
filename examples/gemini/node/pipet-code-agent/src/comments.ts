@@ -16,8 +16,7 @@
 
 import * as vscode from 'vscode';
 
-import { TextServiceClient } from '@google-ai/generativelanguage';
-import { GoogleAuth } from 'google-auth-library';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Provide instructions for the AI language model
 // This approach uses a few-shot technique, providing a few examples.
@@ -56,18 +55,17 @@ Attempt to load the API key from the environment.`;
 export async function generateComment() {
     vscode.window.showInformationMessage('Generating comment...');
 
-    const modelName = vscode.workspace.getConfiguration().get<string>('google.palm.textModel');
+    const modelName = vscode.workspace.getConfiguration().get<string>('google.gemini.textModel', 'models/gemini-1.0-pro-latest');
 
     // Get API Key from local user configuration
-    const apiKey = vscode.workspace.getConfiguration().get<string>('google.palm.apiKey');
+    const apiKey = vscode.workspace.getConfiguration().get<string>('google.gemini.apiKey');
     if (!apiKey) {
         vscode.window.showErrorMessage('API key not configured. Check your settings.');
         return;
     }
 
-    const palm = new TextServiceClient({
-        authClient: new GoogleAuth().fromAPIKey(apiKey),
-    });
+    const genai = new GoogleGenerativeAI(apiKey);
+    const model = genai.getGenerativeModel({model: modelName});
 
     // Text selection
     const editor = vscode.window.activeTextEditor;
@@ -87,16 +85,9 @@ ${selectedCode}
 ${COMMENT_LABEL}
 `;
 
-    const [rawResponse, ...rest] = await palm.generateText({
-        model: modelName,
-        prompt: { text: fullPrompt },
-    });
-    if (!rawResponse.candidates?.[0]?.output) {
-        console.error('No candidates', rawResponse);
-        vscode.window.showErrorMessage('No comment candidates returned. Check debug logs.');
-        return;
-    }
-    const comment = rawResponse.candidates[0].output.trim();
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    const comment = response.text();  
 
     // Insert before selection.
     editor.edit((editBuilder) => {
