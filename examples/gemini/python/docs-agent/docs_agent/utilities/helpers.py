@@ -18,7 +18,7 @@
 
 import urllib, os
 from flask import url_for
-from bs4 import BeautifulSoup
+import bs4
 from pathlib import Path, PurePath
 import markdown
 
@@ -79,7 +79,7 @@ def add_scheme_url(url: str, scheme: str = "https"):
 # Parse a response containing a list of related questions from the language model
 # and convert it into an HTML-based list.
 def parse_related_questions_response_to_html_list(response):
-    soup = BeautifulSoup(response, "html.parser")
+    soup = bs4.BeautifulSoup(response, "html.parser")
     for item in soup.find_all("li"):
         if item.find("code"):
             # If there are <code> tags, strip the tags.
@@ -154,7 +154,7 @@ def build_list_html_links(
 
 # Build an html URL link
 def named_link_html(url: str, label: str = "", **kwargs):
-    soup = BeautifulSoup("")
+    soup = bs4.BeautifulSoup("")
     final_url = add_scheme_url(url)
     attrs = dict(href=f"{final_url}", target=f"_blank", **kwargs)
     tag = soup.new_tag(name="a", attrs=attrs)

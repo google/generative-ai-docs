@@ -97,14 +97,16 @@ def populate(config_file: str = None, product: list[str] = [""]):
 
 
 @cli.command()
-@click.option("--hostname", default=socket.gethostname())
-@click.option("--port", default=5000, type=int)
-@click.option("--debug", default=True, type=bool)
+@click.option("--hostname", default=socket.gethostname(), show_default=True)
+@click.option("--port", default=5000, show_default=True, type=int)
+@click.option("--debug", default=True, show_default=True, type=bool)
+@click.option("--app_mode", default=None, show_default=True, type=click.Choice(["web", "widget", "experimental"], case_sensitive=False), help="Specify a mode for the chatbot.")
 @common_options
 def chatbot(
     hostname: str,
     port: str,
     debug: str,
+    app_mode: str,
     config_file: str = None,
     product: list[str] = [""],
 ):
@@ -115,8 +117,10 @@ def chatbot(
     )
 
     product_file = product_config.products[0]
-    app = chatbot_flask.create_app(product=product_file)
-    click.echo("Launching the chatbot UI.")
+    if app_mode == None:
+        app_mode = product_file.app_mode
+    app = chatbot_flask.create_app(product=product_file, app_mode=app_mode)
+    click.echo(f"Launching the chatbot UI for product {product_file.product_name} in {app_mode} mode.")
     app.run(host=hostname, port=port, debug=debug)
 
 

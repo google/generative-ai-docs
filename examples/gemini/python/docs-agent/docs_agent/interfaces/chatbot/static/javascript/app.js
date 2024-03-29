@@ -26,6 +26,20 @@ if (askButton != null){
   });
 }
 
+// Display the "loading" message when a related question is clicked.
+let relatedQuestions = document.getElementById('suggested-questions');
+
+if (relatedQuestions != null){
+  questions = relatedQuestions.getElementsByTagName('a');
+  for(i=0; i<questions.length; i++){
+    questions[i].addEventListener('click',function (){
+      if (loadingDiv.classList.contains("hidden")){
+        loadingDiv.classList.remove("hidden");
+      }
+    });
+  }
+}
+
 // Display the "aqa-box" div only if the aqa json response is included.
 let aqaContent = document.getElementById('aqa-content');
 let aqaBox = document.getElementById('aqa-box');
@@ -155,3 +169,30 @@ if (rewriteSubmitButton != null){
   }, false);
 }
 
+// Monitor the width of the Docs Agent widget.
+let answerableSpan = document.getElementById('answerable-span');
+//let rewriteButton = document.getElementById('rewrite-button');
+const element = document.querySelector('#chat-border');
+
+const resizeObserver = new ResizeObserver(entries => {
+  for (const entry of entries) {
+    const width = entry.contentRect.width;
+    console.log('Element width changed to:', width);
+    if (width < 520) {
+      answerableSpan.classList.add("hidden");
+    }else{
+      if (answerableSpan.classList.contains("hidden")) {
+        answerableSpan.classList.remove("hidden");
+      }
+    }
+    if (width < 300) {
+      rewriteButton.classList.add("hidden");
+    }else{
+      if (rewriteButton.classList.contains("hidden")) {
+        rewriteButton.classList.remove("hidden");
+      }
+    }
+  }
+});
+
+resizeObserver.observe(element);

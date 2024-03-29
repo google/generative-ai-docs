@@ -288,6 +288,7 @@ class ProductConfig:
         docs_agent_config: str = None,
         markdown_splitter: str = "token_splitter",
         db_type: str = "chroma",
+        app_mode: str = "web",
     ):
         self.product_name = product_name
         self.docs_agent_config = docs_agent_config
@@ -299,6 +300,7 @@ class ProductConfig:
         self.conditions = conditions
         self.log_level = log_level
         self.inputs = inputs
+        self.app_mode = app_mode
 
     def __str__(self):
         # Extracts the list of Inputs
@@ -313,6 +315,7 @@ class ProductConfig:
         db_config_str = "\n".join(dbconfigs)
         return f"Product: {self.product_name}\n\
 Docs Agent config: {self.docs_agent_config}\n\
+App mode: {self.app_mode}\n\
 Markdown splitter: {self.markdown_splitter}\n\
 Database type: {self.db_type}\n\
 Output path: {self.output_path}\n\
@@ -374,6 +377,15 @@ class ReadConfig:
                     name = item["product_name"]
                 except KeyError as error:
                     logging.error(f"Your configuration is missing a {error}")
+                    return sys.exit()
+                # Set the default value of `app_mode` to "web"
+                supported_app_modes = ["web", "experimental", "widget"]
+                try:
+                    app_mode = item["app_mode"]
+                except KeyError:
+                    app_mode = "web"
+                if app_mode not in supported_app_modes:
+                    logging.error(f"Your configuration is using an invalid mode: {app_mode}. Valid modes are {supported_app_modes}")
                     return sys.exit(1)
                 try:
                     product_config = ProductConfig(
@@ -383,12 +395,11 @@ class ReadConfig:
                         db_type=item["db_type"],
                         output_path=item["output_path"],
                         db_configs=item["db_configs"],
-                        # vector_db_dir=item["vector_db_dir"],
-                        # collection_name=item["collection_name"],
                         log_level=item["log_level"],
                         models=item["models"],
                         conditions=item["conditions"],
                         inputs=item["inputs"],
+                        app_mode=app_mode,
                     )
                     # This is done for keys with children
                     # Inputs

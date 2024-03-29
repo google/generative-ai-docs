@@ -116,21 +116,21 @@ credentials (via `gcloud`) stored on your host machine.
    (`application_default_credentials.json`) in the `$HOME/.config/gcloud/`
    directory of your host machine.
 
-## 4. Clone the Docs Agent project
+## 4. Clone the Docs Agent project repository
 
 **Note**: This guide assumes that you're creating a new project directory
 from your `$HOME` directory.
 
-1. Clone the following repo:
+1. Clone the following internal repo:
 
    ```posix-terminal
-   git clone https://github.com/google/generative-ai-docs.git
+   git clone sso://doc-llm-internal/docs-agent
    ```
 
-2. Go to the Docs Agent project directory:
+2. Go to the project directory:
 
    ```posix-terminal
-   cd generative-ai-docs/examples/gemini/python/docs-agent
+   cd docs-agent
    ```
 
 3. Install dependencies using `poetry`:
@@ -138,6 +138,8 @@ from your `$HOME` directory.
    ```posix-terminal
    poetry install
    ```
+
+   This may take some time to complete.
 
 ## 5. Set up an alias to the gemini command
 
