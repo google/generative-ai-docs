@@ -124,13 +124,13 @@ from your `$HOME` directory.
 1. Clone the following internal repo:
 
    ```posix-terminal
-   git clone sso://doc-llm-internal/docs-agent
+   git clone https://github.com/google/generative-ai-docs.git
    ```
 
 2. Go to the project directory:
 
    ```posix-terminal
-   cd docs-agent
+   cd generative-ai-docs/examples/gemini/python/docs-agent
    ```
 
 3. Install dependencies using `poetry`:
