@@ -18,7 +18,6 @@
 
 from markdown import markdown
 import shutil
-from bs4 import BeautifulSoup
 import os
 import re
 import json
@@ -36,7 +35,7 @@ from docs_agent.utilities.helpers import (
     end_path_backslash,
     start_path_no_backslash,
 )
-from docs_agent.preprocess.splitters import markdown_splitter, html_splitter
+from docs_agent.preprocess.splitters import markdown_splitter, html_splitter, fidl_splitter
 from docs_agent.models import palm as palmModule
 import uuid
 
@@ -144,6 +143,7 @@ def process_files_from_input(
     f_count = 0
     md_count = 0
     html_count = 0
+    fidl_count = 0
     file_index = []
     full_file_metadata = {}
     resolved_output_path = resolve_path(product_config.output_path)
@@ -305,6 +305,52 @@ def process_files_from_input(
                             f"Select a valid markdown_splitter option in your configuration for {product_config.product_name}\n"
                         )
                         exit()
+            elif file.endswith(".fidl") and not file.startswith("_"):
+                filename_prefix = "index"
+                chunk_number = 0
+                fidl_count += 1
+                # Add filename to a list
+                file_index.append(relative_path)
+                with open(os.path.join(root, file), "r", encoding="utf-8") as auto:
+                    # Read the input FIDL file
+                    to_file = auto.read()
+                    # Split the FIDL file into a list of FIDL protocols.
+                    fidl_protocols = fidl_splitter.split_file_to_protocols(to_file)
+                    library_name = ""
+                    # Iterate the list of FIDL protocols.
+                    for fidl_protocol in fidl_protocols:
+                        # Identify the new FIDL chunk file path and name.
+                        filename_to_save = make_file_chunk_name(new_path=new_path, filename_prefix=filename_prefix, index=chunk_number)
+                        with open(filename_to_save, "w", encoding="utf-8") as new_file:
+                            new_file.write(fidl_protocol)
+                            new_file.close()
+                        chunk_number += 1
+                        # Handle metadata for the FIDL chunk
+                        md_hash = uuid.uuid3(namespace_uuid, fidl_protocol)
+                        uuid_file = uuid.uuid3(namespace_uuid, filename_to_save)
+                        origin_uuid = uuid.uuid3(namespace_uuid, relative_path)
+                        # Contruct URLs
+                        match_library = re.search(r"^Library\sname:\s+(.*)\n", fidl_protocol)
+                        if match_library:
+                            library_name = match_library.group(1)
+                        fidl_url = url_prefix + library_name
+                        full_file_metadata[filename_to_save] = {
+                            "UUID": str(uuid_file),
+                            "origin_uuid": str(origin_uuid),
+                            "source": str(original_input),
+                            "source_file": str(relative_path),
+                            "source_id": int(fidl_count),
+                            "page_title": str("None"),
+                            "section_title": str("None"),
+                            "section_name_id": str("None"),
+                            "section_id": int(1),
+                            "section_level": int(1),
+                            "previous_id": int(1),
+                            "URL": str(fidl_url),
+                            "md_hash": str(md_hash),
+                            "token_estimate": float(1.0),
+                            "full_token_estimate": float(1.0),
+                        }
             elif (
                 file.endswith(".htm") or file.endswith(".html")
             ) and not file.startswith("_"):
@@ -345,6 +391,14 @@ def make_relative_path(file: str, inputpath: str, root: str = None) -> str:
     else:
         relative_path = os.path.relpath(root + file_slash, inputpath)
     return relative_path
+
+
+# Given a path, filename_prefix, chunk index, and an optional path extension (to save chunk)
+# Create a file chunk name
+def make_file_chunk_name(new_path: str, filename_prefix: str, index: int, extension: str = "md") -> str:
+    filename_to_save = (filename_prefix + "_" + str(index) + "." + extension)
+    full_filename = os.path.join(new_path, filename_to_save)
+    return full_filename
 
 
 # Given a path, file, chunk index, and an optional path extension (to save chunk)
