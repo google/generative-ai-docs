@@ -15,7 +15,7 @@
 #
 
 from markdown import markdown
-from bs4 import BeautifulSoup
+import bs4
 import re, os
 from absl import logging
 from docs_agent.models import tokenCount
@@ -212,7 +212,7 @@ def markdown_to_text(markdown_string):
     # md -> html -> text since BeautifulSoup can extract text cleanly
     html = markdown(markdown_string)
     # Extract text
-    soup = BeautifulSoup(html, "html.parser")
+    soup = bs4.BeautifulSoup(html, "html.parser")
     text = "".join(soup.findAll(string=True))
     # Remove [][] in Markdown
     text = re.sub(r"\[(.*?)\]\[(.*?)\]", "\\1", text)

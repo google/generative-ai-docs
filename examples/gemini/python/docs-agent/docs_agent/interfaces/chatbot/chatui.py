@@ -45,19 +45,32 @@ from docs_agent.memory.logging import log_question, log_like
 
 
 # This is used to define the app blueprint using a productConfig
-def construct_blueprint(product_config: config.ProductConfig):
+def construct_blueprint(product_config: config.ProductConfig, app_mode: str = None):
     bp = Blueprint("chatui", __name__)
     if product_config.db_type == "google_semantic_retriever":
         docs_agent = DocsAgent(config=product_config, init_chroma=False)
     else:
         docs_agent = DocsAgent(config=product_config)
-    logging.info(f"Launching the flask app for product: {product_config.product_name}")
+    logging.info(f"Launching the Flask app for product: {product_config.product_name} with app_mode: {app_mode}")
+    # Assign templates and redirects
+    if app_mode == "web":
+        app_template = "chatui/index.html"
+        redirect_index = "chatui.index"
+    elif app_mode == "experimental":
+        app_template = "chatui-experimental/index.html"
+        redirect_index = "chatui-experimental.index"
+    elif app_mode == "widget":
+        app_template = "chat-widget/index.html"
+        redirect_index = "chat-widget.index"
+    else:
+        app_template = "chatui/index.html"
+        redirect_index = "chatui.index"
 
     @bp.route("/", methods=["GET", "POST"])
     def index():
         server_url = request.url_root.replace("http", "https")
         return render_template(
-            "chatui/index.html",
+            app_template,
             product=product_config.product_name,
             server_url=server_url,
         )
@@ -73,7 +86,7 @@ def construct_blueprint(product_config: config.ProductConfig):
                     context,
                     sources_ref,
                     plain_token,
-                ) = ask_model_2_with_sources(input["question"], agent=docs_agent)
+                ) = ask_model_with_sources(input["question"], agent=docs_agent)
                 source_array = []
                 for source in sources_ref:
                     source_array.append(source.returnDictionary())
@@ -100,7 +113,7 @@ def construct_blueprint(product_config: config.ProductConfig):
             log_like(is_like, str(uuid_found).strip())
             return "OK"
         else:
-            return redirect(url_for("chatui.index"))
+            return redirect(url_for(redirect_index))
 
     @bp.route("/rewrite", methods=["GET", "POST"])
     def rewrite():
@@ -149,10 +162,7 @@ def construct_blueprint(product_config: config.ProductConfig):
                 file.close()
             return "OK"
         else:
-            if product_config.docs_agent_config == "experimental":
-                return redirect(url_for("chatui.index_experimental"))
-            elif product_config.docs_agent_config == "normal":
-                return redirect(url_for("chatui.index"))
+            return redirect(url_for(redirect_index))
 
     # Render a response page when the user asks a question
     # using input text box.
@@ -160,17 +170,9 @@ def construct_blueprint(product_config: config.ProductConfig):
     def result():
         if request.method == "POST":
             question = request.form["question"]
-            if product_config.docs_agent_config == "experimental":
-                return ask_model2(question, agent=docs_agent, template="chatui/index_experimental.html")
-            elif product_config.docs_agent_config == "normal":
-                return ask_model2(
-                    question, agent=docs_agent, template="chatui/index.html"
-                )
+            return ask_model(question, agent=docs_agent, template=app_template)
         else:
-            if product_config.docs_agent_config == "experimental":
-                return redirect(url_for("chatui.index_experimental"))
-            elif product_config.docs_agent_config == "normal":
-                return redirect(url_for("chatui.index"))
+            return redirect(url_for(redirect_index))
 
     # Render a response page when the user clicks a question
     # from the related questions list.
@@ -178,17 +180,9 @@ def construct_blueprint(product_config: config.ProductConfig):
     def question(ask):
         if request.method == "GET":
             question = urllib.parse.unquote_plus(ask)
-            if product_config.docs_agent_config == "experimental":
-                return ask_model2(question, agent=docs_agent, template="chatui/index_experimental.html")
-            elif product_config.docs_agent_config == "normal":
-                return ask_model2(
-                    question, agent=docs_agent, template="chatui/index.html"
-                )
+            return ask_model(question, agent=docs_agent, template=app_template)
         else:
-            if product_config.docs_agent_config == "experimental":
-                return redirect(url_for("chatui.index_expiremental"))
-            elif product_config.docs_agent_config == "normal":
-                return redirect(url_for("chatui.index"))
+            return redirect(url_for(redirect_index))
 
     return bp
 
@@ -196,7 +190,7 @@ def construct_blueprint(product_config: config.ProductConfig):
 # Construct a set of prompts using the user question, send the prompts to
 # the lanaguage model, receive responses, and present them into a page.
 # Use template to specify a custom template for the classic web UI
-def ask_model2(question, agent, template: str = "chatui/index.html"):
+def ask_model(question, agent, template: str = "chatui/index.html"):
     # Returns a built context, a total token count of the context and an array
     # of sourceOBJ
     full_prompt = ""
@@ -307,7 +301,7 @@ def ask_model2(question, agent, template: str = "chatui/index.html"):
 # Not fully implemented
 # This method is used for the API endpoint, so it returns values that can be
 # packaged as JSON
-def ask_model_2_with_sources(question, agent):
+def ask_model_with_sources(question, agent):
     docs_agent = agent
     full_prompt = ""
     context, plain_token, sources_ref = docs_agent.query_vector_store_to_build(
