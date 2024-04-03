@@ -16,6 +16,9 @@
 
 import * as vscode from 'vscode';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getCommentprefixes } from './getCommentprefixes';
+import { get } from 'http';
+
 const CODE_LABEL = 'Here is the code:';
 const REVIEW_LABEL = 'Here is the review:';
 const PROMPT = `
@@ -44,7 +47,7 @@ There are duplicate lines of code in this control structure.
 
 export async function generateReview() {
   vscode.window.showInformationMessage('Generating code review...');
-  const modelName = vscode.workspace.getConfiguration().get<string>('google.gemini.textModel', 'models/gemini-1.0-pro-latest');
+  const modelName = vscode.workspace.getConfiguration().get<string>('google.gemini.textModel', 'gemini-1.0-pro');
 
   // Get API Key from local user configuration
   const apiKey = vscode.workspace.getConfiguration().get<string>('google.gemini.apiKey');
@@ -83,8 +86,7 @@ export async function generateReview() {
     const trimmed = selectedCode.trimStart();
     const padding = selectedCode.substring(0, selectedCode.length - trimmed.length);
 
-    // TODO(you!): Support other comment styles.
-    const commentPrefix = '# ';
+    const commentPrefix = getCommentprefixes(editor.document.languageId);
     let pyComment = comment.split('\n').map((l: string) => `${padding}${commentPrefix}${l}`).join('\n');
     if (pyComment.search(/\n$/) === -1) {
       // Add a final newline if necessary.

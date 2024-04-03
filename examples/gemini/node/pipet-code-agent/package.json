@@ -1,13 +1,14 @@
 {
   "name": "pipet-code-agent",
   "displayName": "Pipet Code Agent",
-  "description": "",
+  "description": "A AI CodeHelper",
   "version": "0.0.1",
+  "repository": "https://github.com/google/generative-ai-docs",
   "engines": {
     "vscode": "^1.78.0"
   },
   "categories": [
-    "Other"
+    "AI"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -22,6 +23,18 @@
         "title": "Pipet: Review the selected code."
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "pipet-code-agent.commentCode",
+          "group": "PipetCodeAgent"
+        },
+        {
+          "command": "pipet-code-agent.reviewCode",
+          "group": "PipetCodeAgent"
+        }
+      ]
+    },
     "configuration": [
       {
         "title": "Pipet Code Agent: Google Gemini",
@@ -38,7 +51,7 @@
             "type": [
               "string"
             ],
-            "default": "models/gemini-1.0-pro-latest",
+            "default": "models/gemini-1.0-pro",
             "markdownDescription": "Provide the name of the model you want to use. Choose from the [base models](https://ai.google.dev/models/gemini) or your own [tuned model](https://ai.google.dev/docs/model_tuning_guidance)."
           }
         }
@@ -51,7 +64,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "build": "tsc -p ./"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
