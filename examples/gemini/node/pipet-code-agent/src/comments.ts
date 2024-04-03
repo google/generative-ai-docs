@@ -56,8 +56,8 @@ ${ CODE_LABEL }
 UFUNCTION(BlueprintCallable, Category = "TransparentWindows")
 static void MakeTransparentWindow(ETWMode Usage);
 ${ COMMENT_LABEL }
-@brief 创建透明窗口.
-@param Usage    窗口的透明模式.
+@brief Make Transparent Window.
+@param Usage    Window Transparent mode.
 
 ${CODE_LABEL}
 virtual void Tick(float DeltaTime) override;

@@ -17,7 +17,6 @@
 import * as vscode from 'vscode';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getCommentprefixes } from './getCommentprefixes';
-import { get } from 'http';
 
 const CODE_LABEL = 'Here is the code:';
 const REVIEW_LABEL = 'Here is the review:';
