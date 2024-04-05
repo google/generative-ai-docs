@@ -13,6 +13,24 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "gemini-chat",
+          "title": "Gemini Chat",
+          "icon": "./img/Gemini.png"
+        }
+      ]
+    },
+    "views": {
+      "gemini-chat": [
+        {
+          "id": "pipet-code-agent.ChatView",
+          "name": "Gemini Chat",
+          "type": "webview"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "pipet-code-agent.commentCode",
