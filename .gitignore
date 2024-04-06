@@ -7,3 +7,4 @@
 **/venv
 **/.python-version
 **/node_modules
+**/*.vsix
