@@ -12,17 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ 
+ */
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getCommentprefixes } from './getCommentprefixes';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getCommentprefixes } from "./getCommentprefixes";
 
 // Provide instructions for the AI language model
 // This approach uses a few-shot technique, providing a few examples.
-const CODE_LABEL = 'Here is the code:';
-const COMMENT_LABEL = 'Here is a good comment:';
+const CODE_LABEL = "Here is the code:";
+const COMMENT_LABEL = "Here is a good comment:";
 const PROMPT = `
 A good code review comment describes the intent behind the code without
 repeating information that's obvious from the code itself. Good comments
@@ -52,10 +52,10 @@ api_key = os.getenv("GOOGLE_API_KEY")
 ${COMMENT_LABEL}
 Attempt to load the API key from the environment.
 
-${ CODE_LABEL }
+${CODE_LABEL}
 UFUNCTION(BlueprintCallable, Category = "TransparentWindows")
 static void MakeTransparentWindow(ETWMode Usage);
-${ COMMENT_LABEL }
+${COMMENT_LABEL}
 @brief Make Transparent Window.
 @param Usage    Window Transparent mode.
 
@@ -87,83 +87,81 @@ export declare class ChatSession {
 }
 ${COMMENT_LABEL}
 @brief ChatSession class that enables sending chat messages and stores history of sent and received messages so far.
-@param getHistory   Gets the chat history so far. Blocked prompts are not added to history. Blocked candidates are not added to history, nor are the prompts that generated them.
-@param sendMessage  Sends a chat message and receives a non-streaming
-@param sendMessageStream    Sends a chat message and receives the response as a {@link GenerateContentStreamResult} containing an iterable stream and a response promise.
-@public
 
 ${CODE_LABEL}
 virtual void CreateClassVariablesFromBlueprint(IAnimBlueprintVariableCreationContext& InCreationContext) = 0;
 ${COMMENT_LABEL}
 @brief Implement this in a graph node and the anim BP compiler will call this expecting to generate class variables.
 @param	InVariableCreator   The variable creation context for the current BP compilation
-	
-
 `;
 
-//Code comment: (generated)
-//@brief Generates a code comment for the selected code.
-//    - Gets the API key and model configuration from the local user configuration.
-//    - Builds the full prompt using the template.
-//    - Generates the content using the model.
-//    - Inserts the generated comment before the selection.
+
 export async function generateComment() {
-    vscode.window.showInformationMessage('Generating comment...');
+  vscode.window.showInformationMessage("Generating comment...");
 
-    const modelName = vscode.workspace.getConfiguration().get<string>('google.gemini.textModel', 'gemini-1.0-pro');
+  const modelName = vscode.workspace
+    .getConfiguration()
+    .get<string>("google.gemini.textModel", "gemini-1.0-pro");
 
-    // Get API Key from local user configuration
-    const apiKey = vscode.workspace.getConfiguration().get<string>('google.gemini.apiKey');
-    if (!apiKey) {
-        vscode.window.showErrorMessage('API key not configured. Check your settings.');
-        return;
+  // Get API Key from local user configuration
+  const apiKey = vscode.workspace
+    .getConfiguration()
+    .get<string>("google.gemini.apiKey");
+  if (!apiKey) {
+    vscode.window.showErrorMessage(
+      "API key not configured. Check your settings."
+    );
+    return;
+  }
+
+  const genai = new GoogleGenerativeAI(apiKey);
+  const model = genai.getGenerativeModel({ model: modelName });
+
+  // Text selection
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    console.debug("Abandon: no open text editor.");
+    return;
+  }
+
+  const selection = editor.selection;
+  const selectedCode = editor.document.getText(selection);
+
+  // Build the full prompt using the template.
+  const fullPrompt = `${PROMPT}${CODE_LABEL}${selectedCode}${COMMENT_LABEL}`;
+
+  const result = await model.generateContent(fullPrompt);
+  const response = await result.response;
+  const comment = response.text();
+
+  // Insert before selection.
+  editor.edit((editBuilder) => {
+    // Copy the indent from the first line of the selection.
+    const trimmed = selectedCode.trimStart();
+    const padding = selectedCode.substring(
+      0,
+      selectedCode.length - trimmed.length
+    );
+
+    // const commentPrefix = getCommentprefixes(editor.document.languageId);
+    const commentPrefix = "${padding} *";
+
+    /**
+     *Split the comment into lines using `'\n'` as separator.
+     *Add an indentation, comment prefix and join the lines back with a `'\n'` separator.
+     */
+    let inlineComment = comment
+      .split("\n")
+      .map((l: string) => `${padding}${commentPrefix}${l}`)
+      .join("\n");
+    if (inlineComment.search(/\n$/) === -1) {
+      // Add a final newline if necessary.
+      inlineComment += "\n";
     }
-
-    const genai = new GoogleGenerativeAI(apiKey);
-    const model = genai.getGenerativeModel({model: modelName});
-
-    // Text selection
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        console.debug('Abandon: no open text editor.');
-        return;
-    }
-
-    const selection = editor.selection;
-    const selectedCode = editor.document.getText(selection);
-
-    // Build the full prompt using the template.
-    const fullPrompt = `${PROMPT}
-
-${CODE_LABEL}
-${selectedCode}
-${COMMENT_LABEL}
-`;
-
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    const comment = response.text();  
-
-    // Insert before selection.
-    editor.edit((editBuilder) => {
-        
-        //Code comment: (generated)
-        //Get the syntax to use for a comment.
-        const commentPrefix = getCommentprefixes(editor.document.languageId);
-
-        // Copy the indent from the first line of the selection.
-        const trimmed = selectedCode.trimStart();
-        const padding = selectedCode.substring(0, selectedCode.length - trimmed.length);
-
-        let pyComment = comment.split('\n').map((l: string) => `${padding}${commentPrefix}${l}`).join('\n');
-        if (pyComment.search(/\n$/) === -1) {
-            // Add a final newline if necessary.
-            pyComment += "\n";
-        }
-        let commentIntro = padding + commentPrefix + "Code comment: (generated)\n";
-        editBuilder.insert(selection.start, commentIntro);
-        //Code comment: (generated)
-        //Insert the Python comment into the editor at the location of the selection.
-        editBuilder.insert(selection.start, pyComment);
-    });
+    let commentIntro = padding + "/**\n";
+    let commentEnd = padding + "*/\n";
+    editBuilder.insert(selection.start, commentIntro);
+    editBuilder.insert(selection.start, inlineComment);
+    editBuilder.insert(selection.start, commentEnd);
+  });
 }
