@@ -96,6 +96,11 @@ ${COMMENT_LABEL}
 `;
 
 
+/**
+ *@brief Generate comment for code selection.
+ * Gets the API key from user config and sends selected text to Gemini for comment generation.
+ * Inserts generated comment before the selected code.
+*/
 export async function generateComment() {
   vscode.window.showInformationMessage("Generating comment...");
 
@@ -144,7 +149,7 @@ export async function generateComment() {
     );
 
     // const commentPrefix = getCommentprefixes(editor.document.languageId);
-    const commentPrefix = "${padding} *";
+    const commentPrefix = `${padding} *`;
 
     /**
      *Split the comment into lines using `'\n'` as separator.
