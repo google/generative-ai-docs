@@ -17,7 +17,7 @@
 import * as vscode from "vscode";
 import { generateComment } from "./comments";
 import { generateReview } from "./review";
-import { generateChat } from "./chat";
+import { startchat } from "./chat";
 
 export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand(
@@ -60,6 +60,8 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this._getHtmlForWebview();
 
+    const chat = startchat();
+
     webviewView.webview.onDidReceiveMessage(async (message) => {
       // 处理来自 Webview 的消息
       if (message.command === "sendMessage" && message.text) {
@@ -68,12 +70,16 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
           command: "Message",
           text: message.text,
         });
-        const chat = await generateChat(message.text);
         if (chat) {
-          webviewView.webview.postMessage({
-            command: "receiveMessage",
-            text: chat,
-          });
+          const result = await chat.sendMessageStream(message.text);
+          let chunktext = "";
+          for await (const chunk of result.stream) {
+            chunktext += chunk.text();
+            webviewView.webview.postMessage({
+              command: "receiveMessage",
+              text: chunktext,
+            });
+          }
         } else {
           webviewView.webview.postMessage({
             command: "receiveMessage",
@@ -135,8 +141,7 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
         ); /* 使用 VS Code 的输入框背景色 */
         color: var(--vscode-input-foreground); /* 使用 VS Code 的输入框前景色 */
         border: 1px solid var(--vscode-input-foreground); /* 使用 VS Code 的输入框前景色作为边框颜色 */
-        margin-left: 5px;
-        
+        margin-left: 5px;        
       }
 
       .ai-message-container {
@@ -232,4 +237,5 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 `;
   }
 }
+
 export function deactivate() {}

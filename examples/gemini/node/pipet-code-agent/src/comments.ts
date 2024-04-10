@@ -27,7 +27,7 @@ const PROMPT = `
 A good code review comment describes the intent behind the code without
 repeating information that's obvious from the code itself. Good comments
 describe "why", explain any "magic" values and non-obvious behaviour.
-Below are some examples of good code comments.
+Below are some examples of good code comments.Use doxygen style.
 
 ${CODE_LABEL}
 print(f" \\033[33m {msg}\\033[00m", file=sys.stderr)
