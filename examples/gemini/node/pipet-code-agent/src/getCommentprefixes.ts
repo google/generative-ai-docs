@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-//Code comment: (generated)
-//Given a file type, returns the comment prefix appropriate for that file type.
-//@param {string} fileType The file type to get the comment prefix for.
-//@returns {string} The comment prefix for the given file type.
+/**
+ *@brief Returns comment prefixes for various file types.
+ *@param	fileType   The file type to get comment prefix for
+ *@return	Comment prefix for the specified file type or `//` if the file type is unknown
+*/
 export function getCommentprefixes(fileType: string): string {
   switch (fileType) {
     case "python":
@@ -39,5 +40,3 @@ export function getCommentprefixes(fileType: string): string {
       return "//"; // No comment prefix for unknown file types
   }
 }
-
-// TODO(you!): Support doxygen comment styles.
