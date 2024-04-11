@@ -30,7 +30,7 @@
       "console": "internalConsole",
       "request": "launch",
       "args": ["package", "--out", "PipetCodeAgent.vsix"],
-      "runtimeExecutable": "C:\\Program Files\\nodejs\\vsce.cmd",
+      "runtimeExecutable": "vsce",
       "presentation": {
         "reveal": "always"
       }

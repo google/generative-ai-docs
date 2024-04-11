@@ -106,7 +106,7 @@ export async function generateComment() {
 
   const modelName = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.textModel", "gemini-1.0-pro");
+    .get<string>("google.gemini.textModel", "models/gemini-1.5-pro-latest");
 
   // Get API Key from local user configuration
   const apiKey = vscode.workspace

@@ -25,7 +25,7 @@ Reviewing code involves finding bugs and increasing code quality. Examples of bu
 errors or typos, out of memory errors, and boundary value errors. Increasing code quality 
 entails reducing complexity of code, eliminating duplicate code, and ensuring other developers 
 are able to understand the code.
-使用中文回答：
+使用中文
 
 ${CODE_LABEL}
 for i in x:
@@ -50,7 +50,7 @@ export async function generateReview() {
   vscode.window.showInformationMessage("Generating code review...");
   const modelName = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.textModel", "gemini-1.0-pro");
+    .get<string>("google.gemini.textModel", "models/gemini-1.5-pro-latest");
 
   // Get API Key from local user configuration
   const apiKey = vscode.workspace
@@ -86,21 +86,26 @@ export async function generateReview() {
   const result = await model.generateContent(fullPrompt);
   const response = await result.response;
   const comment = response.text();
-  return comment;
-  // // Insert before selection
-  // editor.edit((editBuilder) => {
-  //   // Copy the indent from the first line of the selection.
-  //   const trimmed = selectedCode.trimStart();
-  //   const padding = selectedCode.substring(0, selectedCode.length - trimmed.length);
+  // Insert before selection
+  editor.edit((editBuilder) => {
+    // Copy the indent from the first line of the selection.
+    const trimmed = selectedCode.trimStart();
+    const padding = selectedCode.substring(
+      0,
+      selectedCode.length - trimmed.length
+    );
 
-  //   const commentPrefix = getCommentprefixes(editor.document.languageId);
-  //   let pyComment = comment.split('\n').map((l: string) => `${padding}${commentPrefix}${l}`).join('\n');
-  //   if (pyComment.search(/\n$/) === -1) {
-  //     // Add a final newline if necessary.
-  //     pyComment += "\n";
-  //   }
-  //   let reviewIntro = padding + commentPrefix + "Code review: (generated)\n";
-  //   editBuilder.insert(selection.start, reviewIntro);
-  //   editBuilder.insert(selection.start, pyComment);
-  // });
+    const commentPrefix = getCommentprefixes(editor.document.languageId);
+    let pyComment = comment
+      .split("\n")
+      .map((l: string) => `${padding}${commentPrefix}${l}`)
+      .join("\n");
+    if (pyComment.search(/\n$/) === -1) {
+      // Add a final newline if necessary.
+      pyComment += "\n";
+    }
+    let reviewIntro = padding + commentPrefix + "Code review: (generated)\n";
+    editBuilder.insert(selection.start, reviewIntro);
+    editBuilder.insert(selection.start, pyComment);
+  });
 }
