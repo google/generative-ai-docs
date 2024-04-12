@@ -120,7 +120,10 @@ export async function generateComment() {
   }
 
   const genai = new GoogleGenerativeAI(apiKey);
-  const model = genai.getGenerativeModel({ model: modelName });
+  const model = genai.getGenerativeModel(
+    { model: modelName },
+    { apiVersion: "v1beta" }
+  );
 
   // Text selection
   const editor = vscode.window.activeTextEditor;
@@ -135,6 +138,7 @@ export async function generateComment() {
   // Build the full prompt using the template.
   const fullPrompt = `${PROMPT}${CODE_LABEL}${selectedCode}${COMMENT_LABEL}`;
 
+  
   const result = await model.generateContent(fullPrompt);
   const response = await result.response;
   const comment = response.text();

@@ -64,7 +64,10 @@ export async function generateReview() {
   }
 
   const genai = new GoogleGenerativeAI(apiKey);
-  const model = genai.getGenerativeModel({ model: modelName });
+  const model = genai.getGenerativeModel(
+    { model: modelName },
+    { apiVersion: "v1beta" }
+  );
 
   // Text selection
   const editor = vscode.window.activeTextEditor;
