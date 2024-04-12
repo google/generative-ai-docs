@@ -44,11 +44,19 @@ function convertDriveFolderToMDForDocsAgent(folderName) {
 
     while (myfiles.hasNext()) {
       var myfile = myfiles.next();
+      var ftype = myfile.getMimeType();
+      // If this is a shorcut, retrieve the target file
+      if (ftype == "application/vnd.google-apps.shortcut") {
+        var fid = myfile.getTargetId();
+        var myfile = DriveApp.getFileById(fid);
+        var ftype = myfile.getMimeType();
+      }
+      else{
+        var fid = myfile.getId();
+      }
       var fname = sanitizeFileName(myfile.getName());
       var fdate = myfile.getLastUpdated();
       var furl = myfile.getUrl();
-      var fid = myfile.getId();
-      var ftype = myfile.getMimeType();
       var fcreate = myfile.getDateCreated();
 
       //Function returns an array, assign each array value to seperate variables
@@ -58,7 +66,6 @@ function convertDriveFolderToMDForDocsAgent(folderName) {
         var md5_backup = backup_results[1];
         var mdoutput_backup_id = backup_results[2];
       }
-
       if (ftype == "application/vnd.google-apps.document") {
         Logger.log("File: " + fname + " is a Google doc.");
         let gdoc = DocumentApp.openById(fid);

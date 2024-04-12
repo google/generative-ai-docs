@@ -51,10 +51,10 @@ class FullPage:
     def __str__(self):
         return f"This is a page with the following content:\n"
 
-    def buildPage(section_list):
+    def buildPage(self):
         final_page = ""
         total_token_count = 0
-        for item in section_list:
+        for item in self.section_list:
             # It is possible to check attributes such as token_count of chunks here
             # (i.e)if item.token_count > 800:
             final_page += item.content
@@ -81,6 +81,7 @@ class FullPage:
     def returnChildrenSections(self, section_id, token_limit: float = float("inf")):
         # Finds the Section given a section_id
         match = False
+        updated_list = []
         for item in self.section_list:
             if section_id == item.id:
                 given_section = item
@@ -92,7 +93,7 @@ class FullPage:
             return FullPage(section_list=updated_list)
         # Start token count at 0
         curr_token = 0
-        updated_list = []
+        # updated_list = []
         for item in self.section_list:
             direct_parent = item.returnDirectParentId()
             if int(direct_parent) == int(given_section.id):
@@ -114,6 +115,7 @@ class FullPage:
     def returnSiblingSections(self, section_id, token_limit: float = float("inf")):
         # Finds the Section given a section_id
         match = False
+        updated_list = []
         for item in self.section_list:
             if section_id == item.id:
                 given_section = item
@@ -126,7 +128,7 @@ class FullPage:
             return FullPage(section_list=updated_list)
         # Start token count at 0
         curr_token = 0
-        updated_list = []
+        # updated_list = []
         given_parent_tree = eval(given_section.parent_tree)
         for item in self.section_list:
             direct_parent = item.returnDirectParentId()
@@ -153,20 +155,22 @@ class FullPage:
     def returnParentSection(self, section_id, token_limit: float = float("inf")):
         # Finds the Section given a section_id
         match = False
+        updated_list = []
         for item in self.section_list:
             if section_id == item.id:
                 given_section = item
                 match = True
                 # Break out of loop once a match is found
+                given_parent = given_section.returnDirectParentId()
                 break
         # If Section doesn't match, just return a FullPage with a blank list
         if not match:
             print(f"Could not find a section with the provided ID {section_id}")
-            return FullPage(section_list=updated_list)
+            # return FullPage(section_list=updated_list)
+            return None
         # Start token count at 0
         curr_token = 0
-        updated_list = []
-        given_parent = given_section.returnDirectParentId()
+        # updated_list = []
         for item in self.section_list:
             direct_parent = item.returnDirectParentId()
             if int(given_parent) == int(item.id) and given_parent != 0:
@@ -207,8 +211,9 @@ class FullPage:
         section_token_count = 0
         if selfSection:
             self_section = self.returnSelfSection(section_id=section_id)
-            final_sections.append(self_section)
-            section_token_count += self_section.token_count
+            if self_section is not None:
+                final_sections.append(self_section)
+                section_token_count += self_section.token_count
         if children:
             children_sections = self.returnChildrenSections(
                 section_id=section_id, token_limit=(token_limit - section_token_count)

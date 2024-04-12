@@ -866,6 +866,8 @@ function processParagraph(index, element, inSrc, imageCounter, listCounters, ima
     } else if (t === DocumentApp.ElementType.FOOTNOTE) {
       textElements.push(' ('+element.getChild(i).getFootnoteContents().getText()+')');
     // Fixes for new elements
+    } else if (t === DocumentApp.ElementType.EQUATION) {
+      textElements.push(element.getChild(i).getText());
     } else if (t === DocumentApp.ElementType.DATE) {
       textElements.push(' ('+element.getChild(i)+')');
     } else if (t === DocumentApp.ElementType.RICH_LINK) {
@@ -875,8 +877,8 @@ function processParagraph(index, element, inSrc, imageCounter, listCounters, ima
     } else if (t === DocumentApp.ElementType.UNSUPPORTED) {
       textElements.push(' <UNSUPPORTED> ');
     } else {
-      throw "Paragraph "+index+" of type "+element.getType()+" has an unsupported child: "
-      +t+" "+(element.getChild(i)["getText"] ? element.getChild(i).getText():'')+" index="+index;
+      Logger.log("Paragraph "+index+" of type "+element.getType()+" has an unsupported child: "
+      +t+" "+(element.getChild(i)["getText"] ? element.getChild(i).getText():'')+" index="+index);
     }
   }
 

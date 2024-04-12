@@ -16,29 +16,37 @@
 
 """Process Markdown files into plain text"""
 
-from markdown import markdown
 import shutil
 import os
 import re
 import json
+import typing
+import uuid
 from absl import logging
 
-from tqdm import tqdm
-import frontmatter
+import tqdm
 from docs_agent.utilities import config
-from docs_agent.utilities.config import ProductConfig, ReadConfig, Input
+from docs_agent.utilities.config import ProductConfig, ConfigFile, Input
 from docs_agent.models.tokenCount import returnHighestTokens
 from docs_agent.utilities.helpers import (
-    get_project_path,
     resolve_path,
     add_scheme_url,
     end_path_backslash,
     start_path_no_backslash,
 )
-from docs_agent.preprocess.splitters import markdown_splitter, html_splitter, fidl_splitter
-from docs_agent.models import palm as palmModule
-import uuid
+from docs_agent.preprocess.splitters import (
+    markdown_splitter,
+    html_splitter,
+    fidl_splitter,
+)
 
+# Construct a URL from a URL prefix and a relative path.
+def construct_a_url(url_prefix: str, relative_path: str):
+    temp_url = end_path_backslash(add_scheme_url(url=url_prefix, scheme="https"))
+    built_url = temp_url + start_path_no_backslash(relative_path)
+    strip_ext_url = re.search(r"(.*)\.md$", built_url)
+    built_url = strip_ext_url[1]
+    return built_url
 
 # This function pre-processes files before they are actually chunked.
 # This allows it to resolve includes of includes, Jinja templates, etc...
@@ -61,7 +69,7 @@ def pre_process_doc_files(
     file_count = sum(
         len(files) for _, _, files in os.walk(resolve_path(inputpathitem.path))
     )
-    progress_bar = tqdm(
+    progress_bar = tqdm.tqdm(
         total=file_count,
         position=0,
         bar_format="{percentage:3.0f}% | {n_fmt}/{total_fmt} | {elapsed}/{remaining}| {desc}",
@@ -124,23 +132,269 @@ def pre_process_doc_files(
     return temp_output
 
 
-# This function processes files in the `input_path` directory
-# into plain text files.
-# Supports: Markdown files
+# This function processes a Markdown file and
+# splits it into smaller text chunks.
+def process_markdown_file(
+    filename: str,
+    root: str,
+    inputpathitem: Input,
+    splitter: str,
+    new_path: str,
+    file: str,
+    namespace_uuid: uuid.UUID,
+    relative_path: str,
+    url_prefix: str,
+):
+    file_metadata = {}
+    # Read the input Markdown content
+    to_file = ""
+    with open(filename, "r", encoding="utf-8") as auto:
+        to_file = auto.read()
+        auto.close()
+    # Process includes lines in Markdown
+    file_with_include = markdown_splitter.process_markdown_includes(to_file, root)
+    # Process include lines in HTML
+    file_with_include = html_splitter.process_html_includes(
+        file_with_include, inputpathitem.include_path_html
+    )
+    # Estimate of the token count
+    page_token_estimate = returnHighestTokens(file_with_include)
+    # Get the original input path
+    original_input = inputpathitem.path
+    if splitter == "token_splitter":
+        # Returns an array of Section objects along with a Page
+        # Object that contains metadata
+        (
+            page_sections,
+            page,
+        ) = markdown_splitter.process_markdown_page(
+            markdown_text=file_with_include, header_id_spaces="-"
+        )
+        # Process this page's sections into plain text chunks.
+        chunk_number = 0
+        for section in page_sections:
+            filename_to_save = make_chunk_name(
+                new_path=new_path,
+                file=file,
+                index=chunk_number,
+                extension="md",
+            )
+            # Generate UUID for each plain text chunk and collect its metadata,
+            # which will be written to the top-level `file_index.json` file.
+            md_hash = uuid.uuid3(namespace_uuid, section.content)
+            uuid_file = uuid.uuid3(namespace_uuid, filename_to_save)
+            origin_uuid = uuid.uuid3(namespace_uuid, relative_path)
+            # If no URL came from frontmatter, assign URL from config
+            if page.URL == "":
+                page.URL = end_path_backslash(
+                    add_scheme_url(url=url_prefix, scheme="https")
+                )
+            # Strip extension of .md from url
+            # Makes sure that relative_path starts without backslash
+            # page.url will have backslash
+            built_url = page.URL + start_path_no_backslash(relative_path)
+            strip_ext_url = re.search(r"(.*)\.md$", built_url)
+            built_url = strip_ext_url[1]
+            # Build the valid URL for a section including header
+            # Do not add a # if section 1
+            if section.name_id != "" and int(section.level) != 1:
+                built_url = built_url + "#" + section.name_id
+            # Adds additional info so that the section can know its origin
+            file_metadata[filename_to_save] = {
+                "UUID": str(uuid_file),
+                "origin_uuid": str(origin_uuid),
+                "source": str(original_input),
+                "source_file": str(relative_path),
+                "page_title": str(section.page_title),
+                "section_title": str(section.section_title),
+                "section_name_id": str(section.name_id),
+                "section_id": int(section.id),
+                "section_level": int(section.level),
+                "previous_id": int(section.previous_id),
+                "URL": str(built_url),
+                "md_hash": str(md_hash),
+                "token_estimate": float(section.token_count),
+                "full_token_estimate": float(page_token_estimate),
+                "parent_tree": list(section.parent_tree),
+                "metadata": dict(page.metadata),
+            }
+            with open(filename_to_save, "w", encoding="utf-8") as new_file:
+                new_file.write(section.content)
+                new_file.close()
+            chunk_number += 1
+    elif splitter == "process_sections":
+        # Use a custom Markdown splitter to split a Markdown file
+        # into small text chunks
+        to_file = markdown_splitter.process_markdown_includes(to_file, root)
+        # Add the page title and section title into each text chunk
+        (
+            to_file,
+            metadata,
+        ) = markdown_splitter.process_page_and_section_titles(to_file)
+        # Process this page's sections into plain text chunks.
+        docs = markdown_splitter.process_document_into_sections(to_file)
+        # Process each text chunk.
+        chunk_number = 0
+        for doc in docs:
+            filename_to_save = make_chunk_name(
+                new_path=new_path,
+                file=file,
+                index=chunk_number,
+                extension="md",
+            )
+            # Generate UUID for each plain text chunk and collect its metadata,
+            # which will be written to the top-level `file_index.json` file.
+            md_hash = uuid.uuid3(namespace_uuid, file_with_include)
+            uuid_file = uuid.uuid3(namespace_uuid, filename_to_save)
+            # Clean up Markdown and HTML syntax
+            content = markdown_splitter.markdown_to_text(doc)
+            # Contruct a URL
+            built_url = construct_a_url(url_prefix, relative_path)
+            # Get the page title
+            page_title = "None"
+            if "title" in  metadata:
+                page_title = metadata["title"]
+            # Construct metadata.
+            file_metadata[filename_to_save] = {
+                "UUID": str(uuid_file),
+                "origin_uuid": str(uuid_file),
+                "source": str(original_input),
+                "source_file": str(relative_path),
+                "page_title": str(page_title),
+                "section_title": str("None"),
+                "section_name_id": str("None"),
+                "section_id": int(1),
+                "section_level": int(1),
+                "previous_id": int(1),
+                "URL": str(built_url),
+                "md_hash": str(md_hash),
+                "token_estimate": float(1.0),
+                "full_token_estimate": float(page_token_estimate),
+                "metadata": dict(metadata),
+            }
+            with open(filename_to_save, "w", encoding="utf-8") as new_file:
+                new_file.write(content)
+                new_file.close()
+            chunk_number += 1
+    else:
+        # Exits if no valid markdown splitter
+        logging.error(
+            f"Select a valid markdown_splitter option in your configuration for your product\n"
+        )
+        exit()
+    return file_metadata
+
+
+# This function processes a FIDL file (.fidl) into small text chunks.
+def process_fidl_file(
+    filename: str,
+    root: str,
+    inputpathitem: Input,
+    splitter: str,
+    new_path: str,
+    file: str,
+    namespace_uuid: uuid.UUID,
+    relative_path: str,
+    url_prefix: str,
+):
+    # Local variables
+    file_metadata = {}
+    library_name = ""
+    filename_prefix = "index"
+    chunk_number = 0
+    # Get the original input path
+    original_input = inputpathitem.path
+    # Read the input FIDL content
+    to_file = ""
+    with open(filename, "r", encoding="utf-8") as auto:
+        to_file = auto.read()
+        auto.close()
+    # Split the FIDL file into a list of FIDL protocols.
+    fidl_protocols = fidl_splitter.split_file_to_protocols(to_file)
+    # Iterate the list of FIDL protocols.
+    for fidl_protocol in fidl_protocols:
+        # Identify the new FIDL chunk file path and name.
+        filename_to_save = make_file_chunk_name(
+            new_path=new_path, filename_prefix=filename_prefix, index=chunk_number
+        )
+        # Prepare metadata for this FIDL protocol chunk.
+        md_hash = uuid.uuid3(namespace_uuid, fidl_protocol)
+        uuid_file = uuid.uuid3(namespace_uuid, filename_to_save)
+        origin_uuid = uuid.uuid3(namespace_uuid, relative_path)
+        # Contruct the URL for this FIDL protocol.
+        match_library = re.search(r"^Library\sname:\s+(.*)\n", fidl_protocol)
+        if match_library:
+            library_name = match_library.group(1)
+        # If no library name is found,
+        # the library name from the previous protocol is used.
+        fidl_url = url_prefix + library_name
+        file_metadata[filename_to_save] = {
+            "UUID": str(uuid_file),
+            "origin_uuid": str(origin_uuid),
+            "source": str(original_input),
+            "source_file": str(relative_path),
+            "source_id": int(chunk_number),
+            "page_title": str(library_name),
+            "section_title": str(library_name),
+            "section_name_id": str("None"),
+            "section_id": int(1),
+            "section_level": int(1),
+            "previous_id": int(1),
+            "URL": str(fidl_url),
+            "md_hash": str(md_hash),
+            "token_estimate": float(1.0),
+            "full_token_estimate": float(1.0),
+        }
+        # Save the FIDL protocol content as a text chunk.
+        with open(filename_to_save, "w", encoding="utf-8") as new_file:
+            new_file.write(fidl_protocol)
+            new_file.close()
+        chunk_number += 1
+    return file_metadata
+
+
+# This function processes a HTML file into small text chunks.
+def process_html_file(
+    filename: str,
+    root: str,
+    inputpathitem: Input,
+    splitter: str,
+    new_path: str,
+    file: str,
+    namespace_uuid: uuid.UUID,
+    relative_path: str,
+    url_prefix: str,
+):
+    # Local variables
+    file_metadata = {}
+    # Read the input HTML content
+    to_file = ""
+    with open(filename, "r", encoding="utf-8") as auto:
+        to_file = auto.read()
+        auto.close()
+    # Process includes lines in HTML
+    file_with_include = html_splitter.process_html_includes(
+        to_file, inputpathitem.include_path_html
+    )
+    return file_metadata
+
+
+# This function processes files specified in the `inputs` field
+# in the config.yaml file into small plain text files.
 # Includes are processed again since preprocess resolves the includes in
-# Files prefixed with _ which indicates they are not standalone
-# inputpath is optional to walk a temporary directory that has been pre-processed
-# If not, defaults to path of inputpathitem
+# files prefixed with _, which indicates they are not standalone.
+# inputpath is optional to walk a temporary directory that has been pre-processed.
+# If not, it defaults to path of inputpathitem.
 def process_files_from_input(
     product_config: ProductConfig,
     inputpathitem: Input,
     splitter: str,
-    inputpath: str = None,
+    inputpath: typing.Optional[str] = None,
 ):
     # If inputpath isn't specified assign path from item
     if inputpath is None:
         inputpath = inputpathitem.path
-    f_count = 0
+    file_count = 0
     md_count = 0
     html_count = 0
     fidl_count = 0
@@ -149,11 +403,13 @@ def process_files_from_input(
     resolved_output_path = resolve_path(product_config.output_path)
     # Pre-calculates file count
     file_count = sum(len(files) for _, _, files in os.walk(resolve_path(inputpath)))
-    progress_bar = tqdm(
+    # Set up a status bar for the terminal display.
+    progress_bar = tqdm.tqdm(
         total=file_count,
         position=0,
         bar_format="{percentage:3.0f}% | {n_fmt}/{total_fmt} | {elapsed}/{remaining}| {desc}",
     )
+    # Process each input path provided in config.yaml.
     for root, dirs, files in os.walk(resolve_path(inputpath)):
         if inputpathitem.exclude_path is not None:
             dirs[:] = [d for d in dirs if d not in inputpathitem.exclude_path]
@@ -161,216 +417,96 @@ def process_files_from_input(
             # Makes sure that URL ends in backslash
             url_prefix = end_path_backslash(inputpathitem.url_prefix)
             namespace_uuid = uuid.uuid3(uuid.NAMESPACE_DNS, url_prefix)
-        original_input = inputpathitem.path
+        # Process the files found in this input path provided in config.yaml.
         for file in files:
             # Displays status bar
             progress_bar.set_description_str(f"Processing file {file}", refresh=True)
             progress_bar.update(1)
+            # Get the full path to this input file.
             filename_to_open = os.path.join(root, file)
-            # Construct a new sub-directory for storing output plain text files
+            # Construct a new sub-directory for storing output plain text files.
             new_path = resolved_output_path + re.sub(
                 resolve_path(inputpath), "", os.path.join(root, "")
             )
             is_exist = os.path.exists(new_path)
             if not is_exist:
                 os.makedirs(new_path)
+            # Get the relative path to this input file.
             relative_path = make_relative_path(
                 file=file, root=root, inputpath=inputpath
             )
+            # Check the input file type: Markdown, FIDL, or HTML.
             if file.endswith(".md") and not file.startswith("_"):
+                # Add filename to a list
+                file_index.append(relative_path)
+                # Increment the Markdown file count.
                 md_count += 1
-                # Add filename to a list
-                file_index.append(relative_path)
-                with open(filename_to_open, "r", encoding="utf-8") as auto:
-                    # Read the input Markdown content
-                    to_file = auto.read()
-                    auto.close()
-                    # Process includes lines in Markdown
-                    file_with_include = markdown_splitter.process_markdown_includes(
-                        to_file, root
-                    )
-                    # Process include lines in HTML
-                    file_with_include = html_splitter.process_html_includes(
-                        file_with_include, inputpathitem.include_path_html
-                    )
-                    # This is an estimate of the token count
-                    page_token_estimate = returnHighestTokens(file_with_include)
-                    if splitter == "token_splitter":
-                        # Returns an array of Section objects along with a Page
-                        # Object that contains metadata
-                        (
-                            page_sections,
-                            page,
-                        ) = markdown_splitter.process_markdown_page(
-                            markdown_text=file_with_include, header_id_spaces="-"
-                        )
-                        chunk_number = 0
-                        for section in page_sections:
-                            filename_to_save = make_chunk_name(
-                                new_path=new_path,
-                                file=file,
-                                index=chunk_number,
-                                extension="md",
-                            )
-                            # Generate UUID for each plain text chunk and collect its metadata,
-                            # which will be written to the top-level `file_index.json` file.
-                            md_hash = uuid.uuid3(namespace_uuid, section.content)
-                            uuid_file = uuid.uuid3(namespace_uuid, filename_to_save)
-                            origin_uuid = uuid.uuid3(namespace_uuid, relative_path)
-                            # If no URL came from frontmatter, assign URL from config
-                            if page.URL == "":
-                                page.URL = end_path_backslash(
-                                    add_scheme_url(url=url_prefix, scheme="https")
-                                )
-                            # Strip extension of .md from url
-                            # Makes sure that relative_path starts without backslash
-                            # page.url will have backslash
-                            built_url = page.URL + start_path_no_backslash(
-                                relative_path
-                            )
-                            strip_ext_url = re.search(r"(.*)\.md$", built_url)
-                            built_url = strip_ext_url[1]
-                            # Build the valid URL for a section including header
-                            # Do not add a # if section 1
-                            if section.name_id != "" and int(section.level) != 1:
-                                built_url = built_url + "#" + section.name_id
-                            # Adds additional info so that the section can know its origin
-                            full_file_metadata[filename_to_save] = {
-                                "UUID": str(uuid_file),
-                                "origin_uuid": str(origin_uuid),
-                                "source": str(original_input),
-                                "source_file": str(relative_path),
-                                "page_title": str(section.page_title),
-                                "section_title": str(section.section_title),
-                                "section_name_id": str(section.name_id),
-                                "section_id": int(section.id),
-                                "section_level": int(section.level),
-                                "previous_id": int(section.previous_id),
-                                "URL": str(built_url),
-                                "md_hash": str(md_hash),
-                                "token_estimate": float(section.token_count),
-                                "full_token_estimate": float(page_token_estimate),
-                                "parent_tree": list(section.parent_tree),
-                                "metadata": dict(page.metadata),
-                            }
-                            with open(
-                                filename_to_save, "w", encoding="utf-8"
-                            ) as new_file:
-                                new_file.write(section.content)
-                                new_file.close()
-                            chunk_number += 1
-                    elif splitter == "process_sections":
-                        # Use a custom splitter to split into small chunks
-                        (
-                            to_file,
-                            metadata,
-                        ) = markdown_splitter.process_page_and_section_titles(to_file)
-                        to_file = markdown_splitter.process_markdown_includes(
-                            to_file, root
-                        )
-                        docs = markdown_splitter.process_document_into_sections(to_file)
-                        # doc = []
-                        chunk_number = 0
-                        for doc in docs:
-                            filename_to_save = make_chunk_name(
-                                new_path=new_path,
-                                file=file,
-                                index=chunk_number,
-                                extension="md",
-                            )
-                            # Clean up Markdown and HTML syntax
-                            content = markdown_splitter.markdown_to_text(doc)
-                            # Generate UUID for each plain text chunk and collect its metadata,
-                            # which will be written to the top-level `file_index.json` file.
-                            md_hash = uuid.uuid3(namespace_uuid, file_with_include)
-                            uuid_file = uuid.uuid3(namespace_uuid, filename_to_save)
-                            full_file_metadata[filename_to_save] = {
-                                "UUID": str(uuid_file),
-                                "source": original_input,
-                                "source_file": relative_path,
-                                "URL": url_prefix,
-                                "md_hash": str(md_hash),
-                                "metadata": metadata,
-                            }
-                            with open(
-                                filename_to_save, "w", encoding="utf-8"
-                            ) as new_file:
-                                new_file.write(content)
-                                new_file.close()
-                            chunk_number += 1
-                        auto.close()
-                    else:
-                        # Exits if no valid markdown splitter
-                        logging.error(
-                            f"Select a valid markdown_splitter option in your configuration for {product_config.product_name}\n"
-                        )
-                        exit()
+                # Process a Markdown file.
+                this_file_metadata = process_markdown_file(
+                    filename_to_open,
+                    root,
+                    inputpathitem,
+                    splitter,
+                    new_path,
+                    file,
+                    namespace_uuid,
+                    relative_path,
+                    url_prefix,
+                )
+                # Merge this file's metadata to the global metadata.
+                full_file_metadata.update(this_file_metadata)
             elif file.endswith(".fidl") and not file.startswith("_"):
-                filename_prefix = "index"
-                chunk_number = 0
-                fidl_count += 1
                 # Add filename to a list
                 file_index.append(relative_path)
-                with open(os.path.join(root, file), "r", encoding="utf-8") as auto:
-                    # Read the input FIDL file
-                    to_file = auto.read()
-                    # Split the FIDL file into a list of FIDL protocols.
-                    fidl_protocols = fidl_splitter.split_file_to_protocols(to_file)
-                    library_name = ""
-                    # Iterate the list of FIDL protocols.
-                    for fidl_protocol in fidl_protocols:
-                        # Identify the new FIDL chunk file path and name.
-                        filename_to_save = make_file_chunk_name(new_path=new_path, filename_prefix=filename_prefix, index=chunk_number)
-                        with open(filename_to_save, "w", encoding="utf-8") as new_file:
-                            new_file.write(fidl_protocol)
-                            new_file.close()
-                        chunk_number += 1
-                        # Handle metadata for the FIDL chunk
-                        md_hash = uuid.uuid3(namespace_uuid, fidl_protocol)
-                        uuid_file = uuid.uuid3(namespace_uuid, filename_to_save)
-                        origin_uuid = uuid.uuid3(namespace_uuid, relative_path)
-                        # Contruct URLs
-                        match_library = re.search(r"^Library\sname:\s+(.*)\n", fidl_protocol)
-                        if match_library:
-                            library_name = match_library.group(1)
-                        fidl_url = url_prefix + library_name
-                        full_file_metadata[filename_to_save] = {
-                            "UUID": str(uuid_file),
-                            "origin_uuid": str(origin_uuid),
-                            "source": str(original_input),
-                            "source_file": str(relative_path),
-                            "source_id": int(fidl_count),
-                            "page_title": str("None"),
-                            "section_title": str("None"),
-                            "section_name_id": str("None"),
-                            "section_id": int(1),
-                            "section_level": int(1),
-                            "previous_id": int(1),
-                            "URL": str(fidl_url),
-                            "md_hash": str(md_hash),
-                            "token_estimate": float(1.0),
-                            "full_token_estimate": float(1.0),
-                        }
+                # Increment the FIDL file count.
+                fidl_count += 1
+                # Process a FIDL protocol file.
+                this_file_metadata = process_fidl_file(
+                    filename_to_open,
+                    root,
+                    inputpathitem,
+                    splitter,
+                    new_path,
+                    file,
+                    namespace_uuid,
+                    relative_path,
+                    url_prefix,
+                )
+                # Merge this file's metadata to the global metadata.
+                full_file_metadata.update(this_file_metadata)
             elif (
                 file.endswith(".htm") or file.endswith(".html")
             ) and not file.startswith("_"):
-                html_count += 1
                 # Add filename to a list
                 file_index.append(relative_path)
-                with open(filename_to_open, "r", encoding="utf-8") as auto:
-                    # Read the input HTML content
-                    to_file = auto.read()
-                    # Process includes lines in HTML
-                    file_with_include = html_splitter.process_html_includes(
-                        to_file, inputpathitem.include_path_html
-                    )
-                    # print (to_file)
-    # Counts actually processed files
-    f_count = md_count + html_count
-    print("\nProcessed " + str(f_count) + " files from the source: " + inputpath)
+                # Increment the HTML file count.
+                html_count += 1
+                # Process a HTML file.
+                this_file_metadata = process_html_file(
+                    filename_to_open,
+                    root,
+                    inputpathitem,
+                    splitter,
+                    new_path,
+                    file,
+                    namespace_uuid,
+                    relative_path,
+                    url_prefix,
+                )
+                # Merge this file's metadata to the global metadata.
+                full_file_metadata.update(this_file_metadata)
+
+    # The processing of input files is finished.
+    # Count all processed files.
+    file_count = md_count + html_count + fidl_count
+    # Print the summary of the processed files.
+    print()
+    print("Processed " + str(file_count) + " files from the source: " + str(inputpath))
     print(str(md_count) + " Markdown files.")
     print(str(html_count) + " HTML files.")
-    return f_count, md_count, html_count, file_index, full_file_metadata
+    if fidl_count > 0:
+        print(str(fidl_count) + " FIDL files.")
+    return file_count, md_count, html_count, file_index, full_file_metadata
 
 
 # Write the recorded input variables into a file: `file_index.json`
@@ -384,7 +520,7 @@ def save_file_index_json(output_path, output_content):
 
 
 # Given a file, root, and inputpath, make a relative path
-def make_relative_path(file: str, inputpath: str, root: str = None) -> str:
+def make_relative_path(file: str, inputpath: str, root: typing.Optional[str] = None) -> str:
     file_slash = "/" + file
     if root is None:
         relative_path = os.path.relpath(file_slash, inputpath)
@@ -395,8 +531,10 @@ def make_relative_path(file: str, inputpath: str, root: str = None) -> str:
 
 # Given a path, filename_prefix, chunk index, and an optional path extension (to save chunk)
 # Create a file chunk name
-def make_file_chunk_name(new_path: str, filename_prefix: str, index: int, extension: str = "md") -> str:
-    filename_to_save = (filename_prefix + "_" + str(index) + "." + extension)
+def make_file_chunk_name(
+    new_path: str, filename_prefix: str, index: int, extension: str = "md"
+) -> str:
+    filename_to_save = filename_prefix + "_" + str(index) + "." + extension
     full_filename = os.path.join(new_path, filename_to_save)
     return full_filename
 
@@ -495,7 +633,7 @@ def process_inputs_from_product(input_product: ProductConfig, temp_process_path:
 # temp_process_path is where temporary files will be processed and then deleted
 # defaults to /tmp
 def process_all_products(
-    config_file: ReadConfig = config.ReadConfig().returnProducts(),
+    config_file: ConfigFile = config.ReadConfig().returnProducts(),
     temp_process_path: str = "/tmp",
 ):
     print(f"Starting chunker for {str(len(config_file.products))} products.\n")

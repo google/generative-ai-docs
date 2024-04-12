@@ -18,6 +18,7 @@
 
 import click
 import sys
+import typing
 from functools import wraps
 from docs_agent.utilities import config
 from docs_agent.utilities.config import ReadDbConfigs, ConfigFile
@@ -36,6 +37,9 @@ from docs_agent.interfaces import run_console as console
 from docs_agent.storage.google_semantic_retriever import SemanticRetriever
 from docs_agent.storage.chroma import ChromaEnhanced
 import socket
+import os
+import string
+import re
 
 
 def common_options(func):
@@ -60,7 +64,7 @@ def common_options(func):
 @click.group(invoke_without_command=True)
 @common_options
 @click.pass_context
-def cli(ctx, config_file, product):
+def cli_admin(ctx, config_file, product):
     """With Docs Agent, you can populate vector databases,
     manage online corpora, and interact with Google's Gemini
     models."""
@@ -71,9 +75,28 @@ def cli(ctx, config_file, product):
         show_config()
 
 
-@cli.command()
+@click.group(invoke_without_command=True)
 @common_options
-def chunk(config_file: str = None, product: list[str] = [""]):
+@click.pass_context
+def cli_client(ctx, config_file, product):
+    """With Docs Agent, you can interact with Google's Gemini
+    models as well as content stored in Google Semantic Retriever Corpora."""
+    ctx.ensure_object(dict)
+    # Print config.yaml if agent is run without a command.
+    if ctx.invoked_subcommand is None:
+        click.echo("Docs Agent configuration:\n")
+        show_config()
+
+
+cli = click.CommandCollection(
+    sources=[cli_admin, cli_client],
+    help="With Docs Agent, you can populate vector databases, manage online corpora, and interact with Google's Gemini models.",
+)
+
+
+@cli_admin.command()
+@common_options
+def chunk(config_file: typing.Optional [str], product: list[str] = [""]):
     """Convert files to plain text chunks."""
     loaded_config, product_config = return_config_and_product(
         config_file=config_file, product=product
@@ -82,9 +105,9 @@ def chunk(config_file: str = None, product: list[str] = [""]):
     click.echo("The files are successfully converted into text chunks.")
 
 
-@cli.command()
+@cli_admin.command()
 @common_options
-def populate(config_file: str = None, product: list[str] = [""]):
+def populate(config_file: typing.Optional [str], product: list[str] = [""]):
     """Populate a vector database using text chunks."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -96,18 +119,24 @@ def populate(config_file: str = None, product: list[str] = [""]):
         click.echo(f"The text chunks are successfully added to {item.db_type}.")
 
 
-@cli.command()
+@cli_admin.command()
 @click.option("--hostname", default=socket.gethostname(), show_default=True)
 @click.option("--port", default=5000, show_default=True, type=int)
 @click.option("--debug", default=True, show_default=True, type=bool)
-@click.option("--app_mode", default=None, show_default=True, type=click.Choice(["web", "widget", "experimental"], case_sensitive=False), help="Specify a mode for the chatbot.")
+@click.option(
+    "--app_mode",
+    default=None,
+    show_default=True,
+    type=click.Choice(["web", "widget", "experimental"], case_sensitive=False),
+    help="Specify a mode for the chatbot.",
+)
 @common_options
 def chatbot(
     hostname: str,
     port: str,
     debug: str,
     app_mode: str,
-    config_file: str = None,
+    config_file: typing.Optional [str],
     product: list[str] = [""],
 ):
     """Launch the Flask-based chatbot app."""
@@ -120,13 +149,15 @@ def chatbot(
     if app_mode == None:
         app_mode = product_file.app_mode
     app = chatbot_flask.create_app(product=product_file, app_mode=app_mode)
-    click.echo(f"Launching the chatbot UI for product {product_file.product_name} in {app_mode} mode.")
+    click.echo(
+        f"Launching the chatbot UI for product {product_file.product_name} in {app_mode} mode."
+    )
     app.run(host=hostname, port=port, debug=debug)
 
 
-@cli.command()
+@cli_admin.command()
 @common_options
-def show_config(config_file: str = None, product: list[str] = [""]):
+def show_config(config_file: typing.Optional [str], product: list[str] = [""]):
     """Print the Docs Agent configuration."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -137,10 +168,10 @@ def show_config(config_file: str = None, product: list[str] = [""]):
         print(item)
 
 
-@cli.command()
+@cli_client.command(name="tellme")
 @click.argument("words", nargs=-1)
 @common_options
-def tellme(words, config_file: str = None, product: list[str] = [""]):
+def tellme(words, config_file: typing.Optional [str], product: list[str] = [""]):
     """Answer a question related to the product."""
     # Loads configurations from common options
     loaded_config, product_configs = return_config_and_product(
@@ -157,9 +188,91 @@ def tellme(words, config_file: str = None, product: list[str] = [""]):
     console.ask_model(question.strip(), product_config)
 
 
-@cli.command()
+@cli_client.command()
+@click.argument("words", nargs=-1)
+@click.option(
+    "--file",
+    type=click.Path(),
+    help="Only available with Gemini 1.5 Pro. Specify a file with which a task is performed.",
+)
+@click.option(
+    "--rag",
+    is_flag=True,
+    help="Only works with --file. Augments the context input with content from your configured RAG system.",
+)
 @common_options
-def benchmark(config_file: str = None, product: list[str] = [""]):
+def helpme(
+    words,
+    config_file: typing.Optional [str],
+    file: typing.Optional [str] = None,
+    rag: bool = False,
+    product: list[str] = [""],
+):
+    """(Experimental) Ask AI to perform a task using console output.
+    Use --file to perform a task on a specific file."""
+    # Loads configurations from common options
+    loaded_config, product_configs = return_config_and_product(
+        config_file=config_file, product=product
+    )
+    if product == ():
+        # Extracts the first product by default
+        product_config = ConfigFile(products=[product_configs.products[0]])
+    else:
+        product_config = product_configs
+    question = ""
+    for word in words:
+        question += word + " "
+    if file:
+        # This feature is only available in gemini 1.5 pro (large context)
+        if product_config.products[0].models.language_model.startswith(
+            "models/gemini-1.5-pro"
+        ):
+            try:
+                with open(file, "r", encoding="utf-8") as auto:
+                    # Read the input content
+                    content = auto.read()
+                    auto.close()
+                final_file = f"The content of the {file} file:\n" + content
+                console.ask_model_with_file(
+                    question.strip(), product_config, file=final_file, rag=rag
+                )
+            except FileNotFoundError:
+                click.echo(f"File not found: {file}")
+        else:
+            click.echo(
+                f"File mode is not supported with this model: {product_config.products[0].models.language_model}"
+            )
+    else:
+        terminal_output = ""
+        # Set the default filename created from the `script` command.
+        file_path = "/tmp/docs_agent_console_input"
+        # Set the maximum number of lines to read from the terminal.
+        lines_limit = -150
+        if product_config.products[0].models.language_model.startswith(
+            "models/gemini-1.5-pro"
+        ):
+            # Read, at the most, 5000 lines printed from the latest command ran on the terminal.
+            lines_limit = -5000
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                for line in file.readlines()[int(lines_limit) : -2]:
+                    # Filter non-ascii and control characters.
+                    printable = set(string.printable)
+                    line = "".join(filter(lambda x: x in printable, line))
+                    terminal_output += line
+                    # if an Enter key is detected, remove all saved lines.
+                    # This allows to read the output of the last commandline only.
+                    if re.search("^\[\?2004", line):
+                        terminal_output = ""
+        except:
+            terminal_output = "No console output is provided."
+        context = "THE FOLLOWING IS MY CONSOLE OUTPUT:\n\n" + terminal_output
+        console.ask_model_for_help(question.strip(), context, product_config)
+
+
+@cli_admin.command()
+@common_options
+def benchmark(config_file: typing.Optional [str], product: list[str] = [""]):
     """Run the Docs Agent benchmark test."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -168,24 +281,27 @@ def benchmark(config_file: str = None, product: list[str] = [""]):
     benchmarks.run_benchmarks()
 
 
-@cli.command()
+@cli_admin.command()
 @common_options
-def list_corpora(config_file: str = None, product: list[str] = [""]):
+def list_corpora(config_file: typing.Optional [str], product: list[str] = [""]):
     """List all existing online corpora."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
         config_file=config_file, product=product
     )
     semantic = SemanticRetriever()
-    corpora_response = semantic.list_existing_corpora()
+    response = semantic.list_existing_corpora()
     click.echo(f"Found the following corpora:\n")
-    click.echo(f"{corpora_response}")
+    click.echo(f"{response}")
+    while hasattr(response, "next_page_token") and response.next_page_token != "":
+        response = semantic.list_existing_corpora(response.next_page_token)
+        click.echo(f"{response}")
 
 
-@cli.command()
+@cli_admin.command()
 @click.option("--name", default=None)
 @common_options
-def delete_corpus(name: str, config_file: str = None, product: list[str] = [""]):
+def delete_corpus(name: str, config_file: typing.Optional [str], product: list[str] = [""]):
     """Delete an online corpus."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -204,10 +320,10 @@ def delete_corpus(name: str, config_file: str = None, product: list[str] = [""])
             click.echo(f"Corpora list:\n{corpora_response}")
 
 
-@cli.command()
+@cli_admin.command()
 @click.option("--name", default=None)
 @common_options
-def open_corpus(name: str, config_file: str = None, product: list[str] = [""]):
+def open_corpus(name: str, config_file: typing.Optional [str], product: list[str] = [""]):
     """Share an online corpus with everyone."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -224,13 +340,13 @@ def open_corpus(name: str, config_file: str = None, product: list[str] = [""]):
             click.echo("Successfully shared " + name)
 
 
-@cli.command()
+@cli_admin.command()
 @click.option("--name", default=None)
 @click.option("--email", default=None)
 @click.option("--role", default="READER")
 @common_options
 def share_corpus(
-    name: str, email: str, role: str, config_file: str = None, product: list[str] = [""]
+    name: str, email: str, role: str, config_file: typing.Optional [str], product: list[str] = [""]
 ):
     """Share an online corpus with a user."""
     # Loads configurations from common options
@@ -250,11 +366,11 @@ def share_corpus(
             click.echo("Successfully shared " + name)
 
 
-@cli.command()
+@cli_admin.command()
 @click.option("--name", default=None)
 @common_options
 def remove_corpus_permission(
-    name: str, config_file: str = None, product: list[str] = [""]
+    name: str, config_file: typing.Optional [str], product: list[str] = [""]
 ):
     """Remove a user permission from an online corpus."""
     # Loads configurations from common options
@@ -272,14 +388,31 @@ def remove_corpus_permission(
             click.echo("Successfully removed " + name)
 
 
-@cli.command()
+@cli_admin.command()
+@click.option("--name", default=None)
+@common_options
+def get_all_docs(name: str, config_file: typing.Optional [str], product: list[str] = [""]):
+    """Get the list of all docs in an online corpus."""
+    # Loads configurations from common options
+    loaded_config, product_config = return_config_and_product(
+        config_file=config_file, product=product
+    )
+    semantic = SemanticRetriever()
+    if name == None:
+        click.echo("Usage: agent get_all_docs --name <CORPUS_NAME>")
+    else:
+        click.echo("Getting the list of all docs from " + name)
+        semantic.get_all_docs(corpus_name=name, print_output=True)
+
+
+@cli_admin.command()
 @click.option("--input_chroma", default=None)
 @click.option("--output_dir", default=None)
 @common_options
 def backup_chroma(
     input_chroma: str,
-    output_dir: str = None,
-    config_file: str = None,
+    output_dir: typing.Optional [str],
+    config_file: typing.Optional [str],
     product: list[str] = [""],
 ):
     """Backup a chroma database to an output directory."""
