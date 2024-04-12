@@ -19,11 +19,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, json, jsonify
 import markdown
 import markdown.extensions.fenced_code
-from bs4 import BeautifulSoup
 import urllib
 import os
+import typing
 from datetime import datetime
-from pytz import timezone
 from absl import logging
 import pytz
 import uuid
@@ -45,13 +44,17 @@ from docs_agent.memory.logging import log_question, log_like
 
 
 # This is used to define the app blueprint using a productConfig
-def construct_blueprint(product_config: config.ProductConfig, app_mode: str = None):
+def construct_blueprint(
+    product_config: config.ProductConfig, app_mode: typing.Optional[str] = None
+):
     bp = Blueprint("chatui", __name__)
     if product_config.db_type == "google_semantic_retriever":
         docs_agent = DocsAgent(config=product_config, init_chroma=False)
     else:
         docs_agent = DocsAgent(config=product_config)
-    logging.info(f"Launching the Flask app for product: {product_config.product_name} with app_mode: {app_mode}")
+    logging.info(
+        f"Launching the Flask app for product: {product_config.product_name} with app_mode: {app_mode}"
+    )
     # Assign templates and redirects
     if app_mode == "web":
         app_template = "chatui/index.html"
@@ -62,6 +65,9 @@ def construct_blueprint(product_config: config.ProductConfig, app_mode: str = No
     elif app_mode == "widget":
         app_template = "chat-widget/index.html"
         redirect_index = "chat-widget.index"
+    elif app_mode == "1.5":
+        app_template = "chatui-1.5/index.html"
+        redirect_index = "chatui-1.5.index"
     else:
         app_template = "chatui/index.html"
         redirect_index = "chatui.index"
@@ -84,16 +90,14 @@ def construct_blueprint(product_config: config.ProductConfig, app_mode: str = No
                     full_prompt,
                     response,
                     context,
-                    sources_ref,
-                    plain_token,
+                    search_result,
                 ) = ask_model_with_sources(input["question"], agent=docs_agent)
                 source_array = []
-                for source in sources_ref:
-                    source_array.append(source.returnDictionary())
+                # for source in search_result:
+                #     source_array.append(source.returnDictionary())
                 dictionary = {
                     "response": response,
                     "full_prompt": full_prompt,
-                    "token_count_context": plain_token,
                     "sources": source_array,
                 }
                 return jsonify(dictionary)
@@ -130,7 +134,7 @@ def construct_blueprint(product_config: config.ProductConfig, app_mode: str = No
             rewrite_captured = json_data.get("rewrite")
             date_format = "%m%d%Y-%H%M%S"
             date = datetime.now(tz=pytz.utc)
-            date = date.astimezone(timezone("US/Pacific"))
+            date = date.astimezone(pytz.timezone("US/Pacific"))
             print(
                 "[" + date.strftime(date_format) + "] A user has submitted a rewrite."
             )
@@ -183,6 +187,11 @@ def construct_blueprint(product_config: config.ProductConfig, app_mode: str = No
             return ask_model(question, agent=docs_agent, template=app_template)
         else:
             return redirect(url_for(redirect_index))
+
+    # Render the log view page
+    @bp.route("/logs", methods=["GET", "POST"])
+    def logs():
+        return show_logs(agent=docs_agent)
 
     return bp
 
@@ -258,7 +267,10 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
         related_questions_response,
         new_prompt_questions,
     ) = docs_agent.ask_content_model_with_context_prompt(
-        context=final_context, question=new_question, prompt=new_condition
+        context=final_context,
+        question=new_question,
+        prompt=new_condition,
+        model="gemini-pro",
     )
     # Clean up the response to a proper html list
     related_questions = parse_related_questions_response_to_html_list(
@@ -278,8 +290,27 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
             probability = aqa_response.answerable_probability
         except:
             probability = 0.0
+
+    ### The code below is added for the new Gemini 1.5 model.
+    # Ask the Gemini 1.5 model to generate a full summary.
+    if docs_agent.config.app_mode == "1.5":
+        new_condition = f"Read the context below and provide a detailed overview to address the question at the end:"
+        (
+            summary_response,
+            summary_prompt,
+        ) = docs_agent.ask_content_model_with_context_prompt(
+            context=final_context,
+            question=question,
+            prompt=new_condition,
+            model="gemini-1.5-pro",
+        )
+        log_lines = f"{response}\n\nGemini 1.5 response:\n\n{summary_response}"
+    else:
+        summary_response = ""
+        log_lines = f"{response}"
+
     ### LOG THIS REQUEST.
-    log_question(new_uuid, question, response, probability)
+    log_question(new_uuid, question, log_lines, probability)
 
     return render_template(
         template,
@@ -295,6 +326,7 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
         md_to_html=md_to_html,
         final_context=final_context,
         search_result=search_result,
+        summary_response=summary_response,
     )
 
 
@@ -304,7 +336,7 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
 def ask_model_with_sources(question, agent):
     docs_agent = agent
     full_prompt = ""
-    context, plain_token, sources_ref = docs_agent.query_vector_store_to_build(
+    search_result, context = docs_agent.query_vector_store_to_build(
         question=question, token_limit=30000, results_num=10, max_sources=10
     )
     context_with_instruction = docs_agent.add_instruction_to_context(context)
@@ -317,4 +349,33 @@ def ask_model_with_sources(question, agent):
             context_with_instruction, question
         )
 
-    return full_prompt, response, context, sources_ref, plain_token
+    return full_prompt, response, context, search_result
+
+
+# Display a page showing logs
+def show_logs(agent, template: str = "admin/logs.html"):
+    docs_agent = agent
+    product = docs_agent.config.product_name
+    log_filename = "chatui_logs.txt"
+    answerable_log_filename = "answerable_logs.txt"
+    log_contents = ""
+    answerable_contents = ""
+    if docs_agent.config.enable_show_logs == "True":
+        try:
+            with open(log_filename, "r", encoding="utf-8") as file:
+                log_contents = file.read()
+        except:
+            log_contents = "Cannot find or open log files."
+        try:
+            with open(answerable_log_filename, "r", encoding="utf-8") as file:
+                answerable_contents = file.read()
+        except:
+            answerable_contents = (
+                "Cannot find or open a file that contains answerable scores."
+            )
+    return render_template(
+        template,
+        product=product,
+        logs=log_contents,
+        answerable_logs=answerable_contents,
+    )
