@@ -13,21 +13,21 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
+    "views": {
+      "chatView": [
         {
-          "id": "gemini-chat",
-          "title": "Gemini Chat",
-          "icon": "./img/Gemini.png"
+          "id": "pipet-code-agent.chatView",
+          "name": "Gemini Chat",
+          "type": "webview"
         }
       ]
     },
-    "views": {
-      "gemini-chat": [
+    "viewsContainers": {
+      "activitybar": [
         {
-          "id": "pipet-code-agent.ChatView",
-          "name": "Gemini Chat",
-          "type": "webview"
+          "id": "chatView",
+          "title": "Gemini Chat",
+          "icon": "./img/Gemini.png"
         }
       ]
     },
@@ -39,9 +39,21 @@
       {
         "command": "pipet-code-agent.reviewCode",
         "title": "Pipet: Review the selected code."
+      },
+      {
+        "command": "pipet-code-agent.clearChat",
+        "title": "Pipet: Clear Chat.",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
+      "view/title": [
+        {
+          "command": "pipet-code-agent.clearChat",
+          "group": "navigation",
+          "when": "view == pipet-code-agent.chatView"
+        }
+      ],
       "editor/context": [
         {
           "command": "pipet-code-agent.commentCode",
@@ -50,6 +62,12 @@
         {
           "command": "pipet-code-agent.reviewCode",
           "group": "PipetCodeAgent"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "pipet-code-agent.clearChat",
+          "when": "webviewId == 'pipet-code-agent.chatView'"
         }
       ]
     },
