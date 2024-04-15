@@ -20,31 +20,36 @@ document.addEventListener("DOMContentLoaded", function () {
   // 显示接收到的Gemini消息
   function showAIMessage(text, chatID) {
     const messageContainer = document.createElement("div");
-    messageContainer.id = chatID;
-    messageContainer.classList.add("message-container");
-    messageContainer.innerHTML =
-      "<p><strong>Gemini:</strong> " + marked.parse(text) + "</p>";
-    dialog.appendChild(messageContainer);
+    if (messageContainer) {
+      messageContainer.id = chatID;
+      messageContainer.classList.add("message-container");
+      messageContainer.innerHTML =
+        "<p><strong>Gemini:</strong> " + marked.parse(text) + "</p>";
+      dialog.appendChild(messageContainer);
+    }
   }
 
   function updateAIMessage(newText, chatID) {
     const messageContainer = document.getElementById(chatID);
-
-    (messageContainer.innerHTML =
-      "<p><strong>Gemini:</strong> " + marked.parse(newText)),
-      +"</p>";
-    addBottons(messageContainer);
-    sendMessageButton.innerHTML = "发送";
+    if (messageContainer) {
+      (messageContainer.innerHTML =
+        "<p><strong>Gemini:</strong> " + marked.parse(newText)),
+        +"</p>";
+      addBottons(messageContainer);
+      sendMessageButton.innerHTML = "发送";
+    }
   }
 
   // 显示问题
   function showUserMessage(text) {
     const messageContainer = document.createElement("div");
-    messageContainer.classList.add("message-container");
-    messageContainer.innerHTML =
-      "<p><strong>You:</strong> " + marked.parse(text) + "</p>";
-    addBottons(messageContainer);
-    dialog.appendChild(messageContainer);
+    if (messageContainer) {
+      messageContainer.classList.add("message-container");
+      messageContainer.innerHTML =
+        "<p><strong>You:</strong> " + marked.parse(text) + "</p>";
+      addBottons(messageContainer);
+      dialog.appendChild(messageContainer);
+    }
   }
   /**
    *

@@ -18,8 +18,7 @@ import * as vscode from "vscode";
 import { generateComment } from "./comments";
 import { generateReview } from "./review";
 import { startchat } from "./chat";
-import { text } from "stream/consumers";
-import { toUSVString } from "util";
+import { ChatSession } from "@google/generative-ai";
 
 export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand(
@@ -44,6 +43,8 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 }
+
+let chat: void | ChatSession;
 class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "pipet-code-agent.chatView";
 
@@ -67,7 +68,9 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
     try {
-      const chat = startchat();
+      chat = startchat();
+      console.log("<<<<<<<<<<<<<<<<<<<<<<<reset>>>>>>>>>>>>>>>>>>>");
+
       webviewView.webview.onDidReceiveMessage(async (message) => {
         // 处理来自 Webview 的消息
         if (message.command === "sendMessage" && message.text) {
@@ -108,11 +111,20 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
       });
     }
   }
+
   public clearChat() {
     if (this._view) {
       this._view.webview.postMessage({
         command: "clearChat",
       });
+      try {
+        chat = startchat();
+      } catch (error) {
+        this._view.webview.postMessage({
+          command: "receiveMessage",
+          text: `${error}`,
+        });
+      }
     }
   }
   private _getHtmlForWebview(webview: vscode.Webview) {
@@ -125,13 +137,16 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
     const styleCodeUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "media", "prism.css")
     );
+    const mediaUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "media")
+    );
     // Use a nonce to only allow a specific script to be run.
     const nonce = getNonce();
     return `<!DOCTYPE html>
             <html lang="en">
               <head>
                 <meta charset="UTF-8" />
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}' https://cdn.jsdelivr.net/npm/prismjs/components/;">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="${styleMainUri}" rel="stylesheet">
                 <link rel="stylesheet" href="${styleCodeUri}">
@@ -146,7 +161,10 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
                   <button id="sendMessage" disabled>发送</button>
                 </footer>
                 <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-                <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/prismjs/prism.js"></script>
+                <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+                <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/prismjs/plugins/autoloader/prism-autoloader.min.js">
+                Prism.plugins.autoloader.languages_path = "${mediaUri}";
+                </script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
               </body>
             </html>`;
