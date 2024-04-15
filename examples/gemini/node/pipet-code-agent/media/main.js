@@ -10,6 +10,20 @@ document.addEventListener("DOMContentLoaded", function () {
   let chatID;
   dialog.innerHTML = oldHtml;
 
+  const allCodeButtons = Array.from(
+    dialog.getElementsByClassName("code-buttons-container")
+  );
+  if (allCodeButtons) {
+    allCodeButtons.forEach((button) => {
+      console.log(button);
+      button.addEventListener("click", () => {
+        const toCopy =
+          button.parentElement.querySelectorAll("pre code")[0].textContent;
+        navigator.clipboard.writeText(toCopy);
+      });
+    });
+  }
+
   function adjustTextareaHeight() {
     userInput.style.height = "auto";
     userInput.style.height = userInput.scrollHeight + "px";
@@ -36,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "<p><strong>Gemini:</strong> " + marked.parse(newText)),
         +"</p>";
       addBottons(messageContainer);
-      sendMessageButton.innerHTML = "发送";
+      sendMessageButton.innerHTML = "Chat";
     }
   }
 
@@ -56,23 +70,13 @@ document.addEventListener("DOMContentLoaded", function () {
    * @param {HTMLDivElement}
    */
   function addBottons(container) {
-    const svg =
-      '<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"> <g id="Layer_1">  <title>Layer 1</title>  <path stroke="null" id="svg_1" d="m11.17086,13.7471l-7.75098,0l0,-10.05744l-1.40928,0l0,10.05744c0,0.79023 0.63418,1.43678 1.40928,1.43678l7.75098,0l0,-1.43678zm2.81854,-2.87355l0,-8.62066c0,-0.79023 -0.63418,-1.43678 -1.40928,-1.43678l-6.34171,0c-0.7751,0 -1.40928,0.64655 -1.40928,1.43678l0,8.62066c0,0.79023 0.63418,1.43678 1.40928,1.43678l6.34171,0c0.7751,0 1.40928,-0.64655 1.40928,-1.43678zm-1.40928,0l-6.34171,0c0,-2.87355 0,-5.74711 0,-8.62066l6.34171,0l0,8.62066z" fill="#bfbdb6"/> </g></svg>';
     const codeElements = container.querySelectorAll("pre code");
     codeElements.forEach((codeElement) => {
       const copyButton = document.createElement("button");
-      copyButton.innerHTML = svg;
       copyButton.classList.add("code-buttons-container");
       copyButton.addEventListener("click", () => {
         const textToCopy = codeElement.textContent;
-        navigator.clipboard
-          .writeText(textToCopy)
-          .then(() => {
-            copyButton.innerHTML = svg;
-          })
-          .catch((error) => {
-            copyButton.innerHTML = "Failed";
-          });
+        navigator.clipboard.writeText(textToCopy);
       });
       codeElement.parentElement.classList.add("pre");
       codeElement.parentElement.appendChild(copyButton);
@@ -107,7 +111,6 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
       default:
         console.log("Unknown command: " + message.command);
-        break;
     }
     vscode.setState(dialog.innerHTML);
   });

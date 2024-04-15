@@ -1,74 +1,87 @@
-  body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      /* 使内容占据整个视口高度 */
-  }
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* 使内容占据整个视口高度 */
+}
 
-  main {
-      flex: 1;
-      /* 使 main 元素占据剩余的垂直空间 */
-      padding: 20px;
-      /* 添加内边距 */
-  }
+main {
+  flex: 1;
+  /* 使 main 元素占据剩余的垂直空间 */
+  padding: 20px;
+  /* 添加内边距 */
+}
 
-  #dialog {
-      overflow-y: auto;
-      /* 当内容过多时，显示滚动条 */
-      border-radius: 5px;
-      /* 添加边框圆角 */
-      padding: 10px;
-      /* 添加内边距 */
-      margin-bottom: 10px;
-      /* 添加底部外边距 */
-  }
+#dialog {
+  overflow-y: auto;
+  /* 当内容过多时，显示滚动条 */
+  border-radius: 5px;
+  /* 添加边框圆角 */
+  padding: 10px;
+  /* 添加内边距 */
+  margin-bottom: 10px;
+  /* 添加底部外边距 */
+}
 
-  footer {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-  }
+footer {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
 
-  #userInput {
-      height: auto;
-      resize: none;
-      background-color: var(--vscode-input-background);
-      /* 使用 VS Code 的输入框背景色 */
-      color: var(--vscode-input-foreground);
-      /* 使用 VS Code 的输入框前景色 */
-      border: 1px solid var(--vscode-input-foreground);
-      /* 使用 VS Code 的输入框前景色作为边框颜色 */
-      flex: 1;
-  }
+#userInput {
+  height: auto;
+  resize: none;
+  background-color: var(--vscode-input-background);
+  /* 使用 VS Code 的输入框背景色 */
+  color: var(--vscode-input-foreground);
+  /* 使用 VS Code 的输入框前景色 */
+  border: 1px solid var(--vscode-input-foreground);
+  /* 使用 VS Code 的输入框前景色作为边框颜色 */
+  flex: 1;
+}
 
-  #sendMessage {
-      background-color: var(--vscode-input-background);
-      /* 使用 VS Code 的输入框背景色 */
-      color: var(--vscode-input-foreground);
-      /* 使用 VS Code 的输入框前景色 */
-      border: 1px solid var(--vscode-input-foreground);
-      /* 使用 VS Code 的输入框前景色作为边框颜色 */
-      margin-left: 5px;
-  }
+#sendMessage {
+  background-color: var(--vscode-input-background);
+  /* 使用 VS Code 的输入框背景色 */
+  color: var(--vscode-input-foreground);
+  /* 使用 VS Code 的输入框前景色 */
+  border: 1px solid var(--vscode-input-foreground);
+  /* 使用 VS Code 的输入框前景色作为边框颜色 */
+  margin-left: 5px;
+  transition: background-color 0.3s;
+}
 
-  .message-container {
-      position: relative;
-      background-color: var(--vscode-input-background);
-      color: var(--vscode-editor-foreground);
-  }
+#sendMessage:hover{
+  background-color: var(--vscode-input-foreground);
+  color: var(--vscode-input-background);
+}
 
+.message-container {
+  position: relative;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-editor-foreground);
+}
 
-  .code-buttons-container {
-      background-color: #00000000;
-      border: none;
-      position: absolute;
-      right: 2px;
-      top: 2px;
-      z-index: 1
-  }
+.code-buttons-container {
+  background-color: #ffffff00;
+  border: none;
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cg id='Layer_1'%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cpath stroke='null' id='svg_1' d='m11.17086,13.7471l-7.75098,0l0,-10.05744l-1.40928,0l0,10.05744c0,0.79023 0.63418,1.43678 1.40928,1.43678l7.75098,0l0,-1.43678zm2.81854,-2.87355l0,-8.62066c0,-0.79023 -0.63418,-1.43678 -1.40928,-1.43678l-6.34171,0c-0.7751,0 -1.40928,0.64655 -1.40928,1.43678l0,8.62066c0,0.79023 0.63418,1.43678 1.40928,1.43678l6.34171,0c0.7751,0 1.40928,-0.64655 1.40928,-1.43678zm-1.40928,0l-6.34171,0c0,-2.87355 0,-5.74711 0,-8.62066l6.34171,0l0,8.62066z' fill='%23bfbdb6'/%3E%3C/g%3E%3C/svg%3E");
+  transition: background-color 0.3s;
+}
 
-  .pre {
-      position: relative;
-  }
+.code-buttons-container:hover {
+  background-color: #ffffff41;
+}
+
+.pre {
+  position: relative;
+}
