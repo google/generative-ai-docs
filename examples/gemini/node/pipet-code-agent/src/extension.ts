@@ -69,8 +69,6 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 
     try {
       chat = startchat();
-      console.log("<<<<<<<<<<<<<<<<<<<<<<<reset>>>>>>>>>>>>>>>>>>>");
-
       webviewView.webview.onDidReceiveMessage(async (message) => {
         // 处理来自 Webview 的消息
         if (message.command === "sendMessage" && message.text) {
