@@ -144,7 +144,7 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
             <html lang="en">
               <head>
                 <meta charset="UTF-8" />
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}' https://cdn.jsdelivr.net/npm/prismjs/components/;">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}' https://cdn.jsdelivr.net/npm/prismjs/components/;">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="${styleMainUri}" rel="stylesheet">
                 <link rel="stylesheet" href="${styleCodeUri}">
@@ -155,8 +155,8 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
                   <div id="dialog"></div>
                 </main>
                 <footer>
-                  <textarea id="userInput" placeholder="请输入您的消息"></textarea>
-                  <button id="sendMessage" disabled>发送</button>
+                  <textarea id="userInput" placeholder="Ask anything here"></textarea>
+                  <button id="sendMessage" disabled>Chat</button>
                 </footer>
                 <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
                 <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
