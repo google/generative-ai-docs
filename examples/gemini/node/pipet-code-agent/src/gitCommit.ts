@@ -29,12 +29,12 @@ export async function generateGitCommit() {
 async function generateCommit(diff: string) {
   const modelName = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.textModel", "models/gemini-1.5-pro-latest");
+    .get<string>("google.gemini.textModel", "default");
 
   // Get API Key from local user configuration
   const apiKey = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.apiKey");
+    .get<string>("google.gemini.apiKey", "default");
   if (!apiKey) {
     vscode.window.showErrorMessage(
       "API key not configured. Check your settings."
@@ -46,27 +46,31 @@ async function generateCommit(diff: string) {
     { model: modelName },
     { apiVersion: "v1beta" }
   );
-  const result = await model.generateContent({
-    systemInstruction: {
-      role: "system",
-      parts: [{ text: SYSTEMINSTRUCTION }],
-    },
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: "Git Diff:" + diff }],
+  try {
+    const result = await model.generateContent({
+      systemInstruction: {
+        role: "system",
+        parts: [{ text: SYSTEMINSTRUCTION }],
       },
-    ],
-  });
-  const response = result.response;
-  const commit = response.text();
-  await vscode.env.clipboard.writeText(commit);
-  await vscode.commands.executeCommand("workbench.view.scm");
-  await vscode.commands.executeCommand("git.commitStaged", commit);
-  await vscode.commands.executeCommand("editor.action.insertSnippet", {
-    snippet: commit,
-  });
-  vscode.window.showInformationMessage(
-    "Commit message copied to clipboard and Pasted in the commit box."
-  );
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: "Git Diff:" + diff }],
+        },
+      ],
+    });
+    const response = result.response;
+    const commit = response.text();
+    await vscode.env.clipboard.writeText(commit);
+    await vscode.commands.executeCommand("workbench.view.scm");
+    await vscode.commands.executeCommand("git.commitStaged", commit);
+    await vscode.commands.executeCommand("editor.action.insertSnippet", {
+      snippet: commit,
+    });
+    vscode.window.showInformationMessage(
+      "Commit message copied to clipboard and Pasted in the commit box."
+    );
+  } catch (error) {
+    vscode.window.showErrorMessage(`${error}`);
+  }
 }

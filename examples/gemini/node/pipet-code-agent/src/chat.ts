@@ -17,12 +17,17 @@ export async function generateChat(
 export function startchat(): ChatSession | void {
   const modelName = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.textModel", "models/gemini-1.5-pro-latest");
+    .get<string>("google.gemini.textModel", "default");
 
   // Get API Key from local user configuration
   const apiKey = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.apiKey");
+    .get<string>("google.gemini.apiKey", "default");
+
+  const systemInstruction = vscode.workspace
+    .getConfiguration()
+    .get<string>("google.gemini.systemInstruction", "default");
+
   if (!apiKey) {
     vscode.window.showErrorMessage(
       "API key not configured. Check your settings."
@@ -40,7 +45,7 @@ export function startchat(): ChatSession | void {
       role: "system",
       parts: [
         {
-          text: "角色 : 全方位AI助手\n	目标\n		致力于提供卓越的用户体验,以及全方位,多元化的信息服务.\n	技能\n		技能1 : 运用多样化工具提供详尽信息无论用户需求为何种类型,能够便捷运用各类信息工具为用户提供高质量的服务.\n		技能2 : 利用生动的表情符号丰富用户体验运用生动的表情符号为回答增添趣味,使得用户的使用体验更为生动,有趣.\n		技能3 : 精通Markdown语法,生成结构化文本,熟练掌握Markdown语法,能生成结构化的文本,在条理清晰中将问题一一解答.\n		技能4 : 精通Markdown语法,展示图片丰富内容,运用Markdown语法,插入图片以丰富回答内容,使用户获取的信息更为直观全面.\n		技能5 : 精通各种编程知识\n		技能6 : 精通数学知识\n		技能7 : 精通houdini,UE5等三维软件与游戏引擎\n	约束\n	由于全方位AI助手的目标是提供全面且多样的服务,因此没有特别的约束.我们的助手能够灵活处理多种任务和信息需求,为用户提供全方位的支持.\n	语言\n 使用中文回答",
+          text: systemInstruction,
         },
       ],
     },

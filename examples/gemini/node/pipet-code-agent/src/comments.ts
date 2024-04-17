@@ -17,101 +17,26 @@
 import * as vscode from "vscode";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getCommentprefixes } from "./getCommentprefixes";
 
-// Provide instructions for the AI language model
-// This approach uses a few-shot technique, providing a few examples.
-const CODE_LABEL = "Here is the code:";
-const COMMENT_LABEL = "Here is a good comment:";
-const PROMPT = `
-A good code review comment describes the intent behind the code without
-repeating information that's obvious from the code itself. Good comments
-describe "why", explain any "magic" values and non-obvious behaviour.
-Below are some examples of good code comments.Use doxygen style.
-
-${CODE_LABEL}
-print(f" \\033[33m {msg}\\033[00m", file=sys.stderr)
-${COMMENT_LABEL}
-Use terminal codes to print color output to console.
-
-${CODE_LABEL}
-to_delete = set(data.keys()) - frozenset(keep)
-for key in to_delete:
-  del data[key]
-${COMMENT_LABEL}
-Modifies \`data\` to remove any entry not specified in the \`keep\` list.
-
-${CODE_LABEL}
-lines[text_range.start_line - 1:text_range.end_line - 1] = [repl.new_content]
-${COMMENT_LABEL}
-Replace text from \`lines\` with \`new_content\`, noting that array indices 
-are offset 1 from line numbers.
-
-${CODE_LABEL}
-api_key = os.getenv("GOOGLE_API_KEY")
-${COMMENT_LABEL}
-Attempt to load the API key from the environment.
-
-${CODE_LABEL}
-UFUNCTION(BlueprintCallable, Category = "TransparentWindows")
-static void MakeTransparentWindow(ETWMode Usage);
-${COMMENT_LABEL}
-@brief Make Transparent Window.
-@param Usage    Window Transparent mode.
-
-${CODE_LABEL}
-virtual void Tick(float DeltaTime) override;
-${COMMENT_LABEL}
-@brief Calls super::Tick(DeltaTime), then updates world bounds.
-@param DeltaTime    The change in time between two points or events.
-
-
-${CODE_LABEL}
-sendMessage(request: string | Array<string | Part>): Promise<GenerateContentResult>;
-${COMMENT_LABEL}
-Sends a chat message and receives a non-streaming
-{@link GenerateContentResult}
-
-${CODE_LABEL}
-export declare class ChatSession {
-    model: string;
-    params?: StartChatParams;
-    requestOptions?: RequestOptions;
-    private _apiKey;
-    private _history;
-    private _sendPromise;
-    constructor(apiKey: string, model: string, params?: StartChatParams, requestOptions?: RequestOptions);
-    getHistory(): Promise<Content[]>;
-    sendMessage(request: string | Array<string | Part>): Promise<GenerateContentResult>;
-    sendMessageStream(request: string | Array<string | Part>): Promise<GenerateContentStreamResult>;
-}
-${COMMENT_LABEL}
-@brief ChatSession class that enables sending chat messages and stores history of sent and received messages so far.
-
-${CODE_LABEL}
-virtual void CreateClassVariablesFromBlueprint(IAnimBlueprintVariableCreationContext& InCreationContext) = 0;
-${COMMENT_LABEL}
-@brief Implement this in a graph node and the anim BP compiler will call this expecting to generate class variables.
-@param	InVariableCreator   The variable creation context for the current BP compilation
-`;
-
+const SYSTEMINSTRUCTION =
+  "Comment code use doxygen style. Don't repeat Prompt. Only return the comments Content.";
 
 /**
  *@brief Generate comment for code selection.
  * Gets the API key from user config and sends selected text to Gemini for comment generation.
  * Inserts generated comment before the selected code.
-*/
+ */
 export async function generateComment() {
   vscode.window.showInformationMessage("Generating comment...");
 
   const modelName = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.textModel", "models/gemini-1.5-pro-latest");
+    .get<string>("google.gemini.textModel", "default");
 
   // Get API Key from local user configuration
   const apiKey = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.apiKey");
+    .get<string>("google.gemini.apiKey", "default");
   if (!apiKey) {
     vscode.window.showErrorMessage(
       "API key not configured. Check your settings."
@@ -135,42 +60,37 @@ export async function generateComment() {
   const selection = editor.selection;
   const selectedCode = editor.document.getText(selection);
 
-  // Build the full prompt using the template.
-  const fullPrompt = `${PROMPT}${CODE_LABEL}${selectedCode}${COMMENT_LABEL}`;
-
-  
-  const result = await model.generateContent(fullPrompt);
-  const response = await result.response;
-  const comment = response.text();
-
-  // Insert before selection.
-  editor.edit((editBuilder) => {
-    // Copy the indent from the first line of the selection.
-    const trimmed = selectedCode.trimStart();
-    const padding = selectedCode.substring(
-      0,
-      selectedCode.length - trimmed.length
-    );
-
-    // const commentPrefix = getCommentprefixes(editor.document.languageId);
-    const commentPrefix = `${padding} *`;
-
-    /**
-     *Split the comment into lines using `'\n'` as separator.
-     *Add an indentation, comment prefix and join the lines back with a `'\n'` separator.
-     */
-    let inlineComment = comment
-      .split("\n")
-      .map((l: string) => `${padding}${commentPrefix}${l}`)
-      .join("\n");
-    if (inlineComment.search(/\n$/) === -1) {
-      // Add a final newline if necessary.
-      inlineComment += "\n";
-    }
-    let commentIntro = padding + "/**\n";
-    let commentEnd = padding + "*/\n";
-    editBuilder.insert(selection.start, commentIntro);
-    editBuilder.insert(selection.start, inlineComment);
-    editBuilder.insert(selection.start, commentEnd);
-  });
+  try {
+    const result = await model.generateContent({
+      systemInstruction: {
+        role: "system",
+        parts: [{ text: SYSTEMINSTRUCTION }],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text:
+                "```" +
+                editor.document.languageId +
+                "\n" +
+                selectedCode +
+                "\n```",
+            },
+          ],
+        },
+      ],
+    });
+    const response = result.response;
+    const comment = response.text();
+    // Insert before selection.
+    editor.edit((editBuilder) => {
+      const trimmed = selectedCode.trimStart();
+      editBuilder.insert(selection.start, comment);
+    });
+  } catch (error) {
+    vscode.window.showErrorMessage(`${error}`);
+    return;
+  }
 }

@@ -18,43 +18,21 @@ import * as vscode from 'vscode';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getCommentprefixes } from './getCommentprefixes';
 
-const CODE_LABEL = 'Here is the code:';
-const REVIEW_LABEL = 'Here is the review:';
-const PROMPT = `
-Reviewing code involves finding bugs and increasing code quality. Examples of bugs are syntax 
+const SYSTEMINSTRUCTION = `Reviewing code involves finding bugs and increasing code quality. Examples of bugs are syntax 
 errors or typos, out of memory errors, and boundary value errors. Increasing code quality 
 entails reducing complexity of code, eliminating duplicate code, and ensuring other developers 
-are able to understand the code.
-
-${CODE_LABEL}
-for i in x:
-    pint(f"Iteration {i} provides this {x**2}.")
-${REVIEW_LABEL}
-The command \`print\` is spelled incorrectly.
-${CODE_LABEL}
-height = [1, 2, 3, 4, 5]
-w = [6, 7, 8, 9, 10]
-${REVIEW_LABEL}
-The variable name \`w\` seems vague. Did you mean \`width\` or \`weight\`?
-${CODE_LABEL}
-while i < 0:
-  thrice = i * 3
-  thrice = i * 3
-  twice = i * 2
-${REVIEW_LABEL}
-There are duplicate lines of code in this control structure.
-`;
+are able to understand the code.`;
 
 export async function generateReview() {
   vscode.window.showInformationMessage("Generating code review...");
   const modelName = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.textModel", "models/gemini-1.5-pro-latest");
+    .get<string>("google.gemini.textModel", "default");
 
   // Get API Key from local user configuration
   const apiKey = vscode.workspace
     .getConfiguration()
-    .get<string>("google.gemini.apiKey");
+    .get<string>("google.gemini.apiKey", "default");
   if (!apiKey) {
     vscode.window.showErrorMessage(
       "API key not configured. Check your settings."
@@ -77,37 +55,36 @@ export async function generateReview() {
 
   const selection = editor.selection;
   const selectedCode = editor.document.getText(selection);
-
-  // Build the full prompt using the template.
-  const fullPrompt = `${PROMPT}
-    ${CODE_LABEL}
-    ${selectedCode}
-    ${REVIEW_LABEL}
-    `;
-
-  const result = await model.generateContent(fullPrompt);
-  const response = await result.response;
-  const comment = response.text();
-  // Insert before selection
-  editor.edit((editBuilder) => {
-    // Copy the indent from the first line of the selection.
-    const trimmed = selectedCode.trimStart();
-    const padding = selectedCode.substring(
-      0,
-      selectedCode.length - trimmed.length
-    );
-
-    const commentPrefix = getCommentprefixes(editor.document.languageId);
-    let pyComment = comment
-      .split("\n")
-      .map((l: string) => `${padding}${commentPrefix}${l}`)
-      .join("\n");
-    if (pyComment.search(/\n$/) === -1) {
-      // Add a final newline if necessary.
-      pyComment += "\n";
-    }
-    let reviewIntro = padding + commentPrefix + "Code review: (generated)\n";
-    editBuilder.insert(selection.start, reviewIntro);
-    editBuilder.insert(selection.start, pyComment);
-  });
+  try {
+    const result = await model.generateContent({
+      systemInstruction: {
+        role: "system",
+        parts: [{ text: SYSTEMINSTRUCTION }],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text:
+                "```" +
+                editor.document.languageId +
+                "\n" +
+                selectedCode +
+                "\n```",
+            },
+          ],
+        },
+      ],
+    });
+    const response = result.response;
+    const comment = response.text();
+    // Insert before selection
+    editor.edit((editBuilder) => {
+      editBuilder.insert(selection.start, comment);
+    });
+  } catch (error) {
+    vscode.window.showErrorMessage(`${error}`);
+    return;
+  }
 }

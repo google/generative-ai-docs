@@ -80,16 +80,21 @@
         "title": "Pipet Code Agent: Google Gemini",
         "properties": {
           "google.gemini.apiKey": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "default": null,
+            "type": "string",
+            "default": "",
             "markdownDescription": "Enter your [API Key](https://aistudio.google.com/app/apikey) for Gemini."
           },
+          "google.gemini.systemInstruction": {
+            "type": "string",
+            "default": "",
+            "editPresentation": "multilineText",
+            "markdownDeprecation": "Enter [System Instruction](https://ai.google.dev/docs/system_instructions) for Gemini."
+          },
           "google.gemini.textModel": {
-            "type": [
-              "string"
+            "type": "string",
+            "enum": [
+              "models/gemini-1.5-pro-latest",
+              "models/gemini-pro"
             ],
             "default": "models/gemini-1.5-pro-latest",
             "markdownDescription": "Provide the name of the model you want to use. Choose from the [base models](https://ai.google.dev/models/gemini) or your own [tuned model](https://ai.google.dev/docs/model_tuning_guidance)."
