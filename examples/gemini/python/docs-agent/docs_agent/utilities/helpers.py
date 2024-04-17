@@ -19,6 +19,7 @@
 import urllib, os
 from flask import url_for
 import bs4
+import typing
 from pathlib import Path, PurePath
 import markdown
 
@@ -29,7 +30,7 @@ def get_project_path() -> Path:
 
 
 # Function to resolve path. If no base_dir is specified, use the project root
-def resolve_path(rel_or_abs_path: str, base_dir: str = get_project_path()):
+def resolve_path(rel_or_abs_path: str, base_dir: Path = get_project_path()):
     path = rel_or_abs_path.strip()
     if path.startswith("/"):
         return path
@@ -123,8 +124,8 @@ def build_list_html_links(
     section_titles: list,
     page_titles: list,
     distances: list,
-    section_content: list = None,
-    max_count: int = None,
+    section_content: typing.Optional[list] = None,
+    max_count: typing.Optional[int] = None,
 ):
     if max_count == None:
         max_count = len(urls)

@@ -19,7 +19,8 @@
 import os
 import sys
 import yaml
-import pathlib
+import typing
+
 from absl import logging
 from docs_agent.utilities.helpers import get_project_path
 
@@ -30,12 +31,12 @@ class DbConfig:
         # Currently 'chroma' or 'google_semantic_retriever'
         db_type: str,
         # These for 'chroma'
-        vector_db_dir: str = None,
-        collection_name: str = None,
+        vector_db_dir: typing.Optional[str] = None,
+        collection_name: typing.Optional[str] = None,
         # These for 'google_semantic_retriever'
-        corpus_name: str = None,
+        corpus_name: typing.Optional[str] = None,
         # Only used when creating a corpus
-        corpus_display: str = None,
+        corpus_display: typing.Optional[str] = None,
     ):
         self.db_type = db_type
         self.vector_db_dir = vector_db_dir
@@ -88,8 +89,8 @@ class ReadDbConfigs:
 
     def return_chroma_db(self):
         for item in self.input_list:
-            if item.vector_db_dir:
-                return item.vector_db_dir
+            if item["vector_db_dir"]:
+                return item["vector_db_dir"]
             else:
                 return None
 
@@ -101,9 +102,9 @@ class Input:
     def __init__(
         self,
         path: str,
-        url_prefix: str = None,
-        include_path_html: str = None,
-        exclude_path: str = None,
+        url_prefix: typing.Optional[str] = None,
+        include_path_html: typing.Optional[str] = None,
+        exclude_path: typing.Optional[str] = None,
     ):
         self.path = path
         self.url_prefix = url_prefix
@@ -149,10 +150,10 @@ class Models:
         self,
         language_model: str,
         embedding_model: str,
-        api_endpoint: str = None,
-        api_key: str = None,
-        embedding_api_call_limit: int = None,
-        embedding_api_call_period: int = None,
+        api_endpoint: typing.Optional[str] = None,
+        api_key: typing.Optional[str] = None,
+        embedding_api_call_limit: typing.Optional[int] = None,
+        embedding_api_call_period: typing.Optional[int] = None,
     ):
         self.language_model = language_model
         self.embedding_model = embedding_model
@@ -224,11 +225,20 @@ class Conditions:
     def __init__(
         self,
         condition_text: str,
-        fact_check_question: str = None,
-        model_error_message: str = None,
+        fact_check_question: typing.Optional[str] = None,
+        model_error_message: typing.Optional[str] = None,
     ):
-        default_fact_check_question: "Can you compare the text below to the information provided in this prompt above and write a short message that warns the readers about which part of the text they should consider fact-checking? (Please keep your response concise, focus on only one important item, but DO NOT USE BOLD TEXT IN YOUR RESPONSE.)"
-        default_model_error_message: "Gemini is not able to answer this question at the moment. Rephrase the question and try asking again."
+        default_fact_check_question = (
+            "Can you compare the text below to the information provided in this"
+            " prompt above and write a short message that warns the readers"
+            " about which part of the text they should consider"
+            " fact-checking? (Please keep your response concise, focus on only"
+            " one important item, but DO NOT USE BOLD TEXT IN YOUR RESPONSE.)"
+        )
+        default_model_error_message = (
+            "Gemini is not able to answer this question at the moment."
+            " Rephrase the question and try asking again."
+        )
         self.condition_text = condition_text
         if fact_check_question is None:
             self.fact_check_question = default_fact_check_question
@@ -281,14 +291,15 @@ class ProductConfig:
         product_name: str,
         models: Models,
         output_path: str,
-        db_configs: DbConfig,
+        db_configs: list[DbConfig],
         inputs: list[Input],
         conditions: Conditions,
-        log_level: str = None,
-        docs_agent_config: str = None,
+        log_level: typing.Optional[str] = None,
+        docs_agent_config: typing.Optional[str] = None,
         markdown_splitter: str = "token_splitter",
         db_type: str = "chroma",
         app_mode: str = "web",
+        enable_show_logs: str = "False",
     ):
         self.product_name = product_name
         self.docs_agent_config = docs_agent_config
@@ -301,6 +312,7 @@ class ProductConfig:
         self.log_level = log_level
         self.inputs = inputs
         self.app_mode = app_mode
+        self.enable_show_logs = enable_show_logs
 
     def __str__(self):
         # Extracts the list of Inputs
@@ -316,6 +328,7 @@ class ProductConfig:
         return f"Product: {self.product_name}\n\
 Docs Agent config: {self.docs_agent_config}\n\
 App mode: {self.app_mode}\n\
+Enable show logs: {self.enable_show_logs}\n\
 Markdown splitter: {self.markdown_splitter}\n\
 Database type: {self.db_type}\n\
 Output path: {self.output_path}\n\
@@ -335,9 +348,9 @@ class ConfigFile:
     ):
         self.products = products
 
-    def __str__():
+    def __str__(self):
         output = ["Products:"]
-        for item in config_file:
+        for item in self.products:
             output.append(item)
         return "\n".join(output)
 
@@ -356,10 +369,11 @@ class ReadConfig:
     def __init__(
         self, yaml_path: str = os.path.join(get_project_path(), "config.yaml")
     ):
+        self.yaml_path = yaml_path
         try:
             with open(yaml_path, "r", encoding="utf-8") as inp_yaml:
                 self.config_values = yaml.safe_load(inp_yaml)
-                self.yaml_path = yaml_path
+                # self.yaml_path = yaml_path
         except FileNotFoundError:
             logging.error(f"The config file {self.yaml_path} does not exist.")
             # Exits the scripts if there is no valid config file
@@ -368,7 +382,7 @@ class ReadConfig:
     def __str__(self):
         return self.yaml_path
 
-    def returnProducts(self, product: str = None) -> list[ConfigFile]:
+    def returnProducts(self, product: typing.Optional[str] = None) -> ConfigFile:
         products = []
         try:
             for item in self.config_values["configs"]:
@@ -379,7 +393,7 @@ class ReadConfig:
                     logging.error(f"Your configuration is missing a {error}")
                     return sys.exit()
                 # Set the default value of `app_mode` to "web"
-                supported_app_modes = ["web", "experimental", "widget"]
+                supported_app_modes = ["web", "experimental", "widget", "1.5"]
                 try:
                     app_mode = item["app_mode"]
                 except KeyError:
@@ -387,6 +401,10 @@ class ReadConfig:
                 if app_mode not in supported_app_modes:
                     logging.error(f"Your configuration is using an invalid mode: {app_mode}. Valid modes are {supported_app_modes}")
                     return sys.exit(1)
+                try:
+                    enable_show_logs = item["enable_show_logs"]
+                except KeyError:
+                    enable_show_logs = "False"
                 try:
                     product_config = ProductConfig(
                         product_name=item["product_name"],
@@ -400,23 +418,28 @@ class ReadConfig:
                         conditions=item["conditions"],
                         inputs=item["inputs"],
                         app_mode=app_mode,
+                        enable_show_logs=enable_show_logs,
                     )
                     # This is done for keys with children
                     # Inputs
-                    new_inputs = ReadInputs(product_config.inputs).returnInputs()
+                    new_inputs = ReadInputs(
+                        input_list=item["inputs"]
+                    ).returnInputs()
                     product_config.inputs = new_inputs
                     product_config.inputs = new_inputs
                     # Conditions
                     new_conditions = ReadConditions(
-                        product_config.conditions
+                        input_list=item["conditions"]
                     ).returnConditions()
                     product_config.conditions = new_conditions
                     # Models
-                    new_models = ReadModels(product_config.models).returnModels()
+                    new_models = ReadModels(
+                        input_list=item["models"]
+                    ).returnModels()
                     product_config.models = new_models
                     # DbConfigs
                     new_db_configs = ReadDbConfigs(
-                        product_config.db_configs
+                        input_list=item["db_configs"]
                     ).returnDbConfigs()
                     product_config.db_configs = new_db_configs
                     # Append
@@ -452,7 +475,7 @@ class ReadConfig:
 
 
 # Function to make using common_options simpler
-def return_config_and_product(config_file: str = None, product: list[str] = [""]):
+def return_config_and_product(config_file: typing.Optional[str] = None, product: list[str] = [""]):
     if config_file is None:
         loaded_config = ReadConfig()
     else:

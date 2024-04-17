@@ -16,7 +16,6 @@
 
 from datetime import datetime
 import pytz
-from pytz import timezone
 
 """Module to log interactions with the chatbot"""
 
@@ -25,7 +24,7 @@ from pytz import timezone
 def log_question(uid, user_question: str, response: str, probability: str = "None", save: str = "txt"):
     date_format = "%m/%d/%Y %H:%M:%S %Z"
     date = datetime.now(tz=pytz.utc)
-    date = date.astimezone(timezone("US/Pacific"))
+    date = date.astimezone(pytz.timezone("US/Pacific"))
     print("UID: " + str(uid))
     print("Question: " + user_question.strip() + "\n")
     print("Response:")
@@ -40,6 +39,8 @@ def log_question(uid, user_question: str, response: str, probability: str = "Non
             )
             log_file.write("# " + user_question.strip() + "\n\n")
             log_file.write(response.strip() + "\n\n")
+            if probability != "None":
+                log_file.write("Answerable probability: " + str(probability) + "\n\n")
             log_file.close()
         # Added to track the answerable_probability scores.
         if probability != "None":
@@ -55,7 +56,7 @@ def log_question(uid, user_question: str, response: str, probability: str = "Non
 def log_like(is_like, uid, save: str = "txt"):
     date_format = "%m/%d/%Y %H:%M:%S %Z"
     date = datetime.now(tz=pytz.utc)
-    date = date.astimezone(timezone("US/Pacific"))
+    date = date.astimezone(pytz.timezone("US/Pacific"))
     print("UID: " + str(uid))
     print("Like: " + str(is_like))
     if save == "txt":

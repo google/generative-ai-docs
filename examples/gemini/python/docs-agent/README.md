@@ -70,6 +70,22 @@ The following list summarizes the tasks and features supported by Docs Agent:
 - **Run the Docs Agent CLI from anywhere in a terminal**: You can set up the
   Docs Agent CLI to ask questions to the Gemini model from anywhere in a terminal.
   For more information, see the [Set up Docs Agent CLI][cli-readme] page.
+- **Support the Gemini 1.5 models**: You can use the new Gemini 1.5 models,
+  `gemini-1.5-pro-latest` and `text-embedding-004`, with Docs Agent today.
+  For the moment, the following `config.yaml` setup is recommended:
+
+  ```
+  models:
+  - language_model: "models/aqa"
+    embedding_model: "models/text-embedding-004"
+    api_endpoint: "generativelanguage.googleapis.com"
+  ...
+  app_mode: "1.5"
+  db_type: "chroma"
+  ```
+
+  The setup above uses 3 Gemini models to their strength: AQA (`aqa`),
+  Gemini 1.0 Pro (`gemini-pro`), and Gemini 1.5 Pro (`gemini-1.5-pro-latest`).
 
 For more information on Docs Agent's architecture and features,
 see the [Docs Agent concepts][docs-agent-concepts] page.
@@ -113,27 +129,24 @@ Update your host machine's environment to prepare for the Docs Agent setup:
 2. Install the following dependencies:
 
    ```posix-terminal
-   sudo apt install git pip python3-venv
+   sudo apt install git pipx python3-venv
    ```
 
 3. Install `poetry`:
 
    ```posix-terminal
-   curl -sSL https://install.python-poetry.org | python3 -
+   pipx install poetry
    ```
 
-   **Important**: Make sure that `$HOME/.local/bin` is in your `PATH` variable
-   (for example, `export PATH=$PATH:~/.local/bin`).
-
-4. Set the following environment variable:
+4. To add `$HOME/.local/bin` to your `PATH` variable, run the following
+   command:
 
    ```posix-terminal
-   export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+   pipx ensurepath
    ```
 
-   This is a [known issue][poetry-known-issue] in `poetry`.
-
-5. Set the Google API key as a environment variable:
+5. To set the Google API key as a environment variable, add the following
+   line to your `$HOME/.bashrc` file:
 
    ```
    export GOOGLE_API_KEY=<YOUR_API_KEY_HERE>
@@ -142,8 +155,11 @@ Update your host machine's environment to prepare for the Docs Agent setup:
    Replace `<YOUR_API_KEY_HERE>` with the API key to the
    [Gemini API][genai-doc-site].
 
-   **Tip**: To avoid repeating these `export` lines, add them to your
-   `$HOME/.bashrc` file.
+6. Update your environment:
+
+   ```posix-termainl
+   source ~/.bashrc
+   ```
 
 ### 3. (Optional) Authorize credentials for Docs Agent
 
@@ -256,7 +272,7 @@ Update settings in the Docs Agent project to use your custom dataset:
 
    ```
    inputs:
-     - path: "/usr/local/home/user01/website/src"
+     - path: "/usr/local/home/user01/website/src/content"
        url_prefix: "https://docs.flutter.dev"
    ```
 
@@ -265,23 +281,13 @@ Update settings in the Docs Agent project to use your custom dataset:
 
    ```
    inputs:
-     - path: "/usr/local/home/user01/website/src/ui"
+     - path: "/usr/local/home/user01/website/src/content/ui"
        url_prefix: "https://docs.flutter.dev/ui"
-     - path: "/usr/local/home/user01/website/src/tools"
+     - path: "/usr/local/home/user01/website/src/content/tools"
        url_prefix: "https://docs.flutter.dev/tools"
    ```
 
-6. (**Optional**) If you want to use the Gemini AQA model and populate a corpus online
-   via the [Semantic Retrieval API][semantic-api], use the following settings:
-
-   ```
-   models:
-     - language_model: "models/aqa"
-   ...
-   db_type: "google_semantic_retriever"
-   ```
-
-   Or if you want to use the `gemini-pro` model with a local vector database setup
+6. If you want to use the `gemini-pro` model with a local vector database setup
    (`chroma`), use the following settings:
 
    ```
@@ -289,6 +295,17 @@ Update settings in the Docs Agent project to use your custom dataset:
      - language_model: "models/gemini-pro"
    ...
    db_type: "chroma"
+   ```
+
+   (**Optional**) Or if you want to use the Gemini AQA model and populate
+   a corpus online via the [Semantic Retrieval API][semantic-api], use the
+   following settings:
+
+   ```
+   models:
+     - language_model: "models/aqa"
+   ...
+   db_type: "google_semantic_retriever"
    ```
 
 7. Save the `config.yaml` file and exit the text editor.
@@ -403,7 +420,6 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [chroma-docs]: https://docs.trychroma.com/
 [flutter-docs-src]: https://github.com/flutter/website/tree/main/src
 [flutter-docs-site]: https://docs.flutter.dev/
-[poetry-known-issue]: https://github.com/python-poetry/poetry/issues/1917
 [apps-script-readme]: ./apps_script/README.md
 [scripts-readme]: ./docs_agent/preprocess/README.md
 [config-yaml]: config.yaml
