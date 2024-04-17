@@ -44,6 +44,10 @@
         "command": "pipet-code-agent.clearChat",
         "title": "Pipet: Clear Chat.",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "pipet-code-agent.generateGitCommit",
+        "title": "Pipet: Generate Git Commit."
       }
     ],
     "menus": {

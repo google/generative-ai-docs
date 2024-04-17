@@ -19,6 +19,7 @@ import { generateComment } from "./comments";
 import { generateReview } from "./review";
 import { startchat } from "./chat";
 import { ChatSession } from "@google/generative-ai";
+import { generateGitCommit } from "./gitdiff";
 
 export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand(
@@ -28,6 +29,11 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand(
     "pipet-code-agent.reviewCode",
     generateReview
+  );
+
+  vscode.commands.registerCommand(
+    "pipet-code-agent.generateGitCommit",
+    generateGitCommit
   );
 
   const provider = new ChatViewProvider(context.extensionUri);
