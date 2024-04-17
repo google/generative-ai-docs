@@ -15,7 +15,6 @@ document.addEventListener("DOMContentLoaded", function () {
   );
   if (allCodeButtons) {
     allCodeButtons.forEach((button) => {
-      console.log(button);
       button.addEventListener("click", () => {
         const toCopy =
           button.parentElement.querySelectorAll("pre code")[0].textContent;
