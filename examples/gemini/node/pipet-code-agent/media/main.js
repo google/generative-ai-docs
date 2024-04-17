@@ -1,9 +1,12 @@
+/**
+ * Copyright 2024 Jason
+ */
+
 document.addEventListener("DOMContentLoaded", function () {
   const vscode = acquireVsCodeApi();
   const oldState = vscode.getState() || {};
   let oldHtml = oldState || "<div></div>";
 
-  // 在这里执行获取元素的操作
   const dialog = document.getElementById("dialog");
   const userInput = document.getElementById("userInput");
   const sendMessageButton = document.getElementById("sendMessage");
@@ -30,7 +33,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   userInput.addEventListener("input", adjustTextareaHeight);
 
-  // 显示接收到的Gemini消息
   function showAIMessage(text, chatID) {
     const messageContainer = document.createElement("div");
     if (messageContainer) {
@@ -53,7 +55,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // 显示问题
   function showUserMessage(text) {
     const messageContainer = document.createElement("div");
     if (messageContainer) {
@@ -65,7 +66,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
   /**
-   *
    * @param {HTMLDivElement}
    */
   function addBottons(container) {
@@ -83,7 +83,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // 当发送按钮被点击时
   sendMessageButton.addEventListener("click", () => {
     this.chatID = Math.random().toString();
     const userMessage = userInput.value;
@@ -94,7 +93,6 @@ document.addEventListener("DOMContentLoaded", function () {
     sendMessageButton.innerHTML = "Thinking...";
   });
 
-  // 接收来自插件的消息
   window.addEventListener("message", (event) => {
     const message = event.data;
     switch (message.command) {

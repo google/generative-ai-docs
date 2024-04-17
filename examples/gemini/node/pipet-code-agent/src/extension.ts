@@ -19,7 +19,7 @@ import { generateComment } from "./comments";
 import { generateReview } from "./review";
 import { startchat } from "./chat";
 import { ChatSession } from "@google/generative-ai";
-import { generateGitCommit } from "./gitdiff";
+import { generateGitCommit } from "./gitCommit";
 
 export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand(
@@ -76,9 +76,7 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
     try {
       chat = startchat();
       webviewView.webview.onDidReceiveMessage(async (message) => {
-        // 处理来自 Webview 的消息
         if (message.command === "sendMessage" && message.text) {
-          // 在 Webview 中显示接收到的消息
           webviewView.webview.postMessage({
             command: "Message",
             text: message.text,

@@ -1,3 +1,7 @@
+/**
+ * Copyright 2024 Jason
+ */
+
 import * as vscode from "vscode";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 

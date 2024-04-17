@@ -25,7 +25,6 @@ Reviewing code involves finding bugs and increasing code quality. Examples of bu
 errors or typos, out of memory errors, and boundary value errors. Increasing code quality 
 entails reducing complexity of code, eliminating duplicate code, and ensuring other developers 
 are able to understand the code.
-使用中文
 
 ${CODE_LABEL}
 for i in x:
