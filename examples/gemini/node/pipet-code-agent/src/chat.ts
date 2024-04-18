@@ -5,15 +5,6 @@
 import * as vscode from "vscode";
 import { ChatSession, GoogleGenerativeAI } from "@google/generative-ai";
 
-export async function generateChat(
-  prompt: string,
-  chat: ChatSession
-): Promise<string> {
-  const result = await chat.sendMessageStream(prompt);
-  const response = result.response;
-  return (await response).text();
-}
-
 export function startchat(): ChatSession | void {
   const modelName = vscode.workspace
     .getConfiguration()

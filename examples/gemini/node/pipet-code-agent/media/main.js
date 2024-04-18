@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
     sendMessageButton.disabled = !userInput.value;
   }
   userInput.addEventListener("input", adjustTextareaHeight);
+  userInput.addEventListener("keydown", handleKeyDown);
 
   function showAIMessage(text, chatID) {
     const messageContainer = document.createElement("div");
@@ -81,6 +82,16 @@ document.addEventListener("DOMContentLoaded", function () {
       codeElement.parentElement.appendChild(copyButton);
       Prism.highlightElement(codeElement);
     });
+  }
+
+  function handleKeyDown(event) {
+    console.log("enter");
+    if (event.keyCode === 13) {
+      if (!event.shiftKey) {
+        event.preventDefault();
+        sendMessageButton.click();
+      }
+    }
   }
 
   sendMessageButton.addEventListener("click", () => {

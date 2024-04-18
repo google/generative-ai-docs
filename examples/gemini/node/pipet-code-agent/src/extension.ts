@@ -83,7 +83,9 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
           });
           if (chat) {
             try {
-              const result = await chat.sendMessageStream(message.text);
+              const code = this.selectedCode();
+              const prompt = `${code}${message.text}`;
+              const result = await chat.sendMessageStream(prompt);
               let chunktext = "";
               for await (const chunk of result.stream) {
                 chunktext += chunk.text();
@@ -111,6 +113,24 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
         command: "receiveMessage",
         text: `${error}`,
       });
+    }
+  }
+
+  public selectedCode(): string {
+    try {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        console.debug("Abandon: no open text editor.");
+        return "";
+      }
+      const code = editor.document.getText(editor.selection);
+      const prefix = "```";
+      const codePrefix = `${prefix}${editor.document.languageId}`;
+      const result = `${codePrefix}\n${code}\n${prefix}\n`;
+      return result ?? "";
+    } catch (error) {
+      vscode.window.showErrorMessage(`${error}`);
+      return "";
     }
   }
 

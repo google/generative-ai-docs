@@ -8,25 +8,20 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  /* 使内容占据整个视口高度 */
+  
 }
 
 main {
   flex: 1;
-  /* 使 main 元素占据剩余的垂直空间 */
+  
   padding: 20px;
-  /* 添加内边距 */
 }
 
 #dialog {
   overflow-y: auto;
-  /* 当内容过多时，显示滚动条 */
   border-radius: 5px;
-  /* 添加边框圆角 */
   padding: 10px;
-  /* 添加内边距 */
   margin-bottom: 10px;
-  /* 添加底部外边距 */
 }
 
 footer {
@@ -39,23 +34,20 @@ footer {
   height: auto;
   resize: none;
   background-color: var(--vscode-input-background);
-  /* 使用 VS Code 的输入框背景色 */
   color: var(--vscode-input-foreground);
-  /* 使用 VS Code 的输入框前景色 */
   border: 1px solid var(--vscode-input-foreground);
-  /* 使用 VS Code 的输入框前景色作为边框颜色 */
+  border-radius: 3px;
   flex: 1;
 }
 
 #sendMessage {
+  height: auto;
   background-color: var(--vscode-input-background);
-  /* 使用 VS Code 的输入框背景色 */
   color: var(--vscode-input-foreground);
-  /* 使用 VS Code 的输入框前景色 */
   border: 1px solid var(--vscode-input-foreground);
-  /* 使用 VS Code 的输入框前景色作为边框颜色 */
   margin-left: 5px;
   transition: background-color 0.3s;
+  border-radius: 3px;
 }
 
 #sendMessage:hover{
