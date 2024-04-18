@@ -4,9 +4,10 @@
 
 import * as vscode from "vscode";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { promises } from "dns";
 
 const SYSTEMINSTRUCTION =
-  "Generate Git Commit by Git Diff, Don't return other message.";
+  "Generate Git Commit by Git Diff and last commit, Only return commit message.";
 
 export async function generateGitCommit() {
   try {
@@ -19,7 +20,11 @@ export async function generateGitCommit() {
 
     vscode.window.showInformationMessage("Generate Git Diff...");
     const diff = await gitApi.repositories[0].diff();
-    await generateCommit(diff);
+    const logOptions = { maxEntries: 1 };
+    const log = await gitApi.repositories[0].log(logOptions);
+    const lastCommit = log[0];
+    const lastCommitMessage = `Last commit:\n\n**Hash:** ${lastCommit.hash}\n**Author:** ${lastCommit.author_name} <${lastCommit.author_email}>\n**Date:** ${lastCommit.date}\n**Message:** ${lastCommit.message}`;
+    await generateCommit(`${lastCommitMessage}\nDiff: ${diff}`);
   } catch (error) {
     vscode.window.showErrorMessage(`${error}`);
     return;
