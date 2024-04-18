@@ -29,7 +29,7 @@
       "type": "node",
       "console": "internalConsole",
       "request": "launch",
-      "args": ["package", "--out", "PipetCodeAgent.vsix"],
+      "args": ["package", "--out", "build/PipetCodeAgent.vsix"],
       "runtimeExecutable": "vsce",
       "presentation": {
         "reveal": "always"

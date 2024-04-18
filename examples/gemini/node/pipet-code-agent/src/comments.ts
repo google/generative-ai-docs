@@ -86,7 +86,6 @@ export async function generateComment() {
     const comment = response.text();
     // Insert before selection.
     editor.edit((editBuilder) => {
-      const trimmed = selectedCode.trimStart();
       editBuilder.insert(selection.start, comment);
     });
   } catch (error) {

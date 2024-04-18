@@ -81,7 +81,25 @@ export async function generateReview() {
     const comment = response.text();
     // Insert before selection
     editor.edit((editBuilder) => {
-      editBuilder.insert(selection.start, comment);
+      // Copy the indent from the first line of the selection.
+      const trimmed = selectedCode.trimStart();
+      const padding = selectedCode.substring(
+        0,
+        selectedCode.length - trimmed.length
+      );
+
+      const commentPrefix = getCommentprefixes(editor.document.languageId);
+      let pyComment = comment
+        .split("\n")
+        .map((l: string) => `${padding}${commentPrefix}${l}`)
+        .join("\n");
+      if (pyComment.search(/\n$/) === -1) {
+        // Add a final newline if necessary.
+        pyComment += padding + "\n";
+      }
+      let reviewIntro = padding + commentPrefix + "Code review: (generated)\n";
+      editBuilder.insert(selection.start, reviewIntro);
+      editBuilder.insert(selection.start, pyComment);
     });
   } catch (error) {
     vscode.window.showErrorMessage(`${error}`);
