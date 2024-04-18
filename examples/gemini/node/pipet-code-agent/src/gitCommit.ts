@@ -63,12 +63,8 @@ async function generateCommit(diff: string) {
     const commit = response.text();
     await vscode.env.clipboard.writeText(commit);
     await vscode.commands.executeCommand("workbench.view.scm");
-    await vscode.commands.executeCommand("git.commitStaged", commit);
-    await vscode.commands.executeCommand("editor.action.insertSnippet", {
-      snippet: commit,
-    });
     vscode.window.showInformationMessage(
-      "Commit message copied to clipboard and Pasted in the commit box."
+      "Commit message copied to clipboard and can Past in the commit box."
     );
   } catch (error) {
     vscode.window.showErrorMessage(`${error}`);
