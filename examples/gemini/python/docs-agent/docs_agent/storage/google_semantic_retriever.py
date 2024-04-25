@@ -18,7 +18,7 @@
 
 import google.ai.generativelanguage as glm
 from absl import logging
-import sys
+import typing
 
 
 class SemanticRetriever:
@@ -33,28 +33,28 @@ class SemanticRetriever:
         response = self.retriever_service_client.get_corpus(get_corpus_request)
         return response
 
-    def get_document(self, document_name: str, metadata):
-        get_document_request = glm.GetDocumentRequest(name=corpus_name)
-        try:
-            response = self.retriever_service_client.get_document(get_document_request)
-            return response
-        except:
-            logging.error(
-                f"Document {document_name} does not exist or you do not have permissions"
-            )
+    # def get_document(self, document_name: str, metadata):
+    #     get_document_request = glm.GetDocumentRequest(name=corpus_name)
+    #     try:
+    #         response = self.retriever_service_client.get_document(get_document_request)
+    #         return response
+    #     except:
+    #         logging.error(
+    #             f"Document {document_name} does not exist or you do not have permissions"
+    #         )
 
-    def get_chunk(self, chunk_name: str, metadata):
-        get_chunk_request = glm.GetChunkRequest(name=corpus_name)
-        try:
-            response = self.retriever_service_client.get_chunk(get_chunk_request)
-            return response
-        except:
-            logging.error(
-                f"Chunk {chunk_name} does not exist or you do not have permissions"
-            )
+    # def get_chunk(self, chunk_name: str, metadata):
+    #     get_chunk_request = glm.GetChunkRequest(name=corpus_name)
+    #     try:
+    #         response = self.retriever_service_client.get_chunk(get_chunk_request)
+    #         return response
+    #     except:
+    #         logging.error(
+    #             f"Chunk {chunk_name} does not exist or you do not have permissions"
+    #         )
 
-    def list_existing_corpora(self):
-        corpora_list = glm.ListCorporaRequest()
+    def list_existing_corpora(self, page_token: str = ""):
+        corpora_list = glm.ListCorporaRequest(page_size=20, page_token=page_token)
         response = self.retriever_service_client.list_corpora(corpora_list)
         return response
 
@@ -90,16 +90,17 @@ class SemanticRetriever:
         self,
         corpus_name: str,
         page_title: str,
-        page_url: str = None,
-        metadata: dict = None,
+        page_url: typing.Optional[str] = None,
+        uuid: typing.Optional[str] = None,
+        metadata: typing.Optional[dict] = None,
     ):
         document_resource_name = ""
         try:
             # Create a new document with a custom display name.
             example_document = glm.Document(display_name=page_title)
             # Add metadata.
+            document_metadata = []
             if metadata is not None:
-                document_metadata = []
                 for key_dict, value_dict in metadata.items():
                     if isinstance(value_dict, int) or isinstance(value_dict, float):
                         document_metadata.append(
@@ -115,12 +116,13 @@ class SemanticRetriever:
                                 key=key_dict, string_value=str(value_dict)
                             )
                         )
+                example_document.custom_metadata.extend(document_metadata)
             else:
-                if page_url is not None:
+                if uuid is not None and uuid != "":
                     document_metadata = [
-                        glm.CustomMetadata(key="url", string_value=page_url)
+                        glm.CustomMetadata(key="uuid", string_value=str(uuid))
                     ]
-            example_document.custom_metadata.extend(document_metadata)
+                    example_document.custom_metadata.extend(document_metadata)
             # Make the request
             create_document_request = glm.CreateDocumentRequest(
                 parent=corpus_name, document=example_document
@@ -131,20 +133,26 @@ class SemanticRetriever:
             # Set the `document_resource_name` for subsequent sections.
             document_resource_name = create_document_response.name
         except:
-            get_document_request = glm.GetDocumentRequest(name=document_resource_name)
-            # Make the request
-            get_document_response = self.retriever_service_client.get_document(
-                get_document_request
-            )
-            document_resource_name = get_document_response.name
+            logging.error(f"Cannot create a new doucment: {page_title}")
+            exit(1)
         return document_resource_name
 
+    def retrieve_a_doc(self, document_resource_name: str):
+        response = []
+        try:
+            get_document_request = glm.GetDocumentRequest(name=document_resource_name)
+            # Make the request
+            response = self.retriever_service_client.get_document(get_document_request)
+        except:
+            logging.error(f"Cannot retrieve a doucment: {document_resource_name}")
+        return response
+
     def create_a_chunk(
-        self, doc_name, text, metadata: dict = None, page_url: str = None
+        self, doc_name, text, metadata, page_url: typing.Optional[str] = None
     ):
         response = ""
+        document_metadata = []
         if metadata is not None:
-            document_metadata = []
             for key_dict, value_dict in metadata.items():
                 if isinstance(value_dict, int) or isinstance(value_dict, float):
                     document_metadata.append(
@@ -208,8 +216,8 @@ class SemanticRetriever:
         corpus_name: str,
         page_title: str,
         text,
-        page_url: str = None,
-        metadata: dict = None,
+        page_url: typing.Optional[str] = None,
+        metadata: typing.Optional[dict] = None,
     ):
         try:
             doc_name = self.create_a_doc(
@@ -229,6 +237,52 @@ class SemanticRetriever:
         except:
             logging.error("Error in creaing a doc chunk: " + page_title)
             return None
+
+    def get_all_docs(self, corpus_name: str, print_output: bool = False):
+        all_docs = []
+        try:
+            request = glm.ListDocumentsRequest(parent=corpus_name, page_size=20)
+            response = self.retriever_service_client.list_documents(request)
+            index = 0
+            for docs in response.documents:
+                if print_output:
+                    index += 1
+                    print(f"\nDocument # {index}")
+                    print(f"Name: {docs.name}")
+                    print(f"Display name: {docs.display_name}")
+                    metadata = docs.custom_metadata
+                    for item in metadata:
+                        if item.key == "uuid":
+                            print(f"uuid: {item.string_value}")
+                        elif item.key == "md_hash":
+                            print(f"md_hash: {item.string_value}")
+                all_docs.append(docs)
+            while (
+                hasattr(response, "next_page_token") and response.next_page_token != ""
+            ):
+                request = glm.ListDocumentsRequest(
+                    parent=corpus_name,
+                    page_size=20,
+                    page_token=response.next_page_token,
+                )
+                response = self.retriever_service_client.list_documents(request)
+                for docs in response.documents:
+                    if print_output:
+                        index += 1
+                        print(f"\nDocument # {index}")
+                        print(f"Name: {docs.name}")
+                        print(f"Display name: {docs.display_name}")
+                        metadata = docs.custom_metadata
+                        for item in metadata:
+                            if item.key == "uuid":
+                                print(f"uuid: {item.string_value}")
+                            elif item.key == "md_hash":
+                                print(f"md_hash: {item.string_value}")
+                    all_docs.append(docs)
+            return all_docs
+        except:
+            logging.error("Error in listing all docs: " + corpus_name)
+            return all_docs
 
     def share_a_corpus(self, corpus_name: str, email: str, role: str):
         shared_user_email = email

@@ -7,9 +7,7 @@
       <input type="submit" value="Ask" id="ask-button">
     </form>
   </div>
-  <div class="loading hidden" id="loading-div">
-    GENERATING A RESPONSE...
-  </div>
+  <div class="loader hidden" id="loading-div"></div>
   {% if response %}
   <div class="full-response">
     {% include 'chatui/result.html' %}

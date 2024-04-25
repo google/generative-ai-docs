@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 from docs_agent.utilities import config
-from docs_agent.models import palm
 
 # Per the docs 60-80 words ~= 100 tokens
 lower_word_limit = 60 / 100
@@ -31,47 +30,47 @@ higher_char_limit = 4
 # This value should be set in config.yaml file to avoid unecessary API calls as
 # it will mostly remain static until a different model is used
 # todo: clean these functions
-def returnMaxInputTokenModelAPI() -> float:
-    model = palm.returnModel("models/text-bison-001")
-    maxInputToken = model.input_token_limit
-    max_context_tokens_api = maxInputToken - max_token_count_api
-    print("Max input token: " + str(maxInputToken))
-    max_context_tokens = maxInputToken - max_token_count_prompt
-    print("Max input token removing prompt: " + str(max_context_tokens))
-    print("Max input token removing prompt API: " + str(max_context_tokens_api))
+# def returnMaxInputTokenModelAPI() -> float:
+#     model = "models/gemini-pro"
+#     maxInputToken = model.input_token_limit
+#     max_context_tokens_api = maxInputToken - max_token_count_api
+#     print("Max input token: " + str(maxInputToken))
+#     max_context_tokens = maxInputToken - max_token_count_prompt
+#     print("Max input token removing prompt: " + str(max_context_tokens))
+#     print("Max input token removing prompt API: " + str(max_context_tokens_api))
 
-    number_of_context_per_prompt = 3
+#     number_of_context_per_prompt = 3
 
-    # Remove 5 tokens to give additional token buffer
-    max_chunk_size = max_context_tokens / number_of_context_per_prompt - 5
-    print("Max chunk size is: " + str(max_chunk_size))
-    max_chunk_size_api = max_context_tokens_api / number_of_context_per_prompt - 5
-    print("Max chunk size is API: " + str(max_chunk_size_api))
-    max_token_count_prompt = estimateTokensAverage(CONDITION_TEXT) + 5
-    max_token_count_api = palm.tokenCount(CONDITION_TEXT) + 5
+#     # Remove 5 tokens to give additional token buffer
+#     max_chunk_size = max_context_tokens / number_of_context_per_prompt - 5
+#     print("Max chunk size is: " + str(max_chunk_size))
+#     max_chunk_size_api = max_context_tokens_api / number_of_context_per_prompt - 5
+#     print("Max chunk size is API: " + str(max_chunk_size_api))
+#     max_token_count_prompt = estimateTokensAverage(CONDITION_TEXT) + 5
+#     max_token_count_api = palm.tokenCount(CONDITION_TEXT) + 5
 
-    return max_token_count_api
+#     return max_token_count_api
 
 
-def returnMaxInputTokenModelEstimate() -> float:
-    model = palm.returnModel("models/text-bison-001")
-    maxInputToken = model.input_token_limit
-    max_context_tokens_api = maxInputToken - max_token_count_api
-    print("Max input token: " + str(maxInputToken))
-    max_context_tokens = maxInputToken - max_token_count_prompt
-    print("Max input token removing prompt: " + str(max_context_tokens))
-    print("Max input token removing prompt API: " + str(max_context_tokens_api))
+# def returnMaxInputTokenModelEstimate() -> float:
+# #    model = "models/gemini-pro"
+#     maxInputToken = model.input_token_limit
+#     max_context_tokens_api = maxInputToken - max_token_count_api
+#     print("Max input token: " + str(maxInputToken))
+#     max_context_tokens = maxInputToken - max_token_count_prompt
+#     print("Max input token removing prompt: " + str(max_context_tokens))
+#     print("Max input token removing prompt API: " + str(max_context_tokens_api))
 
-    number_of_context_per_prompt = 3
+#     number_of_context_per_prompt = 3
 
-    # Remove 5 tokens to give additional token buffer
-    max_chunk_size = max_context_tokens / number_of_context_per_prompt - 5
-    print("Max chunk size is: " + str(max_chunk_size))
-    max_chunk_size_api = max_context_tokens_api / number_of_context_per_prompt - 5
-    print("Max chunk size is API: " + str(max_chunk_size_api))
-    max_token_estimate = estimateTokensAverage(CONDITION_TEXT) + 5
+#     # Remove 5 tokens to give additional token buffer
+#     max_chunk_size = max_context_tokens / number_of_context_per_prompt - 5
+#     print("Max chunk size is: " + str(max_chunk_size))
+#     max_chunk_size_api = max_context_tokens_api / number_of_context_per_prompt - 5
+#     print("Max chunk size is API: " + str(max_chunk_size_api))
+#     max_token_estimate = estimateTokensAverage(CONDITION_TEXT) + 5
 
-    return max_token_estimate
+#     return max_token_estimate
 
 
 # Function to return a character count of a string

@@ -19,7 +19,7 @@ from docs_agent.interfaces.chatbot import chatui
 from docs_agent.utilities import config
 
 
-def create_app(product: config.ProductConfig):
+def create_app(product: config.ProductConfig, app_mode: str = "web"):
     app = Flask(__name__)
-    app.register_blueprint(chatui.construct_blueprint(product_config=product))
+    app.register_blueprint(chatui.construct_blueprint(product_config=product, app_mode=app_mode))
     return app

@@ -56,27 +56,24 @@ Setting up Docs Agent requires the following prerequisite items:
 2. Install the following dependencies:
 
    ```posix-terminal
-   sudo apt install git pip python3-venv
+   sudo apt install git pipx python3-venv
    ```
 
 3. Install `poetry`:
 
    ```posix-terminal
-   curl -sSL https://install.python-poetry.org | python3 -
+   pipx install poetry
    ```
 
-   **Important**: Make sure that `$HOME/.local/bin` is in your `PATH` variable
-   (for example, `export PATH=$PATH:~/.local/bin`).
-
-4. Set the following environment variable:
+4. To add `$HOME/.local/bin` to your `PATH` variable, run the following
+   command:
 
    ```posix-terminal
-   export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+   pipx ensurepath
    ```
 
-   This is a [known issue][poetry-known-issue] in `poetry`.
-
-5. Set the Google API key as a environment variable:
+5. To set the Google API key as a environment variable, add the following
+   line to your `$HOME/.bashrc` file:
 
    ```
    export GOOGLE_API_KEY=<YOUR_API_KEY_HERE>
@@ -85,8 +82,11 @@ Setting up Docs Agent requires the following prerequisite items:
    Replace `<YOUR_API_KEY_HERE>` with the API key to the
    [Gemini API][genai-doc-site].
 
-   **Tip**: To avoid repeating these `export` lines, add them to your
-   `$HOME/.bashrc` file.
+6. Update your environment:
+
+   ```posix-termainl
+   source ~/.bashrc
+   ```
 
 ## 3. Authorize credentials for Docs Agent
 
@@ -197,6 +197,112 @@ from anywhere in the terminal:
    user@user01:~/temp$ gemini does flutter support material design 3?
    ```
 
+## Appendices
+
+### Set up your terminal to run the helpme command
+
+**Note**: This is an experimental setup.
+
+This new feature allows you to freely navigate a codebase setup in your
+terminal and asks Gemini to perform various tasks while automatically
+referencing the output you see in your terminal.
+
+Similar to the `agent tellme` command, the `agent helpme` command allows you to
+ask a question to Gemini directly from your terminal. However, unlike
+the `tellme` command, the `helpme` command uses the Gemini Pro model
+and doesn't depend on an online corpus to retrieve relevant context.
+Instead, this `helpme` setup can read directly from the output of your terminal
+(that is, the last 150 lines at the moment) and automatically adds it as context
+to your prompt.
+
+These tasks include, but not limited to:
+
+- Rewrite `README` file to be instructional and linear.
+- Rewrite `README` file to be more concise and better structured.
+- Format `README` to collect reference links at the bottom.
+- Write comments for a C++ source file.
+
+**Note**: Since this setup uses the Gemini Pro model, setting up OAuth on your
+host machine is **not required**.
+
+To set up this `helpme` command in your terminal, do the following:
+
+1. (**Optional**) Open the `helpme.sh` file using a text editor, for example:
+
+   ```sh
+   nano helpme.sh
+   ```
+
+   If necessary, adjust the path (`$HOME/docs-agent`) to match your
+   `docs-agent` project directory on the host machine:
+
+   ```
+   #!/bin/bash
+
+   # Check if the POETRY_ACTIVE environment variable is set
+   if [ -z "$POETRY_ACTIVE" ]; then
+       cd $HOME/docs-agent && poetry run agent helpme $@
+   else
+       agent helpme $@
+   fi
+   ```
+
+   Save the file and close text editor.
+
+2. Add the following `alias` lines to your `$HOME/.bashrc` file:
+
+   ```
+   alias gemini-pro='$HOME/docs-agent/helpme.sh'
+   alias start_agent='script -f -o 200MiB -O /tmp/docs_agent_console_input'
+   alias stop_agent='exit'
+   ```
+
+   Similarly, if necessary, you need to adjust the path
+  (`$HOME/docs-agent`) to match your the `docs-agent` project directory
+   on the host machine.
+
+3. Update your environment:
+
+   ```sh
+   source ~/.bashrc
+   ```
+
+4. When you are ready to let Docs Agent to read output from your terminal,
+   run the following command:
+
+   ```sh
+   start_agent
+   ```
+
+   **Note**: To stop this process, run `stop_agent`.
+
+5. Navigate to a directory in your terminal and use the `cat` command
+   (or `head` or `tail`) to print the content of a file to your terminal.
+
+   (In fact, you can run any command that prints output to the terminal.)
+
+   For example:
+
+   ```
+   user@user01:~/my-example-project$ cat test.cc
+   <prints the test.cc file here>
+   ```
+
+6. To use the latest output from your terminal, run the `gemini-pro` command
+   immediately after the output:
+
+   ```sh
+   gemini-pro <REQUEST>
+   ```
+
+   For example:
+
+   ```
+   user@user01:~/my-example-project$ cat test.cc
+   <prints the test.cc file here>
+   user@user01:~/my-example-project$ gemini-pro could you help me write comments for this C++ file above?
+   ```
+
 <!-- Reference links -->
 
 [gemini-aqa]: https://ai.google.dev/docs/semantic_retriever
@@ -205,5 +311,4 @@ from anywhere in the terminal:
 [google-cloud]: https://console.cloud.google.com/
 [oauth-client]: https://ai.google.dev/docs/oauth_quickstart#set-cloud
 [authorize-credentials]: https://ai.google.dev/docs/oauth_quickstart#authorize-credentials
-[poetry-known-issue]: https://github.com/python-poetry/poetry/issues/1917
 [genai-doc-site]: https://ai.google.dev/docs/gemini_api_overview

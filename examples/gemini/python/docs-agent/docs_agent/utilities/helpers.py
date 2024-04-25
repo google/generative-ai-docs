@@ -18,7 +18,8 @@
 
 import urllib, os
 from flask import url_for
-from bs4 import BeautifulSoup
+import bs4
+import typing
 from pathlib import Path, PurePath
 import markdown
 
@@ -29,7 +30,7 @@ def get_project_path() -> Path:
 
 
 # Function to resolve path. If no base_dir is specified, use the project root
-def resolve_path(rel_or_abs_path: str, base_dir: str = get_project_path()):
+def resolve_path(rel_or_abs_path: str, base_dir: Path = get_project_path()):
     path = rel_or_abs_path.strip()
     if path.startswith("/"):
         return path
@@ -79,7 +80,7 @@ def add_scheme_url(url: str, scheme: str = "https"):
 # Parse a response containing a list of related questions from the language model
 # and convert it into an HTML-based list.
 def parse_related_questions_response_to_html_list(response):
-    soup = BeautifulSoup(response, "html.parser")
+    soup = bs4.BeautifulSoup(response, "html.parser")
     for item in soup.find_all("li"):
         if item.find("code"):
             # If there are <code> tags, strip the tags.
@@ -123,8 +124,8 @@ def build_list_html_links(
     section_titles: list,
     page_titles: list,
     distances: list,
-    section_content: list = None,
-    max_count: int = None,
+    section_content: typing.Optional[list] = None,
+    max_count: typing.Optional[int] = None,
 ):
     if max_count == None:
         max_count = len(urls)
@@ -154,7 +155,7 @@ def build_list_html_links(
 
 # Build an html URL link
 def named_link_html(url: str, label: str = "", **kwargs):
-    soup = BeautifulSoup("")
+    soup = bs4.BeautifulSoup("")
     final_url = add_scheme_url(url)
     attrs = dict(href=f"{final_url}", target=f"_blank", **kwargs)
     tag = soup.new_tag(name="a", attrs=attrs)
