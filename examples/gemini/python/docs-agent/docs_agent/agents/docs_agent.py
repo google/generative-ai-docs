@@ -16,26 +16,21 @@
 
 """Docs Agent"""
 
-import os
-import sys
+import typing
 
 from absl import logging
 import google.api_core
 import google.ai.generativelanguage as glm
 from chromadb.utils import embedding_functions
 
-from docs_agent.storage.chroma import Chroma, Format, ChromaEnhanced
-from docs_agent.models.palm import PaLM
+from docs_agent.storage.chroma import ChromaEnhanced
 
 from docs_agent.models.google_genai import Gemini
 
-from docs_agent.utilities.config import ProductConfig, ReadConfig, Input, Models
-from docs_agent.models import tokenCount
+from docs_agent.utilities.config import ProductConfig, Models
 from docs_agent.preprocess.splitters import markdown_splitter
 
 from docs_agent.preprocess.splitters.markdown_splitter import Section as Section
-from docs_agent.utilities.helpers import get_project_path
-from docs_agent.postprocess.docs_retriever import FullPage as FullPage
 from docs_agent.postprocess.docs_retriever import SectionDistance as SectionDistance
 from docs_agent.postprocess.docs_retriever import (
     SectionProbability as SectionProbability,
@@ -49,6 +44,8 @@ class DocsAgent:
     def __init__(self, config: ProductConfig, init_chroma: bool = True):
         # Models settings
         self.config = config
+        self.embedding_model = str(self.config.models.embedding_model)
+        self.api_endpoint = str(self.config.models.api_endpoint)
         # Use the new chroma db for all queries
         # Should make a function for this or clean this behavior
         if init_chroma:
@@ -62,9 +59,9 @@ class DocsAgent:
             )
             self.collection = self.chroma.get_collection(
                 self.collection_name,
-                embedding_model=self.config.models.embedding_model,
+                embedding_model=self.embedding_model,
                 embedding_function=embedding_function_gemini_retrieval(
-                    self.config.models.api_key
+                    self.config.models.api_key, self.embedding_model
                 ),
             )
         # AQA model settings
@@ -77,9 +74,12 @@ class DocsAgent:
             self.context_model = "models/gemini-pro"
             gemini_model_config = Models(
                 language_model=self.context_model,
-                embedding_model="models/embedding-001",
+                embedding_model=self.embedding_model,
+                api_endpoint=self.api_endpoint,
             )
-            self.gemini = Gemini(models_config=gemini_model_config)
+            self.gemini = Gemini(
+                models_config=gemini_model_config, conditions=config.conditions
+            )
         # Semantic retriever
         if self.config.db_type == "google_semantic_retriever":
             for item in self.config.db_configs:
@@ -93,9 +93,34 @@ class DocsAgent:
                         )
             self.aqa_response_buffer = ""
 
-        if self.config.models.language_model == "models/gemini-pro":
-            self.gemini = Gemini(models_config=config.models)
-            self.context_model = "models/gemini-pro"
+        if self.config.models.language_model.startswith("models/gemini"):
+            self.gemini = Gemini(
+                models_config=config.models, conditions=config.conditions
+            )
+            self.context_model = self.config.models.language_model
+
+        # Always initialize the gemini-pro model for other tasks.
+        gemini_pro_model_config = Models(
+            language_model="models/gemini-pro",
+            embedding_model=self.embedding_model,
+            api_endpoint=self.api_endpoint,
+        )
+        self.gemini_pro = Gemini(
+            models_config=gemini_pro_model_config, conditions=config.conditions
+        )
+
+        if self.config.app_mode == "1.5":
+            # Initialize the gemini-1.5.pro model for summarization.
+            gemini_15_model_config = Models(
+                language_model="models/gemini-1.5-pro-latest",
+                embedding_model=self.embedding_model,
+                api_endpoint=self.api_endpoint,
+            )
+            self.gemini_15 = Gemini(
+                models_config=gemini_15_model_config, conditions=config.conditions
+            )
+        else:
+            self.gemini_15 = self.gemini_pro
 
     # Use this method for talking to a Gemini content model
     def ask_content_model_with_context(self, context, question):
@@ -261,7 +286,7 @@ class DocsAgent:
 
     def ask_aqa_model(self, question):
         response = ""
-        if self.db_type == "ONLINE_STORAGE":
+        if self.config.db_type == "google_semantic_retriever":
             response = self.ask_aqa_model_using_corpora(question)
         else:
             response = self.ask_aqa_model_using_local_vector_store(question)
@@ -436,7 +461,11 @@ class DocsAgent:
     # If prompt is "fact_checker" it will use the fact_check_question from
     # config.yaml for the prompt
     def ask_content_model_with_context_prompt(
-        self, context: str, question: str, prompt: str = None
+        self,
+        context: str,
+        question: str,
+        prompt: typing.Optional[str] = None,
+        model: typing.Optional[str] = None,
     ):
         if prompt == None:
             prompt = self.config.conditions.condition_text
@@ -447,7 +476,13 @@ class DocsAgent:
         if self.config.log_level == "VERBOSE":
             self.print_the_prompt(new_prompt)
         try:
-            response = self.gemini.generate_content(contents=new_prompt)
+            response = ""
+            if model == "gemini-pro":
+                response = self.gemini_pro.generate_content(contents=new_prompt)
+            elif model == "gemini-1.5-pro":
+                response = self.gemini_15.generate_content(contents=new_prompt)
+            else:
+                response = self.gemini.generate_content(contents=new_prompt)
         except:
             return self.config.conditions.model_error_message, new_prompt
         for chunk in response:
@@ -475,7 +510,7 @@ class DocsAgent:
     # Use this method for asking a Gemini content model for fact-checking.
     # This uses ask_content_model_with_context_prompt w
     def ask_content_model_to_fact_check_prompt(self, context: str, prev_response: str):
-        question = self.fact_check_question + "\n\nText: "
+        question = self.config.conditions.fact_check_question + "\n\nText: "
         question += prev_response
         return self.ask_content_model_with_context_prompt(
             context=context, question=question, prompt=""
@@ -487,7 +522,7 @@ class DocsAgent:
 
 
 # Function to give an embedding function for gemini using an API key
-def embedding_function_gemini_retrieval(api_key):
+def embedding_function_gemini_retrieval(api_key, embedding_model: str):
     return embedding_functions.GoogleGenerativeAiEmbeddingFunction(
-        api_key=api_key, model_name="models/embedding-001", task_type="RETRIEVAL_QUERY"
+        api_key=api_key, model_name=embedding_model, task_type="RETRIEVAL_QUERY"
     )

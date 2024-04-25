@@ -16,16 +16,19 @@
 
 """Rate limited Gemini wrapper"""
 
-import os
+import typing
+from typing import List
 
 import google.generativeai
-from ratelimit import limits, sleep_and_retry
-from typing import List
+from ratelimit import limits
+from ratelimit import sleep_and_retry
+
 from docs_agent.utilities.config import Models
+from docs_agent.utilities.config import Conditions
 
 
 class Error(Exception):
-    """Base error class for Gemini"""
+    """Base error class for Gemini."""
 
 
 class GoogleNoAPIKeyError(Error, RuntimeError):
@@ -49,15 +52,15 @@ class GoogleUnsupportedModelError(Error, RuntimeError):
 
 
 class Gemini:
-    """Rate limited Gemini wrapper
+    """Rate limited Gemini wrapper.
 
-    This class exposes Gemini's chat, text, and embedding API, but with a rate limit.
-    Besides the rate limit, the `chat` and `generate_text` method has the same name and
-    behavior as `google.generativeai.chat` and `google.generativeai.generate_text`,
-    respectively. The `embed` method is different from
-    `google.generativeai.generate_embeddings` since `embed` returns List[float]
-    while `google.generativeai.generate_embeddings` returns a dict. And that's why it
-    has a different name.
+    This class exposes Gemini's chat, text, and embedding API, but with a rate
+    limit. Besides the rate limit, the `chat` and `generate_text` method has the
+    same name and behavior as `google.generativeai.chat` and
+    `google.generativeai.generate_text`, respectively. The `embed` method is
+    different from `google.generativeai.generate_embeddings` since `embed`
+    returns List[float] while `google.generativeai.generate_embeddings` returns a
+    dict. And that's why it has a different name.
     """
 
     minute = 60  # seconds in a minute
@@ -65,7 +68,17 @@ class Gemini:
     max_text_per_minute = 30
 
     # MAX_MESSAGE_PER_MINUTE = 30
-    def __init__(self, models_config: Models) -> None:
+    def __init__(
+        self,
+        models_config: Models,
+        conditions: typing.Optional[Conditions] = None,
+    ) -> None:
+        if conditions is None:
+            self.model_error_message = "Gemini model failed to generate"
+            self.prompt_condition = ""
+        else:
+            self.model_error_message = conditions.model_error_message
+            self.prompt_condition = conditions.condition_text
         self.api_endpoint = models_config.api_endpoint
         self.api_key = models_config.api_key
         self.embed_model = models_config.embedding_model
@@ -78,20 +91,26 @@ class Gemini:
             api_key=self.api_key, client_options={"api_endpoint": self.api_endpoint}
         )
         # Check whether the specified models are supported
-        supported_models = set(
-            model.name for model in google.generativeai.list_models()
-        )
-        for model in (models_config.language_model, models_config.embedding_model):
-            if model not in supported_models:
-                raise GoogleUnsupportedModelError(model, self.api_endpoint)
+        # supported_models = set(
+        #    model.name for model in google.generativeai.list_models()
+        # )
+        # for model in (models_config.language_model, models_config.embedding_model):
+        #  if model not in supported_models:
+        #    raise GoogleUnsupportedModelError(model, self.api_endpoint)
 
-    # TODO bring in limit values from config files
+    # TODO: bring in limit values from config files
     @sleep_and_retry
     @limits(calls=max_embed_per_minute, period=minute)
     def embed(
-        self, content, task_type: str = "RETRIEVAL_QUERY", title: str = None
+        self,
+        content,
+        task_type: str = "RETRIEVAL_QUERY",
+        title: typing.Optional[str] = None,
     ) -> List[float]:
-        if self.embed_model == "models/embedding-001":
+        if (
+            self.embed_model == "models/embedding-001"
+            or self.embed_model == "models/text-embedding-004"
+        ):
             return [
                 google.generativeai.embed_content(
                     model=self.embed_model,
@@ -101,34 +120,32 @@ class Gemini:
                 )["embedding"]
             ]
         else:
-            raise GoogleNoModelError(func_name="embed", attr="embed_model")
+            raise GoogleUnsupportedModelError(self.embed_model, self.api_endpoint)
 
-    # TODO bring in limit values from config files
+    # TODO: bring in limit values from config files
     @sleep_and_retry
     @limits(calls=max_text_per_minute, period=minute)
     def generate_content(self, contents):
         if self.language_model is None:
-            raise GoogleNoModelError(func_name="generate_content", attr="content_model")
+            raise GoogleUnsupportedModelError(self.language_model, self.api_endpoint)
         model = google.generativeai.GenerativeModel(model_name=self.language_model)
         return model.generate_content(contents)
 
     # Use this method for talking to a Gemini content model
     # Optionally provide a prompt, if not use the one from config.yaml
-    # If prompt is "fact_checker" it will use the fact_check_question from
-    # config.yaml for the prompt
     def ask_content_model_with_context_prompt(
-        self, context: str, question: str, prompt: str = None
+        self, context: str, question: str, prompt: typing.Optional[str] = None
     ):
         if prompt == None:
             prompt = self.prompt_condition
-        elif prompt == "fact_checker":
-            prompt = self.fact_check_question
+        # elif prompt == "fact_checker":
+        #   prompt = self.fact_check_question
         new_prompt = f"{prompt}\n\nQuestion: {question}\n\nContext:\n{context}"
         # Print the prompt for debugging if the log level is VERBOSE.
-        if LOG_LEVEL == "VERBOSE":
-            self.print_the_prompt(new_prompt)
+        # if LOG_LEVEL == "VERBOSE":
+        #   self.print_the_prompt(new_prompt)
         try:
-            response = palm.generate_content(new_prompt)
+            response = self.generate_content(new_prompt)
         except google.api_core.exceptions.InvalidArgument:
             return self.model_error_message
         for chunk in response:
@@ -136,8 +153,9 @@ class Gemini:
                 return self.model_error_message
         return response.text, new_prompt
 
-    # Use this method for asking a Gemini content model for fact-checking
-    def ask_content_model_to_fact_check(self, context, prev_response):
-        question = self.fact_check_question + "\n\nText: "
-        question += prev_response
-        return self.ask_content_model_with_context(context, question)
+
+#   # Use this method for asking a Gemini content model for fact-checking
+#   def ask_content_model_to_fact_check(self, context, prev_response):
+#     question = self.fact_check_question + "\n\nText: "
+#     question += prev_response
+#     return self.ask_content_model_with_context(context, question)

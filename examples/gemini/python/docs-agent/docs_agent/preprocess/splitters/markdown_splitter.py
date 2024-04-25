@@ -14,8 +14,9 @@
 # limitations under the License.
 #
 
-from markdown import markdown
-from bs4 import BeautifulSoup
+import typing
+import markdown
+import bs4
 import re, os
 from absl import logging
 from docs_agent.models import tokenCount
@@ -35,10 +36,10 @@ class Section:
         parent_tree: list[int],
         token_count: float,
         content: str,
-        url: str = None,
-        origin_uuid: str = None,
-        md_hash: str = None,
-        uuid: str = None,
+        url: typing.Optional[str] = None,
+        origin_uuid: typing.Optional[str] = None,
+        md_hash: typing.Optional[str] = None,
+        uuid: typing.Optional[str] = None,
     ):
         self.id = id
         self.name_id = name_id
@@ -114,7 +115,7 @@ Content hash: {self.md_hash}\n"
         return doc_title
 
     def return_id(self):
-        return self.section_id
+        return self.id
 
 
 def DictionarytoSection(metadata: dict) -> Section:
@@ -191,7 +192,7 @@ def DictionarytoSection(metadata: dict) -> Section:
 
 
 class Page:
-    def __init__(self, title: str, URL: str, section_count: int, metadata: dict = None):
+    def __init__(self, title: str, URL: str, section_count: int, metadata: typing.Optional[dict] = None):
         self.title = title
         self.URL = URL
         self.section_count = section_count
@@ -210,9 +211,9 @@ def markdown_to_text(markdown_string):
     # Remove <!-- --> lines in Markdown
     markdown_string = re.sub(r"<\!--(.*?)-->", "", markdown_string)
     # md -> html -> text since BeautifulSoup can extract text cleanly
-    html = markdown(markdown_string)
+    html = markdown.markdown(markdown_string)
     # Extract text
-    soup = BeautifulSoup(html, "html.parser")
+    soup = bs4.BeautifulSoup(html, "html.parser")
     text = "".join(soup.findAll(string=True))
     # Remove [][] in Markdown
     text = re.sub(r"\[(.*?)\]\[(.*?)\]", "\\1", text)
@@ -535,7 +536,7 @@ def process_page_and_section_titles(markdown_text):
 # three levels of Markdown headings (#, ##, and ###) into just a single #.
 def process_document_into_sections(markdown_text):
     sections = []
-    buffer = ""
+    buffer = []
     first_section = True
     for line in markdown_text.split("\n"):
         if line.startswith("#"):
@@ -550,9 +551,57 @@ def process_document_into_sections(markdown_text):
                 else:
                     # When a new `#` is detected, store the text in `buffer` into
                     # an array entry and clear the buffer for the next section.
-                    sections.append(buffer)
-                    buffer = ""
-        buffer += line + "\n"
+                    contents = construct_chunks(buffer)
+                    for content in contents:
+                        sections.append(content)
+                    buffer.clear()
+        buffer.append(line)
     # Add the last section on the page.
-    sections.append(buffer)
+    content = convert_array_to_buffer(buffer)
+    sections.append(content)
     return sections
+
+
+# Process an array of Markdwon text into an array of string buffers
+# whose size is smaller than 6KB.
+def construct_chunks(lines):
+    contents = []
+    buffer_size = get_byte_size(lines)
+    if int(buffer_size) > 6000:
+        # If the protocol is larget than 6KB, divide it into two.
+        logging.info(
+            "Found a text chunk greater than 6KB (size: " + str(buffer_size) + ")."
+        )
+        (first_half, second_half) = divide_an_array(lines)
+        first_content = construct_chunks(first_half)
+        second_content = construct_chunks(second_half)
+        contents += first_content
+        contents += second_content
+    else:
+        chunk = convert_array_to_buffer(lines)
+        contents.append(chunk)
+    return contents
+
+# Convert an array into a string buffer.
+def convert_array_to_buffer(lines):
+   content = ""
+   for line in lines:
+        content += line + "\n"
+   return content
+
+
+# Get the byte size of lines.
+def get_byte_size(lines):
+    buffer_size = 0
+    for line in lines:
+        buffer_size += len(line.encode("utf-8"))
+    return buffer_size
+
+
+# Divide a large array into two arrays.
+def divide_an_array(lines):
+    half_point = len(lines) // 2
+    first_half = lines[:half_point]
+    second_half = lines[half_point:]
+    return first_half, second_half
+

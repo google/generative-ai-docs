@@ -93,18 +93,20 @@ body {
     font-size: 0.9em;
     font-family: system-ui;
     line-height: 150%;
+    word-break: break-word;
     padding: 4px;
   }
 
   #response-box {
     font-size: 1.0em;
     font-family: sans-serif;
-    line-height: 100%;
+    line-height: 140%;
     margin-top: 10px;
   }
 
   #suggested-questions {
     font-family: sans-serif;
+    word-break: break-word;
   }
 
   #context-content{
@@ -176,6 +178,13 @@ body {
     margin-top: 12px;
   }
 
+  #answerable-span {
+    font-size: small;
+    font-family: system-ui;
+    float: right;
+    padding: 10px;
+  }
+
   /* ======= Style by class ======= */
 
   .hidden {
@@ -240,6 +249,7 @@ body {
   .related-questions {
     margin-bottom: 20px;
     font-size: 0.9em;
+    line-height: 140%;
   }
 
   /* ======= Style buttons by ID ======= */
@@ -291,7 +301,7 @@ body {
   #edit-text-area {
     font: 13px/1.5em Overpass, "Open Sans", Helvetica, sans-serif;
     max-height: 500px;
-    max-width: 650px;
+    max-width: -webkit-fill-available;
     height: 300px;
     width: 650px;
     padding: 8px;
@@ -340,7 +350,7 @@ body {
 
   .search input[type="text"] {
     border: 0;
-    width: 91%;
+    width: calc(100% - 65px);
     padding: 10px;
   }
 
@@ -505,3 +515,17 @@ body {
     margin-bottom: 0;
   }
 
+/* Loader animation */
+/* Source: https://css-loaders.com/classic/ */
+.loader {
+  width: fit-content;
+  font-family: monospace;
+  font-size: 14px;
+  margin-left: 13px;
+  clip-path: inset(0 3ch 0 0);
+  animation: animation 1s steps(4) infinite;
+}
+.loader:before {
+  content:"Generating a response..."
+}
+@keyframes animation {to{clip-path: inset(0 -1ch 0 0)}}
