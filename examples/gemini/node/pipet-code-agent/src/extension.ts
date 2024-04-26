@@ -124,10 +124,18 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
         return "";
       }
       const code = editor.document.getText(editor.selection);
+      editor.selection = new vscode.Selection(
+        editor.selection.active,
+        editor.selection.active
+      );
       const prefix = "```";
       const codePrefix = `${prefix}${editor.document.languageId}`;
-      const result = `${codePrefix}\n${code}\n${prefix}\n`;
-      return result ?? "";
+      if (code) {
+        const result = `${codePrefix}\n${code}\n${prefix}\n`;
+        return result;
+      } else {
+        return "";
+      }
     } catch (error) {
       vscode.window.showErrorMessage(`${error}`);
       return "";
