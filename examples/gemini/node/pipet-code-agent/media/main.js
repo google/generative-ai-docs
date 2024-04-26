@@ -67,6 +67,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+
+  function onSelection(text) {
+    userInput.placeholder = text;
+  }
+
   function showUserMessage(text) {
     const messageContainer = document.createElement("div");
     if (messageContainer) {
@@ -127,6 +132,9 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
       case "clearChat":
         dialog.innerHTML = "<div></div>";
+        break;
+      case "onSelection":
+        onSelection(message.text);
         break;
       default:
         console.log("Unknown command: " + message.command);

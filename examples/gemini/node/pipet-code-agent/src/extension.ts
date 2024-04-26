@@ -20,6 +20,7 @@ import { generateReview } from "./review";
 import { startchat } from "./chat";
 import { ChatSession } from "@google/generative-ai";
 import { generateGitCommit } from "./gitCommit";
+import * as path from "path";
 
 export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand(
@@ -73,17 +74,35 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
+    vscode.window.onDidChangeTextEditorSelection((event) => {
+      const editor = event.textEditor;
+      if (!editor.selection.isEmpty) {
+        const startLine = editor.selection.start.line + 1;
+        const endLine = editor.selection.end.line + 1;
+        const name = path.basename(editor.document.fileName);
+        webviewView.webview.postMessage({
+          command: "onSelection",
+          text: `${name}:${startLine}-${endLine}`,
+        });
+      } else {
+        webviewView.webview.postMessage({
+          command: "onSelection",
+          text: "Ask anything here",
+        });
+      }
+    });
+
     try {
       chat = startchat();
       webviewView.webview.onDidReceiveMessage(async (message) => {
         if (message.command === "sendMessage" && message.text) {
+          const code = this.selectedCode();
           webviewView.webview.postMessage({
             command: "Message",
-            text: message.text,
+            text: `${code}${message.text}`,
           });
           if (chat) {
             try {
-              const code = this.selectedCode();
               const prompt = `${code}${message.text}`;
               const result = await chat.sendMessageStream(prompt);
               let chunktext = "";
@@ -123,6 +142,7 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
         console.debug("Abandon: no open text editor.");
         return "";
       }
+
       const code = editor.document.getText(editor.selection);
       editor.selection = new vscode.Selection(
         editor.selection.active,
