@@ -178,6 +178,10 @@ body {
     margin-top: 12px;
   }
 
+  #feedback-buttons-box {
+    margin-top: 12px;
+  }
+
   #answerable-span {
     font-size: small;
     font-family: system-ui;
@@ -236,6 +240,13 @@ body {
     border-radius: 15px;
   }
 
+  .feedback {
+    padding: 15px;
+    border: 2px solid #000;
+    margin-top: 6px;
+    border-radius: 15px;
+  }
+
   .question, .response, .response-text, .fact-checked-text {
     max-width: 700px;
     margin-left: 3px;
@@ -269,6 +280,21 @@ body {
     cursor:pointer;
   }
 
+  #feedback-button {
+    border: 0;
+    background-color: #cf633ff2;
+    color: #fff;
+    padding: 7px;
+    border-radius: 5px;
+    cursor:pointer;
+    margin-top: 0.3em;
+  }
+
+  #feedback-button:hover {
+    background: #ce3705f2;
+    cursor:pointer;
+  }
+
   #like-button {
     border: 0;
     color: #fff;
@@ -298,12 +324,41 @@ body {
     font-family: fantasy;
   }
 
+  #feedback-submit-button {
+    border: 0;
+    background: none;
+    background-color: #CF5C3F;
+    color: #fff;
+    padding: 7px;
+    border-radius: 5px;
+    cursor:pointer;
+  }
+
+  #feedback-submit-button:hover {
+    background: #ce3705f2;
+    cursor:pointer;
+  }
+
+  #feedback-submit-result {
+    color: #027f02d6;
+    font-family: fantasy;
+  }
+
   #edit-text-area {
     font: 13px/1.5em Overpass, "Open Sans", Helvetica, sans-serif;
     max-height: 500px;
     max-width: -webkit-fill-available;
     height: 300px;
     width: 650px;
+    padding: 8px;
+  }
+
+  #feedback-text-area {
+    font: 13px/1.5em Overpass, "Open Sans", Helvetica, sans-serif;
+    max-height: 500px;
+    max-width: -webkit-fill-available;
+    height: 300px;
+    width: 580px;
     padding: 8px;
   }
 

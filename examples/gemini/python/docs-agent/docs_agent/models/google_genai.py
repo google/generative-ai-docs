@@ -129,7 +129,11 @@ class Gemini:
         if self.language_model is None:
             raise GoogleUnsupportedModelError(self.language_model, self.api_endpoint)
         model = google.generativeai.GenerativeModel(model_name=self.language_model)
-        return model.generate_content(contents)
+        response = model.generate_content(contents)
+        for chunk in response:
+            if str(chunk.candidates[0].content) == "":
+                return self.model_error_message
+        return response.text
 
     # Use this method for talking to a Gemini content model
     # Optionally provide a prompt, if not use the one from config.yaml

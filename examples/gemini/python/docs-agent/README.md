@@ -172,7 +172,13 @@ Authorize Google Cloud credentials on your host machine:
 
 2. Copy the `client_secret.json` file to your host machine.
 
-3. To authenticate credentials, run the following command in the directory of
+3. Install the Google Cloud SDK on your host machine:
+
+   ```
+   sudo apt install google-cloud-sdk
+   ```
+
+4. To authenticate credentials, run the following command in the directory of
    the host machine where the `client_secret.json` file is located:
 
    ```
@@ -181,10 +187,7 @@ Authorize Google Cloud credentials on your host machine:
 
    This command opens a browser and asks to log in using your Google account.
 
-   **Note**: If the `gcloud` command doesn’t exist, install the Google Cloud SDK
-   on your host machine: `sudo apt install google-cloud-sdk`
-
-4. Follow the instructions on the browser and click **Allow** to authenticate.
+5. Follow the instructions on the browser and click **Allow** to authenticate.
 
    This saves the authenticated credentials for Docs Agent
    (`application_default_credentials.json`) in the `$HOME/.config/gcloud/`

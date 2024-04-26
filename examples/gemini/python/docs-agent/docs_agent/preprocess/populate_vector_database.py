@@ -52,8 +52,18 @@ def get_file_count_in_a_dir(path):
     return file_count
 
 
+# Return the relative path after the `docs-agent/data` path
+def get_relative_path_and_filename(full_path: str):
+    path_and_filename = full_path
+    match = re.search(r".*\/docs-agent\/data\/(.*)$", full_path)
+    if match:
+        path_and_filename = match[1]
+    return path_and_filename
+
+
 # Prepare progres bars for showing files being processed and uploaded.
 def init_progress_bars(file_count):
+    print()
     main = tqdm.tqdm(
         total=file_count,
         position=0,
@@ -129,6 +139,172 @@ def upload_an_entry_to_a_corpus(
     return document_name
 
 
+# Delete entries in the Chroma database if we cannot find matches in the current dataset.
+def delete_unmatched_entries_in_chroma(
+    product_config: ProductConfig, chroma_client, collection
+):
+    print()
+    print(f"Scanning the Chroma database to identify entries to be deleted.")
+    # Arrays to store IDs, text chunk filename, and md hashes of
+    # the existing entries in the local Chroma vector database.
+    existing_online_entry_ids = []
+    existing_online_entry_text_chunk_filenames = []
+    existing_online_entry_md_hashes = []
+    # Get all entries in the vector database.
+    all_entries = collection.get()
+    for entry in all_entries["ids"]:
+        # logging.error(f"ID: {entry}")
+        existing_online_entry_ids.append(str(entry))
+    for entry in all_entries["metadatas"]:
+        # logging.error(f"Metadata: {entry}")
+        text_chunk_filename = ""
+        md_hash = ""
+        if "text_chunk_filename" in entry:
+            text_chunk_filename = entry["text_chunk_filename"]
+        if "md_hash" in entry:
+            md_hash = entry["md_hash"]
+        # logging.error(f"Text chunk filename: {text_chunk_filename}")
+        # logging.error(f"MD HASH: {md_hash}")
+        existing_online_entry_text_chunk_filenames.append(str(text_chunk_filename))
+        existing_online_entry_md_hashes.append(str(md_hash))
+
+    # Examine the new candidate entries in the current `data` directory.
+    candidate_entries = {}
+    (index_object, full_index_path) = load_index(input_path=product_config.output_path)
+    for product in index_object:
+        dictionary_input = index_object[product]
+    # Extract the text chunk name and hash from each chunk data.
+    for item in dictionary_input:
+        chunk_data = dictionary_input[item]
+        text_chunk_filename = ""
+        text_chunk_md_hash = ""
+        # print(f"Candidate text chunk data: {chunk_data}")
+        if "text_chunk_filename" in chunk_data:
+            text_chunk_filename = chunk_data["text_chunk_filename"]
+        if "md_hash" in chunk_data:
+            text_chunk_md_hash = chunk_data["md_hash"]
+        # print(f"Candidate text chunk filename: {text_chunk_filename}")
+        if text_chunk_filename != "":
+            candidate_entries[text_chunk_filename] = text_chunk_md_hash
+
+    # Compare the existing online entries to the candidate entries.
+    to_be_deleted_online_entry_ids = []
+    index = 0
+    for index, item in enumerate(existing_online_entry_text_chunk_filenames):
+        existing_text_chunk = item
+        existing_md_hash = existing_online_entry_md_hashes[index]
+        existing_id = existing_online_entry_ids[index]
+        if existing_text_chunk in candidate_entries:
+            candidate_md_hash = candidate_entries[existing_text_chunk]
+            if existing_md_hash != candidate_md_hash:
+                logging.info(
+                    f"The entry {existing_text_chunk} in the Chroma database "
+                    + "will be deleted because its content has changed."
+                )
+                to_be_deleted_online_entry_ids.append(existing_id)
+        else:
+            logging.info(
+                f"The entry {existing_text_chunk} in the Chroma database "
+                + "will be deleted because it is no longer found in the current dataset."
+            )
+            to_be_deleted_online_entry_ids.append(existing_id)
+
+    # Delete identified entries in the Chroma database.
+    if to_be_deleted_online_entry_ids:
+        collection.delete(ids=to_be_deleted_online_entry_ids)
+        deleted_entries_count = len(to_be_deleted_online_entry_ids)
+        print(f"Deleted entries count: {deleted_entries_count}")
+    else:
+        print(f"Keeping all existing entries in the Chroma database.")
+    return to_be_deleted_online_entry_ids
+
+
+# Delete entries in the online corpus if we cannot find matches in the current dataset.
+def delete_unmatched_entries_in_online_corpus(
+    product_config: ProductConfig, semantic_object, corpus_name
+):
+    print()
+    print(f"Scanning the online corpus to identify chunks to be deleted.")
+    print(f"(This may take some time.)")
+    # Get all chunks in the online corpus.
+    all_chunks = []
+    all_docs = semantic_object.get_all_docs(corpus_name=corpus_name, print_output=False)
+    for doc in all_docs:
+        doc_name = str(doc.name)
+        chunks = semantic_object.get_all_chunks(doc_name=doc_name, print_output=False)
+        for chunk in chunks:
+            all_chunks.append(chunk)
+
+    # Examine the new candidate entries in the current `data` directory.
+    candidate_entries = {}
+    (index_object, full_index_path) = load_index(input_path=product_config.output_path)
+    for product in index_object:
+        dictionary_input = index_object[product]
+    # Extract the text chunk name and hash from each chunk data.
+    for item in dictionary_input:
+        chunk_data = dictionary_input[item]
+        text_chunk_filename = ""
+        text_chunk_md_hash = ""
+        # print(f"Candidate text chunk data: {chunk_data}")
+        if "text_chunk_filename" in chunk_data:
+            text_chunk_filename = chunk_data["text_chunk_filename"]
+        if "md_hash" in chunk_data:
+            text_chunk_md_hash = chunk_data["md_hash"]
+        # print(f"Candidate text chunk filename: {text_chunk_filename}")
+        if text_chunk_filename != "":
+            candidate_entries[text_chunk_filename] = text_chunk_md_hash
+
+    # Compare the existing online entries to the candidate entries.
+    to_be_deleted_online_chunk_names = []
+    for chunk in all_chunks:
+        existing_chunk_name = chunk.name
+        existing_md_hash = ""
+        existing_text_chunk_filename = ""
+        metadata = chunk.custom_metadata
+        for item in metadata:
+            if item.key == "md_hash":
+                # print(f"md_hash: {item.string_value}")
+                existing_md_hash = item.string_value
+            elif item.key == "text_chunk_filename":
+                # print(f"text_chunk_filename: {item.string_value}")
+                existing_text_chunk_filename = item.string_value
+        if existing_text_chunk_filename in candidate_entries:
+            candidate_md_hash = candidate_entries[existing_text_chunk_filename]
+            if existing_md_hash != candidate_md_hash:
+                logging.info(
+                    f"{existing_text_chunk_filename} in the online corpus "
+                    + "will be deleted because its content has changed."
+                )
+                to_be_deleted_online_chunk_names.append(existing_chunk_name)
+        else:
+            logging.info(
+                f"{existing_text_chunk_filename} in the online corpus will be "
+                + "deleted because it is no longer found in the current dataset."
+            )
+            to_be_deleted_online_chunk_names.append(existing_chunk_name)
+
+    # Delete identified chunks in the online corpus.
+    if to_be_deleted_online_chunk_names:
+        # Initialize a progress bar object.
+        progress_bar = tqdm.tqdm(
+            position=0, desc="Deleting the chunk", bar_format="{desc}"
+        )
+        # Loop for deleting chunks online.
+        for chunk_name in to_be_deleted_online_chunk_names:
+            # progress_bar.update(1)
+            progress_bar.set_description_str(
+                f"Deleting the chunk {chunk_name}", refresh=True
+            )
+            semantic_object.delete_a_chunk(chunk_name)
+        delete_count = len(to_be_deleted_online_chunk_names)
+        progress_bar.set_description_str(
+            f"Deleted chunks count: {delete_count}", refresh=False
+        )
+    else:
+        print(f"Keeping all existing chunks in the online corpus.")
+    return to_be_deleted_online_chunk_names
+
+
 # Read plain text files (.md) from an input dir and
 # add their content to the vector database.
 # Embeddings are generated automatically as they are added to the database.
@@ -151,10 +327,18 @@ def populateToDbFromProduct(product_config: ProductConfig):
                 name=item.collection_name,
                 embedding_function=embedding_function_gemini,
             )
+            if (
+                hasattr(product_config, "enable_delete_chunks")
+                and product_config.enable_delete_chunks == "True"
+            ):
+                # Delete entries in the database if we cannot find matches
+                # in the current dataset.
+                delete_unmatched_entries_in_chroma(
+                    product_config, chroma_client, collection
+                )
 
     # Initialzie the Semantic Retreival API.
     corpus_name = ""
-    all_docs = []
     if product_config.db_type == "google_semantic_retriever":
         logging.info("Initializing the Semantic Retrieval API for an online storage.")
         semantic = SemanticRetriever()
@@ -164,21 +348,17 @@ def populateToDbFromProduct(product_config: ProductConfig):
                 if semantic.does_this_corpus_exist(corpus_name) == False:
                     # Create a new corpus.
                     semantic.create_a_new_corpus(item.corpus_display, corpus_name)
-                else:
-                    # Get all documents from the existing corpus.
-                    # This array is used for detecting duplicate entries.
-                    all_docs = semantic.get_all_docs(corpus_name=corpus_name)
+                elif (
+                    hasattr(product_config, "enable_delete_chunks")
+                    and product_config.enable_delete_chunks == "True"
+                ):
+                    # Delete chunks in the corpus if we cannot find matches in the current dataset.
+                    delete_unmatched_entries_in_online_corpus(
+                        product_config, semantic, corpus_name
+                    )
 
-    # These variables track the resource names of documents for the Semantic Retrieval API.
-    document_name_in_corpus = ""
-    dict_document_names_in_corpus = {}
-
-    # Load the file index information from the file_index.json file.
-    (index, full_index_path) = load_index(input_path=product_config.output_path)
-
-    # Get the total number of files for the progress bar.
+    # Initialize progress bar objects.
     file_count = get_file_count_in_a_dir(product_config.output_path)
-    # Prepare progress bars.
     (
         progress_bar,
         progress_new_file,
@@ -186,13 +366,20 @@ def populateToDbFromProduct(product_config: ProductConfig):
         progress_update_file,
     ) = init_progress_bars(file_count)
 
+    # Get the preprocess information from the `file_index.json` file.
+    (index, full_index_path) = load_index(input_path=product_config.output_path)
+
+    # Local variables track the resource names of documents for the Semantic Retrieval API.
+    document_name_in_corpus = ""
+    dict_document_names_in_corpus = {}
+
     # Local variables for counting files.
     total_files = 0
     updated_count = 0
     new_count = 0
     unchanged_count = 0
 
-    # Main loop that goes through each `path` in config.yaml.
+    # Loop through each `path` in the `config.yaml` file.
     for root, dirs, files in os.walk(product_config.output_path):
         # Convert `output_path` to be a fully resolved path.
         fully_resolved_output = end_path_backslash(
@@ -312,9 +499,12 @@ def populateToDbFromProduct(product_config: ProductConfig):
                     f"Skipped {file} because there is no configured parser for extension {extension}"
                 )
 
-    print("")
-    print(f"===========================================")
-    print("Total number of entries: " + str(total_files))
+    progress_bar.set_description_str(
+        f"Finished processing text chunk files (and file_index.json).", refresh=True
+    )
+    progress_unchanged_file.set_description_str(
+        f"Total number of entries: {total_files}", refresh=True
+    )
 
 
 def findFileinDict(input_file_name: str, index_object, content_file):
@@ -322,6 +512,12 @@ def findFileinDict(input_file_name: str, index_object, content_file):
     for product in index_object:
         dictionary_input = index_object[product]
     if input_file_name in dictionary_input:
+        chunk_data = dictionary_input[input_file_name]
+        # Extract the text chunk name from the index object.
+        text_chunk_filename = ""
+        if "text_chunk_filename" in chunk_data:
+            text_chunk_filename = chunk_data["text_chunk_filename"]
+            # logging.error(f"Chunk name: {text_chunk_filename}")
         # If metadata exists, add these to a dictionary that is then
         # merged with other metadata values
         if "metadata" in dictionary_input[input_file_name]:
@@ -340,6 +536,9 @@ def findFileinDict(input_file_name: str, index_object, content_file):
         section.content = content_file
         # Combines Section db in dictionary with extra
         metadata_dict_final = section.encodeToChromaDBNoContent() | metadata_dict_extra
+        # Add the text chunk filename to the metadata.
+        if text_chunk_filename != "":
+            metadata_dict_final["text_chunk_filename"] = text_chunk_filename
         # Overide title if it exists from frontmatter
         if "title" in metadata_dict_final:
             doc_title = str(metadata_dict_final["title"])
@@ -370,7 +569,7 @@ def load_index(
     full_index_path = resolve_path(end_path_backslash(input_path) + input_index_name)
     try:
         with open(full_index_path, "r", encoding="utf-8") as index_file:
-            print("Using file index: " + full_index_path + "\n")
+            logging.info("Using file index: " + full_index_path + "\n")
             index = json.load(index_file)
             return index, full_index_path
     except FileNotFoundError:
@@ -395,6 +594,7 @@ def process_all_products(
         print(f"Processing product: {product.product_name}")
         print(f"Input directory: {resolve_path(product.output_path)}")
         print(f"Database operation db type: {product.db_type}")
+        print()
         for item in product.db_configs:
             print(f"{item}")
         print(f"===========================================")
