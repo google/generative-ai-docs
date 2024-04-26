@@ -16,10 +16,38 @@
 # limitations under the License.
 #
 
-# Check if the POETRY_ACTIVE environment variable is set
-if [ -z "$POETRY_ACTIVE" ]; then
-   cd $HOME/docs-agent && poetry run agent helpme $@
+# IF NECESSARY, ADJUST THIS PATH TO YOUR `docs-agent` DIRECTORY.
+docs_agent_dir="$HOME/docs-agent"
+
+# Initialize request and filename variables.
+request=""
+filename=""
+
+# Loop through the arguments and look for the `--file` flag.
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --file)
+      shift
+      filename="$1"
+      shift
+      ;;
+    *)
+      request="$request $1"
+      shift
+      ;;
+  esac
+done
+
+# Get the full path for the filename.
+if [[ -n "$filename" ]]; then
+  filename=$(readlink -m ${filename})
 else
-   agent helpme $@
+  filename="None"
 fi
 
+# Check if the POETRY_ACTIVE environment variable is set
+if [ -z "$POETRY_ACTIVE" ]; then
+  cd "$docs_agent_dir" && poetry run agent helpme "$request" --file "$filename"
+else
+  agent helpme "$request" --file "$filename"
+fi

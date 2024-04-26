@@ -102,7 +102,8 @@
   </section>
 {% endif %}
 
-<!--Common like/rewrite-->
+<!--Feedback buttons at the bottom of the UI display.-->
+{% if feedback_mode == "rewrite" %}
 <div id="rewrite-buttons-box">
   <input type="button" value="Rewrite this response" id="rewrite-button">
   <input type="button" class="notselected" value="Like this response &#128077;" id="like-button">
@@ -136,3 +137,36 @@
 <div class="hidden" id="uuid-box">
   {{ uuid | safe }}
 </div>
+{% else %}
+<div id="feedback-buttons-box">
+  <input type="button" value="Provide feedback" id="feedback-button">
+  <input type="button" class="notselected" value="Like this response &#128077;" id="like-button">
+  {% if aqa_response_in_html != "" %}
+  <span id="answerable-span">
+    (<b>Answerable probability</b>: {{"%.3f"|format(probability|float)}})
+  </span>
+  {% endif %}
+</div>
+<div class="feedback hidden" id="feedback-box">
+  <h4>Feedback:</h4>
+  <textarea id="feedback-text-area"></textarea>
+  <br>
+  <label for="user-id">LDAP:</label>
+  <input type="text" id="user-id" name="user-id" placeholder="Optional">
+  <br>
+  <span id="feedback-submit-box">
+    <input type="button" value="Submit" id="feedback-submit-button">
+  </span>
+  <span id="feedback-submit-result">
+  </span>
+</div>
+<div class="hidden" id="uuid-box">
+  {{ uuid | safe }}
+</div>
+<div class="hidden" id="feedback-question-span">
+  {{ question | replace("+", " ") | replace("%3F", "?")}}
+</div>
+<div class="hidden" id="feedback-response-span">
+  {{ md_to_html(response) | safe }}
+</div>
+{% endif %}

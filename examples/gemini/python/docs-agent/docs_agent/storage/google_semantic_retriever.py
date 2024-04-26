@@ -211,6 +211,15 @@ class SemanticRetriever:
             )
         return response
 
+    def delete_a_chunk(self, chunk_name: str):
+        response = []
+        try:
+            request = glm.DeleteChunkRequest(name=chunk_name)
+            response = self.retriever_service_client.delete_chunk(request)
+        except:
+            logging.error(f"Cannot delete a chunk: {chunk_name}")
+        return response
+
     def create_a_doc_chunk(
         self,
         corpus_name: str,
@@ -283,6 +292,54 @@ class SemanticRetriever:
         except:
             logging.error("Error in listing all docs: " + corpus_name)
             return all_docs
+
+    def get_all_chunks(self, doc_name: str, print_output: bool = False):
+        all_chunks = []
+        try:
+            request = glm.ListChunksRequest(parent=doc_name, page_size=20)
+            response = self.retriever_service_client.list_chunks(request)
+            index = 0
+            for chunk in response.chunks:
+                if print_output:
+                    index += 1
+                    print(f"\nChunk # {index}")
+                    print(f"Name: {chunk.name}")
+                    metadata = chunk.custom_metadata
+                    for item in metadata:
+                        if item.key == "uuid":
+                            print(f"uuid: {item.string_value}")
+                        elif item.key == "md_hash":
+                            print(f"md_hash: {item.string_value}")
+                        elif item.key == "text_chunk_filename":
+                            print(f"text_chunk_filename: {item.string_value}")
+                all_chunks.append(chunk)
+            while (
+                hasattr(response, "next_page_token") and response.next_page_token != ""
+            ):
+                request = glm.ListChunksRequest(
+                    parent=doc_name,
+                    page_size=20,
+                    page_token=response.next_page_token,
+                )
+                response = self.retriever_service_client.list_chunks(request)
+                for chunk in response.chunks:
+                    if print_output:
+                        index += 1
+                        print(f"\nChunk # {index}")
+                        print(f"Name: {chunk.name}")
+                        metadata = chunk.custom_metadata
+                        for item in metadata:
+                            if item.key == "uuid":
+                                print(f"uuid: {item.string_value}")
+                            elif item.key == "md_hash":
+                                print(f"md_hash: {item.string_value}")
+                            elif item.key == "text_chunk_filename":
+                                print(f"text_chunk_filename: {item.string_value}")
+                    all_chunks.append(chunk)
+            return all_chunks
+        except:
+            logging.error("Error in listing all chunks: " + doc_name)
+            return all_chunks
 
     def share_a_corpus(self, corpus_name: str, email: str, role: str):
         shared_user_email = email

@@ -49,26 +49,26 @@ Setting up Docs Agent requires the following prerequisite items:
 
 1. Update the Linux package repositories on the host machine:
 
-   ```posix-terminal
+   ```
    sudo apt update
    ```
 
 2. Install the following dependencies:
 
-   ```posix-terminal
+   ```
    sudo apt install git pipx python3-venv
    ```
 
 3. Install `poetry`:
 
-   ```posix-terminal
+   ```
    pipx install poetry
    ```
 
 4. To add `$HOME/.local/bin` to your `PATH` variable, run the following
    command:
 
-   ```posix-terminal
+   ```
    pipx ensurepath
    ```
 
@@ -84,7 +84,7 @@ Setting up Docs Agent requires the following prerequisite items:
 
 6. Update your environment:
 
-   ```posix-termainl
+   ```
    source ~/.bashrc
    ```
 
@@ -98,7 +98,13 @@ credentials (via `gcloud`) stored on your host machine.
 
 2. Copy the `client_secret.json` file to your host machine.
 
-3. To authenticate credentials, run the following command in the directory of
+3. Install the Google Cloud SDK on your host machine:
+
+   ```
+   sudo apt install google-cloud-sdk
+   ```
+
+4. To authenticate credentials, run the following command in the directory of
    the host machine where the `client_secret.json` file is located:
 
    ```
@@ -107,10 +113,7 @@ credentials (via `gcloud`) stored on your host machine.
 
    This command opens a browser and asks to log in using your Google account.
 
-   **Note**: If the `gcloud` command doesn’t exist, install the Google Cloud SDK
-   on your host machine: `sudo apt install google-cloud-sdk`
-
-4. Follow the instructions on the browser and click **Allow** to authenticate.
+5. Follow the instructions on the browser and click **Allow** to authenticate.
 
    This saves the authenticated credentials for Docs Agent
    (`application_default_credentials.json`) in the `$HOME/.config/gcloud/`
@@ -123,19 +126,19 @@ from your `$HOME` directory.
 
 1. Clone the following repo:
 
-   ```posix-terminal
+   ```
    git clone https://github.com/google/generative-ai-docs.git
    ```
 
 2. Go to the Docs Agent project directory:
 
-   ```posix-terminal
+   ```
    cd generative-ai-docs/examples/gemini/python/docs-agent
    ```
 
 3. Install dependencies using `poetry`:
 
-   ```posix-terminal
+   ```
    poetry install
    ```
 
@@ -149,7 +152,7 @@ from anywhere in the terminal:
 
 1. (**Optional**) Open the `tellme.sh` file using a text editor, for example:
 
-   ```sh
+   ```
    nano tellme.sh
    ```
 
@@ -157,14 +160,8 @@ from anywhere in the terminal:
    `docs-agent` project directory on the host machine:
 
    ```
-   #!/bin/bash
-
-   # Check if the POETRY_ACTIVE environment variable is set
-   if [ -z "$POETRY_ACTIVE" ]; then
-       cd $HOME/docs-agent && poetry run agent tellme $@
-   else
-       agent tellme $@
-   fi
+   # IF NECESSARY, ADJUST THIS PATH TO YOUR `docs-agent` DIRECTORY.
+   docs_agent_dir="$HOME/docs-agent"
    ```
 
    Save the file and close text editor.
@@ -181,13 +178,13 @@ from anywhere in the terminal:
 
 3. Update your environment:
 
-   ```sh
+   ```
    source ~/.bashrc
    ```
 
 4. Now you can run the `gemini` command from anywhere in your terminal:
 
-   ```sh
+   ```
    gemini <QUESTION>
    ```
 
@@ -229,7 +226,7 @@ To set up this `helpme` command in your terminal, do the following:
 
 1. (**Optional**) Open the `helpme.sh` file using a text editor, for example:
 
-   ```sh
+   ```
    nano helpme.sh
    ```
 
@@ -237,17 +234,11 @@ To set up this `helpme` command in your terminal, do the following:
    `docs-agent` project directory on the host machine:
 
    ```
-   #!/bin/bash
-
-   # Check if the POETRY_ACTIVE environment variable is set
-   if [ -z "$POETRY_ACTIVE" ]; then
-       cd $HOME/docs-agent && poetry run agent helpme $@
-   else
-       agent helpme $@
-   fi
+   # IF NECESSARY, ADJUST THIS PATH TO YOUR `docs-agent` DIRECTORY.
+   docs_agent_dir="$HOME/docs-agent"
    ```
 
-   Save the file and close text editor.
+   Save the file and close the text editor.
 
 2. Add the following `alias` lines to your `$HOME/.bashrc` file:
 
@@ -263,14 +254,14 @@ To set up this `helpme` command in your terminal, do the following:
 
 3. Update your environment:
 
-   ```sh
+   ```
    source ~/.bashrc
    ```
 
 4. When you are ready to let Docs Agent to read output from your terminal,
    run the following command:
 
-   ```sh
+   ```
    start_agent
    ```
 
@@ -291,7 +282,7 @@ To set up this `helpme` command in your terminal, do the following:
 6. To use the latest output from your terminal, run the `gemini-pro` command
    immediately after the output:
 
-   ```sh
+   ```
    gemini-pro <REQUEST>
    ```
 

@@ -16,9 +16,12 @@
 # limitations under the License.
 #
 
+# IF NECESSARY, ADJUST THIS PATH TO YOUR `docs-agent` DIRECTORY.
+docs_agent_dir="$HOME/docs-agent"
+
 # Check if the POETRY_ACTIVE environment variable is set
 if [ -z "$POETRY_ACTIVE" ]; then
-   cd $HOME/docs-agent && poetry run agent tellme $@
+   cd "$docs_agent_dir" && poetry run agent tellme $@
 else
    agent tellme $@
 fi

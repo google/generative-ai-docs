@@ -69,6 +69,23 @@ if (rewriteButton != null){
   });
 }
 
+// Toggle the hidden class on the `feedback-box` div.
+let feedbackButton = document.getElementById('feedback-button');
+
+if (feedbackButton != null){
+  feedbackButton.addEventListener('click',function (){
+    let feedbackBox = document.getElementById('feedback-box');
+    if (feedbackBox.classList.contains("hidden")){
+      feedbackBox.classList.remove("hidden");
+      // Trigger a focus event on the textarea
+      let element = document.getElementById('feedback-text-area');
+      element.dispatchEvent(new Event("focus"));
+    }else{
+      feedbackBox.classList.add("hidden");
+    }
+  });
+}
+
 // Toggle the selected class on the `like this response` button.
 let likeButton = document.getElementById('like-button');
 
@@ -136,6 +153,28 @@ function resize_textarea(){
   }
 }
 
+// Adjust the size of the `feedback-text-area` textarea.
+let feedbackTextArea = document.getElementById('feedback-text-area');
+
+if (feedbackTextArea != null){
+  feedbackTextArea.addEventListener('focus', resize_feedback_textarea);
+  feedbackTextArea.addEventListener('input', resize_feedback_textarea);
+}
+
+function resize_feedback_textarea(){
+  this.style.height = "5px";
+  this.style.width = "650px";
+  this.style.height = (this.scrollHeight)+"px";
+  let feedbackSubmitButton = document.getElementById('feedback-submit-button');
+  if (feedbackSubmitButton != null){
+    if (feedbackSubmitButton.classList.contains("disable")){
+      feedbackSubmitButton.classList.remove("disable");
+      let feedbackResult = document.getElementById('feedback-submit-result');
+      feedbackResult.textContent = "Click to re-submit updated feedback.";
+    }
+  }
+}
+
 // Make a rewrite POST call.
 let rewriteSubmitButton = document.getElementById('submit-button');
 
@@ -166,6 +205,39 @@ if (rewriteSubmitButton != null){
     let submitResult = document.getElementById('submit-result');
     submitResult.textContent = "Rewrite has been submitted. Thank you!";
     rewriteSubmitButton.classList.add("disable");
+  }, false);
+}
+
+// Make a feedback POST call.
+let feedbackSubmitButton = document.getElementById('feedback-submit-button');
+
+if (feedbackSubmitButton != null){
+  feedbackSubmitButton.addEventListener('click',function (){
+    let xhr = new XMLHttpRequest();
+    // The value of `urlRewrite` below is specified in the html template,
+    // which is set by the Flask server.
+    // See chatbot/templates/chatui/base.html
+    xhr.open("POST", urlFeedback, true);
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("Content-Type", "application/json");
+    let feedbackQuestion = document.getElementById('feedback-question-span');
+    let feedbackResponse = document.getElementById('feedback-response-span');
+    let feedbackTextArea = document.getElementById('feedback-text-area');
+    let userIDInput = document.getElementById('user-id');
+    let userID = userIDInput.value;
+    if (userID == "") {
+      userID = "anonymous";
+    }
+    let data = JSON.stringify({
+      "user_id": userID,
+      "question": feedbackQuestion.textContent,
+      "response": feedbackResponse.textContent,
+      "feedback": feedbackTextArea.value});
+    xhr.send(data);
+
+    let feedbackResult = document.getElementById('feedback-submit-result');
+    feedbackResult.textContent = "Feedback has been submitted. Thank you!";
+    feedbackSubmitButton.classList.add("disable");
   }, false);
 }
 

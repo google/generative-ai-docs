@@ -96,27 +96,40 @@ cli = click.CommandCollection(
 
 @cli_admin.command()
 @common_options
-def chunk(config_file: typing.Optional [str], product: list[str] = [""]):
+def chunk(config_file: typing.Optional[str], product: list[str] = [""]):
     """Convert files to plain text chunks."""
     loaded_config, product_config = return_config_and_product(
         config_file=config_file, product=product
     )
     chunker.process_all_products(config_file=product_config)
-    click.echo("The files are successfully converted into text chunks.")
+    click.echo("\nFiles are successfully converted into text chunks.")
 
 
 @cli_admin.command()
+@click.option(
+    "--enable_delete_chunks",
+    is_flag=True,
+    help="Delete stale chunks in the existing databases.",
+)
 @common_options
-def populate(config_file: typing.Optional [str], product: list[str] = [""]):
+def populate(
+    config_file: typing.Optional[str],
+    enable_delete_chunks: bool = False,
+    product: list[str] = [""],
+):
     """Populate a vector database using text chunks."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
         config_file=config_file, product=product
     )
+    # If `--enable_delete_chunks` flag is set, update the config object.
+    if enable_delete_chunks:
+        for product in product_config.products:
+            product.enable_delete_chunks = "True"
 
     populate_script.process_all_products(config_file=product_config)
     for item in product_config.products:
-        click.echo(f"The text chunks are successfully added to {item.db_type}.")
+        click.echo(f"\nText chunks are successfully added to {item.db_type}.")
 
 
 @cli_admin.command()
@@ -127,8 +140,18 @@ def populate(config_file: typing.Optional [str], product: list[str] = [""]):
     "--app_mode",
     default=None,
     show_default=True,
-    type=click.Choice(["web", "widget", "experimental"], case_sensitive=False),
+    type=click.Choice(["web", "widget", "1.5", "experimental"], case_sensitive=False),
     help="Specify a mode for the chatbot.",
+)
+@click.option(
+    "--enable_show_logs",
+    is_flag=True,
+    help="Enable a page view that shows log files.",
+)
+@click.option(
+    "--enable_logs_to_markdown",
+    is_flag=True,
+    help="Save each question-and-response pair to a Markdown file.",
 )
 @common_options
 def chatbot(
@@ -136,7 +159,9 @@ def chatbot(
     port: str,
     debug: str,
     app_mode: str,
-    config_file: typing.Optional [str],
+    enable_show_logs: str,
+    enable_logs_to_markdown: str,
+    config_file: typing.Optional[str],
     product: list[str] = [""],
 ):
     """Launch the Flask-based chatbot app."""
@@ -144,20 +169,34 @@ def chatbot(
     loaded_config, product_config = return_config_and_product(
         config_file=config_file, product=product
     )
-
-    product_file = product_config.products[0]
-    if app_mode == None:
-        app_mode = product_file.app_mode
-    app = chatbot_flask.create_app(product=product_file, app_mode=app_mode)
+    # Launch the web app using the first product in the `config.yaml` file.
+    product = product_config.products[0]
+    # Check the `--app_mode` flag
+    if app_mode == None and hasattr(product, "app_mode"):
+        app_mode = product.app_mode
+    elif app_mode != None:
+        # Update the app_mode field in the product config object.
+        product.app_mode = app_mode
+    # Check the `--app_port` flag
+    app_port = int(port)
+    if app_port == 5000 and hasattr(product, "app_port"):
+        app_port = int(product.app_port)
+    # If `--enable_show_logs` flag is set, update the product config object.
+    if enable_show_logs:
+        product.enable_show_logs = "True"
+    # If `--enable_logs_to_markdown` flag is set, update the product config object.
+    if enable_logs_to_markdown:
+        product.enable_logs_to_markdown = "True"
+    app = chatbot_flask.create_app(product=product, app_mode=app_mode)
     click.echo(
-        f"Launching the chatbot UI for product {product_file.product_name} in {app_mode} mode."
+        f"Launching the chatbot UI for product {product.product_name} in {app_mode} mode."
     )
-    app.run(host=hostname, port=port, debug=debug)
+    app.run(host=hostname, port=app_port, debug=debug)
 
 
 @cli_admin.command()
 @common_options
-def show_config(config_file: typing.Optional [str], product: list[str] = [""]):
+def show_config(config_file: typing.Optional[str], product: list[str] = [""]):
     """Print the Docs Agent configuration."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -171,7 +210,7 @@ def show_config(config_file: typing.Optional [str], product: list[str] = [""]):
 @cli_client.command(name="tellme")
 @click.argument("words", nargs=-1)
 @common_options
-def tellme(words, config_file: typing.Optional [str], product: list[str] = [""]):
+def tellme(words, config_file: typing.Optional[str], product: list[str] = [""]):
     """Answer a question related to the product."""
     # Loads configurations from common options
     loaded_config, product_configs = return_config_and_product(
@@ -203,8 +242,8 @@ def tellme(words, config_file: typing.Optional [str], product: list[str] = [""])
 @common_options
 def helpme(
     words,
-    config_file: typing.Optional [str],
-    file: typing.Optional [str] = None,
+    config_file: typing.Optional[str],
+    file: typing.Optional[str] = None,
     rag: bool = False,
     product: list[str] = [""],
 ):
@@ -222,17 +261,19 @@ def helpme(
     question = ""
     for word in words:
         question += word + " "
-    if file:
+    question = question.strip()
+    if file and file != "None":
         # This feature is only available in gemini 1.5 pro (large context)
         if product_config.products[0].models.language_model.startswith(
             "models/gemini-1.5-pro"
         ):
             try:
-                with open(file, "r", encoding="utf-8") as auto:
+                this_file = os.path.realpath(os.path.join(os.getcwd(), file))
+                with open(this_file, "r", encoding="utf-8") as auto:
                     # Read the input content
                     content = auto.read()
                     auto.close()
-                final_file = f"The content of the {file} file:\n" + content
+                final_file = f"THE CONTENT OF THE FILE {file} BELOW:\n\n" + content
                 console.ask_model_with_file(
                     question.strip(), product_config, file=final_file, rag=rag
                 )
@@ -272,7 +313,7 @@ def helpme(
 
 @cli_admin.command()
 @common_options
-def benchmark(config_file: typing.Optional [str], product: list[str] = [""]):
+def benchmark(config_file: typing.Optional[str], product: list[str] = [""]):
     """Run the Docs Agent benchmark test."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -283,7 +324,7 @@ def benchmark(config_file: typing.Optional [str], product: list[str] = [""]):
 
 @cli_admin.command()
 @common_options
-def list_corpora(config_file: typing.Optional [str], product: list[str] = [""]):
+def list_corpora(config_file: typing.Optional[str], product: list[str] = [""]):
     """List all existing online corpora."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -301,7 +342,9 @@ def list_corpora(config_file: typing.Optional [str], product: list[str] = [""]):
 @cli_admin.command()
 @click.option("--name", default=None)
 @common_options
-def delete_corpus(name: str, config_file: typing.Optional [str], product: list[str] = [""]):
+def delete_corpus(
+    name: str, config_file: typing.Optional[str], product: list[str] = [""]
+):
     """Delete an online corpus."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -323,7 +366,9 @@ def delete_corpus(name: str, config_file: typing.Optional [str], product: list[s
 @cli_admin.command()
 @click.option("--name", default=None)
 @common_options
-def open_corpus(name: str, config_file: typing.Optional [str], product: list[str] = [""]):
+def open_corpus(
+    name: str, config_file: typing.Optional[str], product: list[str] = [""]
+):
     """Share an online corpus with everyone."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -346,7 +391,11 @@ def open_corpus(name: str, config_file: typing.Optional [str], product: list[str
 @click.option("--role", default="READER")
 @common_options
 def share_corpus(
-    name: str, email: str, role: str, config_file: typing.Optional [str], product: list[str] = [""]
+    name: str,
+    email: str,
+    role: str,
+    config_file: typing.Optional[str],
+    product: list[str] = [""],
 ):
     """Share an online corpus with a user."""
     # Loads configurations from common options
@@ -370,7 +419,7 @@ def share_corpus(
 @click.option("--name", default=None)
 @common_options
 def remove_corpus_permission(
-    name: str, config_file: typing.Optional [str], product: list[str] = [""]
+    name: str, config_file: typing.Optional[str], product: list[str] = [""]
 ):
     """Remove a user permission from an online corpus."""
     # Loads configurations from common options
@@ -391,7 +440,9 @@ def remove_corpus_permission(
 @cli_admin.command()
 @click.option("--name", default=None)
 @common_options
-def get_all_docs(name: str, config_file: typing.Optional [str], product: list[str] = [""]):
+def get_all_docs(
+    name: str, config_file: typing.Optional[str], product: list[str] = [""]
+):
     """Get the list of all docs in an online corpus."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
@@ -406,13 +457,54 @@ def get_all_docs(name: str, config_file: typing.Optional [str], product: list[st
 
 
 @cli_admin.command()
+@common_options
+def cleanup_dev(
+    config_file: typing.Optional[str],
+    product: list[str] = [""],
+):
+    """Delete all databases in this Docs Agent development environment."""
+    print("Cleaning up the Docs Agent development environment.")
+    print("Found the following database configuration:")
+    # Loads configurations from common options
+    loaded_config, product_config = return_config_and_product(
+        config_file=config_file, product=product
+    )
+    chroma_dir = ""
+    corpus_name = ""
+    product = product_config.products[0]
+    for db in product.db_configs:
+        if hasattr(db, "vector_db_dir") and db.vector_db_dir != None:
+            print(f"Chroma database: {db.vector_db_dir}")
+            chroma_dir = db.vector_db_dir
+        if hasattr(db, "corpus_name") and db.corpus_name != None:
+            print(f"Corpus name: {db.corpus_name}")
+            corpus_name = db.corpus_name
+    if chroma_dir != "":
+        command = "rm -fr " + chroma_dir
+        if click.confirm(
+            f"\nDeleting the Chroma database {chroma_dir} ({command}).\nDo you want to continue?",
+            abort=True,
+        ):
+            os.system(command)
+            print("Done.")
+    if corpus_name != "":
+        if click.confirm(
+            f"\nDeleting the corpus named {corpus_name}.\nDo you want to continue?",
+            abort=True,
+        ):
+            semantic = SemanticRetriever()
+            semantic.delete_a_corpus(corpus_name=corpus_name)
+            print("Done.")
+
+
+@cli_admin.command()
 @click.option("--input_chroma", default=None)
 @click.option("--output_dir", default=None)
 @common_options
 def backup_chroma(
     input_chroma: str,
-    output_dir: typing.Optional [str],
-    config_file: typing.Optional [str],
+    output_dir: typing.Optional[str],
+    config_file: typing.Optional[str],
     product: list[str] = [""],
 ):
     """Backup a chroma database to an output directory."""

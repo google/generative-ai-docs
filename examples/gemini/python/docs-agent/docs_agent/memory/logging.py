@@ -16,12 +16,48 @@
 
 from datetime import datetime
 import pytz
+import os
 
 """Module to log interactions with the chatbot"""
 
 
-# Log the question and response to the server's log file.
-def log_question(uid, user_question: str, response: str, probability: str = "None", save: str = "txt"):
+# Save this question and response pair as a file.
+def log_question_to_file(user_question: str, response: str, probability: str = "None"):
+    filename = str(user_question).lower().replace(" ", "-").replace("?", "")
+    log_dir = "./logs/responses"
+    log_filename = f"{log_dir}/{filename}.md"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    with open(log_filename, "a", encoding="utf-8") as log_file:
+        log_file.write("# " + user_question.strip() + "\n\n")
+        log_file.write(response.strip() + "\n\n")
+        if probability != "None":
+            log_file.write("(Answerable probability: " + str(probability) + ")\n")
+        log_file.close()
+
+
+# Log the answerable_probability score and question.
+def log_answerable_probability(user_question: str, probability: str):
+    log_dir = "./logs"
+    answerable_list_filename = log_dir + "/answerable_logs.txt"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    with open(answerable_list_filename, "a", encoding="utf-8") as log_file:
+        log_file.write(
+            str("{:.16f}".format(probability)) + "    " + user_question.strip() + "\n"
+        )
+        log_file.close()
+
+
+# Print and log the question and response.
+def log_question(
+    uid,
+    user_question: str,
+    response: str,
+    probability: str = "None",
+    save: str = "True",
+    logs_to_markdown: str = "False",
+):
     date_format = "%m/%d/%Y %H:%M:%S %Z"
     date = datetime.now(tz=pytz.utc)
     date = date.astimezone(pytz.timezone("US/Pacific"))
@@ -32,8 +68,12 @@ def log_question(uid, user_question: str, response: str, probability: str = "Non
     # For the AQA model, also print the response's answerable_probability
     if probability != "None":
         print("Answerable probability: " + str(probability) + "\n")
-    if save == "txt":
-        with open("chatui_logs.txt", "a", encoding="utf-8") as log_file:
+    if save == "True":
+        log_dir = "./logs"
+        log_filename = log_dir + "/chatui_logs.txt"
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        with open(log_filename, "a", encoding="utf-8") as log_file:
             log_file.write(
                 "[" + date.strftime(date_format) + "][UID " + str(uid) + "]\n"
             )
@@ -42,25 +82,23 @@ def log_question(uid, user_question: str, response: str, probability: str = "Non
             if probability != "None":
                 log_file.write("Answerable probability: " + str(probability) + "\n\n")
             log_file.close()
-        # Added to track the answerable_probability scores.
         if probability != "None":
-            with open("answerable_logs.txt", "a", encoding="utf-8") as log2_file:
-                log2_file.write(
-                    str("{:.16f}".format(probability))
-                    + "    "
-                    + user_question.strip()
-                    + "\n"
-                )
-                log2_file.close()
+            # Track the answerable_probability scores.
+            log_answerable_probability(user_question, probability)
+        if logs_to_markdown == "True":
+            log_question_to_file(user_question, response, probability)
 
-def log_like(is_like, uid, save: str = "txt"):
+
+def log_like(is_like, uid, save: str = "True"):
     date_format = "%m/%d/%Y %H:%M:%S %Z"
     date = datetime.now(tz=pytz.utc)
     date = date.astimezone(pytz.timezone("US/Pacific"))
     print("UID: " + str(uid))
     print("Like: " + str(is_like))
-    if save == "txt":
-        with open("chatui_logs.txt", "a", encoding="utf-8") as log_file:
+    if save == "True":
+        log_dir = "./logs"
+        log_filename = log_dir + "/chatui_logs.txt"
+        with open(log_filename, "a", encoding="utf-8") as log_file:
             log_file.write(
                 "[" + date.strftime(date_format) + "][UID " + str(uid) + "]\n"
             )

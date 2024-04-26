@@ -41,7 +41,7 @@ class DocsAgent:
     """DocsAgent class"""
 
     # Temporary parameter of init_chroma
-    def __init__(self, config: ProductConfig, init_chroma: bool = True):
+    def __init__(self, config: ProductConfig, init_chroma: bool = True, init_semantic: bool = True):
         # Models settings
         self.config = config
         self.embedding_model = str(self.config.models.embedding_model)
@@ -65,33 +65,34 @@ class DocsAgent:
                 ),
             )
         # AQA model settings
-        if self.config.models.language_model == "models/aqa":
-            # AQA model setup
-            self.generative_service_client = glm.GenerativeServiceClient()
-            self.retriever_service_client = glm.RetrieverServiceClient()
-            self.permission_service_client = glm.PermissionServiceClient()
-            # Start a Gemini model for other tasks
-            self.context_model = "models/gemini-pro"
-            gemini_model_config = Models(
-                language_model=self.context_model,
-                embedding_model=self.embedding_model,
-                api_endpoint=self.api_endpoint,
-            )
-            self.gemini = Gemini(
-                models_config=gemini_model_config, conditions=config.conditions
-            )
-        # Semantic retriever
-        if self.config.db_type == "google_semantic_retriever":
-            for item in self.config.db_configs:
-                if "google_semantic_retriever" in item.db_type:
-                    self.corpus_name = item.corpus_name
-                    if item.corpus_display:
-                        self.corpus_display = item.corpus_display
-                    else:
-                        self.corpus_display = (
-                            self.config.product_name + " documentation"
-                        )
-            self.aqa_response_buffer = ""
+        if init_semantic:
+            if self.config.models.language_model == "models/aqa":
+                # AQA model setup
+                self.generative_service_client = glm.GenerativeServiceClient()
+                self.retriever_service_client = glm.RetrieverServiceClient()
+                self.permission_service_client = glm.PermissionServiceClient()
+                # Start a Gemini model for other tasks
+                self.context_model = "models/gemini-pro"
+                gemini_model_config = Models(
+                    language_model=self.context_model,
+                    embedding_model=self.embedding_model,
+                    api_endpoint=self.api_endpoint,
+                )
+                self.gemini = Gemini(
+                    models_config=gemini_model_config, conditions=config.conditions
+                )
+            # Semantic retriever
+            if self.config.db_type == "google_semantic_retriever":
+                for item in self.config.db_configs:
+                    if "google_semantic_retriever" in item.db_type:
+                        self.corpus_name = item.corpus_name
+                        if item.corpus_display:
+                            self.corpus_display = item.corpus_display
+                        else:
+                            self.corpus_display = (
+                                self.config.product_name + " documentation"
+                            )
+                self.aqa_response_buffer = ""
 
         if self.config.models.language_model.startswith("models/gemini"):
             self.gemini = Gemini(
@@ -132,10 +133,10 @@ class DocsAgent:
             response = self.gemini.generate_content(new_prompt)
         except google.api_core.exceptions.InvalidArgument:
             return self.config.conditions.model_error_message
-        for chunk in response:
-            if str(chunk.candidates[0].content) == "":
-                return self.config.conditions.model_error_message
-        return response.text
+        # for chunk in response:
+        #     if str(chunk.candidates[0].content) == "":
+        #         return self.config.conditions.model_error_message
+        return response
 
     # Use this method for talking to Gemini's AQA model using inline passages
     # answer_style can be VERBOSE, ABSTRACTIVE, or EXTRACTIVE
@@ -223,15 +224,19 @@ class DocsAgent:
 
     # Use this method for talking to Gemini's AQA model using a corpus
     # Answer style can be "VERBOSE" or ABSTRACTIVE, EXTRACTIVE
-    def ask_aqa_model_using_corpora(self, question, answer_style: str = "VERBOSE"):
+    def ask_aqa_model_using_corpora(
+        self, question, corpus_name: str = "None", answer_style: str = "VERBOSE"
+    ):
         search_result = []
+        if corpus_name == "None":
+            corpus_name = self.corpus_name
         # Prepare parameters for the AQA model
         user_question_content = glm.Content(
             parts=[glm.Part(text=question)], role="user"
         )
         # Settings to retrieve grounding content from semantic retriever
         retriever_config = glm.SemanticRetrieverConfig(
-            source=self.corpus_name, query=user_question_content
+            source=corpus_name, query=user_question_content
         )
 
         if self.config.models.language_model == "models/aqa":
@@ -485,10 +490,10 @@ class DocsAgent:
                 response = self.gemini.generate_content(contents=new_prompt)
         except:
             return self.config.conditions.model_error_message, new_prompt
-        for chunk in response:
-            if str(chunk.candidates[0].content) == "":
-                return self.config.conditions.model_error_message, new_prompt
-        return response.text, new_prompt
+        # for chunk in response:
+        #     if str(chunk.candidates[0].content) == "":
+        #         return self.config.conditions.model_error_message, new_prompt
+        return response, new_prompt
 
     # Use this method for talking to a Gemini content model
     # Provide a prompt, followed by the content of the file
@@ -502,10 +507,10 @@ class DocsAgent:
             response = self.gemini.generate_content(contents=new_prompt)
         except google.api_core.exceptions.InvalidArgument:
             return self.config.conditions.model_error_message
-        for chunk in response:
-            if str(chunk.candidates[0].content) == "":
-                return self.config.conditions.model_error_message
-        return response.text
+        # for chunk in response:
+        #     if str(chunk.candidates[0].content) == "":
+        #         return self.config.conditions.model_error_message
+        return response
 
     # Use this method for asking a Gemini content model for fact-checking.
     # This uses ask_content_model_with_context_prompt w
