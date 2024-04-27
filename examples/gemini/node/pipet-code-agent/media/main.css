@@ -8,17 +8,13 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  
 }
 
 main {
   flex: 1;
-  
-  padding: 20px;
 }
 
 #dialog {
-  overflow-y: auto;
   border-radius: 5px;
   padding: 10px;
   margin-bottom: 10px;
@@ -28,10 +24,15 @@ footer {
   display: flex;
   align-items: center;
   padding: 10px;
+  /* position: fixed;
+  bottom: 0;
+  width: -webkit-fill-available; */
 }
 
 #userInput {
   height: auto;
+  line-height: 1;
+  max-height: 300px;
   resize: none;
   background-color: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
@@ -50,7 +51,7 @@ footer {
   border-radius: 3px;
 }
 
-#sendMessage:hover{
+#sendMessage:hover {
   background-color: var(--vscode-input-foreground);
   color: var(--vscode-input-background);
 }

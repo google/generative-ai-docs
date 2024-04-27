@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const sendMessageButton = document.getElementById("sendMessage");
   let chatID;
   dialog.innerHTML = oldHtml;
+  userInput.scrollIntoView({ behavior: "smooth", block: "end" });
 
   const allCodeButtons = Array.from(
     dialog.getElementsByClassName("code-buttons-container")
@@ -34,6 +35,30 @@ document.addEventListener("DOMContentLoaded", function () {
           button.parentElement.querySelectorAll("pre code")[0].textContent;
         navigator.clipboard.writeText(toCopy);
       });
+    });
+  }
+
+  const allChats = Array.from(
+    dialog.getElementsByClassName("message-container")
+  );
+  if (allChats) {
+    allChats.forEach((chat) => {
+      switch (chat.firstChild.textContent) {
+        case "You: ":
+          vscode.postMessage({
+            command: "updateHistory",
+            role: "user",
+            text: chat.textContent.replace("You:", "").trim(),
+          });
+          break;
+        case "Gemini: ":
+          vscode.postMessage({
+            command: "updateHistory",
+            role: "model",
+            text: chat.textContent.replace("model:", "").trim(),
+          });
+          break;
+      }
     });
   }
 
@@ -53,6 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
       messageContainer.innerHTML =
         "<p><strong>Gemini:</strong> " + marked.parse(text) + "</p>";
       dialog.appendChild(messageContainer);
+      userInput.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }
 
@@ -64,9 +90,9 @@ document.addEventListener("DOMContentLoaded", function () {
         +"</p>";
       addBottons(messageContainer);
       sendMessageButton.innerHTML = "Chat";
+      userInput.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }
-
 
   function onSelection(text) {
     userInput.placeholder = text;
@@ -80,6 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "<p><strong>You:</strong> " + marked.parse(text) + "</p>";
       addBottons(messageContainer);
       dialog.appendChild(messageContainer);
+      userInput.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }
   /**
@@ -101,7 +128,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function handleKeyDown(event) {
-    console.log("enter");
     if (event.keyCode === 13) {
       if (!event.shiftKey) {
         event.preventDefault();
@@ -111,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   sendMessageButton.addEventListener("click", () => {
-    this.chatID = Math.random().toString();
+    chatID = Math.random().toString().substring(2);
     const userMessage = userInput.value;
     vscode.postMessage({ command: "sendMessage", text: userMessage });
     userInput.value = "";
@@ -124,11 +150,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const message = event.data;
     switch (message.command) {
       case "receiveMessage":
-        updateAIMessage(message.text, this.chatID);
+        updateAIMessage(message.text, chatID);
         break;
       case "Message":
         showUserMessage(message.text);
-        showAIMessage("Thinking ...", this.chatID);
+        showAIMessage("Thinking ...", chatID);
         break;
       case "clearChat":
         dialog.innerHTML = "<div></div>";

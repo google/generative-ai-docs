@@ -18,7 +18,7 @@ import * as vscode from "vscode";
 import { generateComment } from "./comments";
 import { generateReview } from "./review";
 import { startchat } from "./chat";
-import { ChatSession } from "@google/generative-ai";
+import { ChatSession, Content } from "@google/generative-ai";
 import { generateGitCommit } from "./gitCommit";
 import * as path from "path";
 
@@ -52,9 +52,9 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 let chat: void | ChatSession;
+let history = [] as Content[];
 class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "pipet-code-agent.chatView";
-
   private _view?: vscode.WebviewView;
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
@@ -93,37 +93,44 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
     });
 
     try {
-      chat = startchat();
+      chat = startchat(history);
       webviewView.webview.onDidReceiveMessage(async (message) => {
-        if (message.command === "sendMessage" && message.text) {
-          const code = this.selectedCode();
-          webviewView.webview.postMessage({
-            command: "Message",
-            text: `${code}${message.text}`,
-          });
-          if (chat) {
-            try {
-              const prompt = `${code}${message.text}`;
-              const result = await chat.sendMessageStream(prompt);
-              let chunktext = "";
-              for await (const chunk of result.stream) {
-                chunktext += chunk.text();
+        if (message) {
+          switch (message.command) {
+            case "sendMessage":
+              const code = this.selectedCode();
+              webviewView.webview.postMessage({
+                command: "Message",
+                text: `${code}${message.text}`,
+              });
+              if (chat) {
+                try {
+                  const prompt = `${code}${message.text}`;
+                  const result = await chat.sendMessageStream(prompt);
+                  let chunktext = "";
+                  for await (const chunk of result.stream) {
+                    chunktext += chunk.text();
+                    webviewView.webview.postMessage({
+                      command: "receiveMessage",
+                      text: chunktext,
+                    });
+                  }
+                } catch (error) {
+                  webviewView.webview.postMessage({
+                    command: "receiveMessage",
+                    text: `${error}`,
+                  });
+                }
+              } else {
                 webviewView.webview.postMessage({
                   command: "receiveMessage",
-                  text: chunktext,
+                  text: "Chat Start Failed.",
                 });
               }
-            } catch (error) {
-              webviewView.webview.postMessage({
-                command: "receiveMessage",
-                text: `${error}`,
-              });
-            }
-          } else {
-            webviewView.webview.postMessage({
-              command: "receiveMessage",
-              text: "Chat Start Failed.",
-            });
+              break;
+            case "updateHistory":
+              this.updateHistory(message.role, message.text);
+              break;
           }
         }
       });
@@ -133,6 +140,13 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
         text: `${error}`,
       });
     }
+  }
+
+  public updateHistory(role: string, part: string) {
+    history.push({
+      role: role,
+      parts: [{ text: part }],
+    });
   }
 
   public selectedCode(): string {
@@ -168,7 +182,8 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
         command: "clearChat",
       });
       try {
-        chat = startchat();
+        history = [];
+        chat = startchat(history);
       } catch (error) {
         this._view.webview.postMessage({
           command: "receiveMessage",
@@ -207,8 +222,8 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
                   <div id="dialog"></div>
                 </main>
                 <footer>
-                  <textarea id="userInput" placeholder="Ask anything here"></textarea>
-                  <button id="sendMessage" disabled>Chat</button>
+                    <textarea id="userInput" placeholder="Ask anything here"></textarea>
+                    <button id="sendMessage" disabled>Chat</button>
                 </footer>
                 <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
                 <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>

@@ -15,9 +15,13 @@
  */
 
 import * as vscode from "vscode";
-import { ChatSession, GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  ChatSession,
+  Content,
+  GoogleGenerativeAI,
+} from "@google/generative-ai";
 
-export function startchat(): ChatSession | void {
+export function startchat(history: Content[]): ChatSession | void {
   const modelName = vscode.workspace
     .getConfiguration()
     .get<string>("google.gemini.textModel", "default");
@@ -52,6 +56,7 @@ export function startchat(): ChatSession | void {
         },
       ],
     },
+    history,
   });
   return chat;
 }
