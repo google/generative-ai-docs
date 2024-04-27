@@ -13,6 +13,14 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "keybindings": [
+      {
+        "command": "pipet-code-agent.generateCode",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus"
+      }
+    ],
     "views": {
       "chatView": [
         {
@@ -32,6 +40,10 @@
       ]
     },
     "commands": [
+      {
+        "command": "pipet-code-agent.generateCode",
+        "title": "Pipet: Generate Code."
+      },
       {
         "command": "pipet-code-agent.commentCode",
         "title": "Pipet: Add a comment to selected code."
@@ -65,6 +77,10 @@
         },
         {
           "command": "pipet-code-agent.reviewCode",
+          "group": "PipetCodeAgent"
+        },
+        {
+          "command": "pipet-code-agent.generateCode",
           "group": "PipetCodeAgent"
         }
       ],

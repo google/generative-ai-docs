@@ -15,7 +15,6 @@
 
 import * as vscode from "vscode";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { promises } from "dns";
 
 const SYSTEMINSTRUCTION =
   "Generate Git Commit by Git Diff and last commit, Only return commit message.";

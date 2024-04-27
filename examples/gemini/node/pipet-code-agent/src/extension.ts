@@ -20,12 +20,17 @@ import { generateReview } from "./review";
 import { startchat } from "./chat";
 import { ChatSession, Content } from "@google/generative-ai";
 import { generateGitCommit } from "./gitCommit";
+import { performAction } from "./generateCode";
 import * as path from "path";
 
 export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand(
     "pipet-code-agent.commentCode",
     generateComment
+  );
+  vscode.commands.registerCommand(
+    "pipet-code-agent.generateCode",
+    performAction
   );
   vscode.commands.registerCommand(
     "pipet-code-agent.reviewCode",
