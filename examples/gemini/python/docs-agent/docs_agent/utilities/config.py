@@ -37,19 +37,25 @@ class DbConfig:
         corpus_name: typing.Optional[str] = None,
         # Only used when creating a corpus
         corpus_display: typing.Optional[str] = None,
+        secondary_db_type: typing.Optional[str] = None,
+        secondary_corpus_name: typing.Optional[str] = None,
     ):
         self.db_type = db_type
         self.vector_db_dir = vector_db_dir
         self.collection_name = collection_name
         self.corpus_name = corpus_name
         self.corpus_display = corpus_display
+        self.secondary_db_type = secondary_db_type
+        self.secondary_corpus_name = secondary_corpus_name
 
     def __str__(self):
         return f"Database type: {self.db_type}\n\
 Vector database dir: {self.vector_db_dir}\n\
 Collection name: {self.collection_name}\n\
 Corpus name: {self.corpus_name}\n\
-Corpus display: {self.corpus_display}\n"
+Corpus display: {self.corpus_display}\n\
+Secondary database type: {self.secondary_db_type}\n\
+Secondary corpus name: {self.secondary_corpus_name}\n"
 
     def return_vector_db_dir(self):
         return self.vector_db_dir
@@ -299,7 +305,13 @@ class ProductConfig:
         markdown_splitter: str = "token_splitter",
         db_type: str = "chroma",
         app_mode: str = "web",
+        app_port: int = 5000,
+        feedback_mode: str = "rewrite",
         enable_show_logs: str = "False",
+        enable_logs_to_markdown: str = "False",
+        enable_delete_chunks: str = "False",
+        secondary_db_type: typing.Optional[str] = None,
+        secondary_corpus_name: typing.Optional[str] = None,
     ):
         self.product_name = product_name
         self.docs_agent_config = docs_agent_config
@@ -312,7 +324,13 @@ class ProductConfig:
         self.log_level = log_level
         self.inputs = inputs
         self.app_mode = app_mode
+        self.app_port = app_port
+        self.feedback_mode = feedback_mode
         self.enable_show_logs = enable_show_logs
+        self.enable_logs_to_markdown = enable_logs_to_markdown
+        self.enable_delete_chunks = enable_delete_chunks
+        self.secondary_db_type = secondary_db_type
+        self.secondary_corpus_name = secondary_corpus_name
 
     def __str__(self):
         # Extracts the list of Inputs
@@ -328,9 +346,15 @@ class ProductConfig:
         return f"Product: {self.product_name}\n\
 Docs Agent config: {self.docs_agent_config}\n\
 App mode: {self.app_mode}\n\
+App port: {self.app_port}\n\
+Feedback mode: {self.feedback_mode}\n\
 Enable show logs: {self.enable_show_logs}\n\
+Enable logs to Markdown: {self.enable_logs_to_markdown}\n\
+Enable delete chunks: {self.enable_delete_chunks}\n\
 Markdown splitter: {self.markdown_splitter}\n\
 Database type: {self.db_type}\n\
+Secondary database type: {self.secondary_db_type}\n\
+Secondary corpus name: {self.secondary_corpus_name}\n\
 Output path: {self.output_path}\n\
 \nDatabase configs:\n{db_config_str}\n\
 Log level: {self.log_level}\n\
@@ -399,12 +423,38 @@ class ReadConfig:
                 except KeyError:
                     app_mode = "web"
                 if app_mode not in supported_app_modes:
-                    logging.error(f"Your configuration is using an invalid mode: {app_mode}. Valid modes are {supported_app_modes}")
+                    logging.error(
+                        f"Your configuration is using an invalid mode: {app_mode}. Valid modes are {supported_app_modes}"
+                    )
                     return sys.exit(1)
+                try:
+                    app_port = int(item["app_port"])
+                except KeyError:
+                    app_port = 5000
+                try:
+                    feedback_mode = item["feedback_mode"]
+                except KeyError:
+                    feedback_mode = "feedback"
                 try:
                     enable_show_logs = item["enable_show_logs"]
                 except KeyError:
                     enable_show_logs = "False"
+                try:
+                    enable_logs_to_markdown = item["enable_logs_to_markdown"]
+                except KeyError:
+                    enable_logs_to_markdown = "False"
+                try:
+                    enable_delete_chunks = item["enable_delete_chunks"]
+                except KeyError:
+                    enable_delete_chunks = "False"
+                try:
+                    secondary_db_type = item["secondary_db_type"]
+                except KeyError:
+                    secondary_db_type = None
+                try:
+                    secondary_corpus_name = item["secondary_corpus_name"]
+                except KeyError:
+                    secondary_corpus_name = None
                 try:
                     product_config = ProductConfig(
                         product_name=item["product_name"],
@@ -418,13 +468,17 @@ class ReadConfig:
                         conditions=item["conditions"],
                         inputs=item["inputs"],
                         app_mode=app_mode,
+                        app_port=app_port,
+                        feedback_mode=feedback_mode,
                         enable_show_logs=enable_show_logs,
+                        enable_logs_to_markdown=enable_logs_to_markdown,
+                        enable_delete_chunks=enable_delete_chunks,
+                        secondary_db_type=secondary_db_type,
+                        secondary_corpus_name=secondary_corpus_name,
                     )
                     # This is done for keys with children
                     # Inputs
-                    new_inputs = ReadInputs(
-                        input_list=item["inputs"]
-                    ).returnInputs()
+                    new_inputs = ReadInputs(input_list=item["inputs"]).returnInputs()
                     product_config.inputs = new_inputs
                     product_config.inputs = new_inputs
                     # Conditions
@@ -433,9 +487,7 @@ class ReadConfig:
                     ).returnConditions()
                     product_config.conditions = new_conditions
                     # Models
-                    new_models = ReadModels(
-                        input_list=item["models"]
-                    ).returnModels()
+                    new_models = ReadModels(input_list=item["models"]).returnModels()
                     product_config.models = new_models
                     # DbConfigs
                     new_db_configs = ReadDbConfigs(
@@ -475,7 +527,9 @@ class ReadConfig:
 
 
 # Function to make using common_options simpler
-def return_config_and_product(config_file: typing.Optional[str] = None, product: list[str] = [""]):
+def return_config_and_product(
+    config_file: typing.Optional[str] = None, product: list[str] = [""]
+):
     if config_file is None:
         loaded_config = ReadConfig()
     else:

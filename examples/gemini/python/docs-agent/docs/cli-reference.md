@@ -26,6 +26,15 @@ by running the `agent chunk` command):
 agent populate
 ```
 
+### Populate a vector database and delete stale text chunks
+
+The command below deletes stale entries in the existing vector database
+before populating it with the new text chunks:
+
+```sh
+agent populate --enable_delete_chunks
+```
+
 ### Show the Docs Agent configuration
 
 The command below prints all the fields and values in the current
@@ -33,6 +42,15 @@ The command below prints all the fields and values in the current
 
 ```sh
 agent show-config
+```
+
+### Clean up the Docs Agent development environment
+
+The command below deletes development databases specified in the
+`config.yaml` file:
+
+```sh
+agent cleanup-dev
 ```
 
 ## Docs Agent chatbot web app
@@ -51,6 +69,24 @@ The command below launches the Docs Agent web app to run on port 5005:
 
 ```sh
 agent chatbot --port 5005
+```
+
+### Launch the Docs Agent web app as a widget
+
+The command below launches the Docs Agent web app to use
+a widget-friendly template:
+
+```sh
+agent chatbot --app_mode widget
+```
+
+### Launch the Docs Agent web app with a log view enabled
+
+The command below launches the Docs Agent web app while enabling
+a log view page (which is accessible at `<APP_URL>/logs`):
+
+```sh
+agent chatbot --enable_show_logs
 ```
 
 ## Docs Agent benchmark test
@@ -104,6 +140,22 @@ You may also specify multiple products, for example:
 
 ```sh
 agent tellme which modules are available? --product=Flutter --product=Angular --product=Android
+```
+
+### Ask for advice
+
+The command below reads a request and a filename from the arguments,
+asks the Gemini model, and prints its response:
+
+```sh
+agent helpme <REQUEST> --file <PATH_TO_FILE>
+```
+
+Replace `REQUEST` with a prompt and `PATH_TO_FILE` with a file's
+absolure or relative path, for example:
+
+```sh
+agent helpme write comments for this C++ file? --file ../my-project/test.cc
 ```
 
 ## Online corpus management

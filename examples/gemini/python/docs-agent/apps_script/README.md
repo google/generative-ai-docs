@@ -54,6 +54,7 @@ Do the following:
 1. Repeat the steps until all the `.gs` files are copied to your Apps Script project.
 1. Click the **+** icon next to **Services**.
 1. Scroll down and click **Drive API**.
+1. Select **v2**.
 1. Click **Add**.
 
 You are now ready to edit the parameters on the `main.gs` file to select a folder

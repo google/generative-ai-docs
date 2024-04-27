@@ -150,7 +150,7 @@ def run_benchmarks():
         embedding_01 = docs_agent.generate_embedding(target_answer)
         vprint("")
         vprint("Embedding:")
-        vprint(embedding_01)
+        vprint(str(embedding_01))
 
         # Step 3. Ask `question` to the AI model.
         response = ask_model(question, docs_agent)
@@ -168,7 +168,7 @@ def run_benchmarks():
         embedding_02 = docs_agent.generate_embedding(response)
         vprint("")
         vprint("Embedding:")
-        vprint(embedding_02)
+        vprint(str(embedding_02))
 
         # Step 5. Compute the similarity between Embedding 1 and Embedding 2.
         vprint("################")

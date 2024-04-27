@@ -192,7 +192,13 @@ def DictionarytoSection(metadata: dict) -> Section:
 
 
 class Page:
-    def __init__(self, title: str, URL: str, section_count: int, metadata: typing.Optional[dict] = None):
+    def __init__(
+        self,
+        title: str,
+        URL: str,
+        section_count: int,
+        metadata: typing.Optional[dict] = None,
+    ):
         self.title = title
         self.URL = URL
         self.section_count = section_count
@@ -302,13 +308,18 @@ def make_markdown_chunk(markdown_text, header_id_spaces):
                         section_title = "RFC (request for comment)"
                 # Removing this line as this can be added (if needed) once retrieved from the db
                 # section_markdown += section_intro.format(section_title=section_title)
-        elif line.startswith("#") and first_header == False:
-            section_done = True
-            remaining_markdown += line + "\n"
-        elif not (line.startswith("#")) and section_done:
-            remaining_markdown += line + "\n"
+        elif len(section_markdown) > 100:
+            # Temp solution: Do not create a chunk if the size is less than 100 chars.
+            if line.startswith("#") and first_header == False:
+                section_done = True
+                remaining_markdown += line + "\n"
+            elif not (line.startswith("#")) and section_done:
+                remaining_markdown += line + "\n"
+            else:
+                section_markdown += line + "\n"
         else:
             section_markdown += line + "\n"
+    section_level = level_to_int(section_level)
     return (
         section_id,
         section_level,
@@ -316,6 +327,35 @@ def make_markdown_chunk(markdown_text, header_id_spaces):
         section_markdown,
         remaining_markdown,
     )
+
+
+# Returns an int of a level to avoid blank string
+def level_to_int(level) -> int:
+    if level == "":
+        level = 0
+    else:
+        level = int(level)
+    return level
+
+
+# In a regular child level the length of the parent_tree should be greater
+# than the current level, so for example a header 2 (level 2) may have a
+# parent_tree of [0, 1], in this case we want to append the previous previous_id
+# Conditions to be aware of:
+# If headers are out of order, you may end up with an array level with
+# the same value, such as a header 4 that ends with a parent_tree of
+# [0, 1, 25, 25] indicates that you jumped from a header 2, right into a 4
+def build_parent_tree(
+    parent_tree: list[int], level: int, previous_id: int
+) -> list[int]:
+    if len(parent_tree) != level:
+        first = True
+        while len(parent_tree) != level:
+            if len(parent_tree) >= level:
+                parent_tree.pop()
+            elif len(parent_tree) <= level:
+                parent_tree.append(previous_id)
+    return parent_tree
 
 
 # This function cleans section ids from special characters
@@ -363,6 +403,42 @@ def verify_file(file):
         logging.error(f"[FileNotFound] Missing the include file: {file}")
 
 
+# Takes in current section, then returns an array of
+# sections that it split by lines
+def split_sections_by_lines(section: Section):
+    buffer = []
+    for line in section.content.split("\n"):
+        # Special case if line is too long - tends to be comma seperated lists
+        if get_byte_size(line) > 5000:
+            for item in line.split(","):
+                item = item + ","
+                buffer.append(item)
+        else:
+            buffer.append(line)
+    chunks = construct_chunks(buffer)
+    page_sections = []
+    chunk_count = 0
+    for chunk in chunks:
+        # Calculate tokens for new chunk
+        token_count = tokenCount.returnHighestTokens(chunk)
+        # Section id needs to get bumped up
+        new_section = Section(
+            (section.id + chunk_count),
+            section.name_id,
+            section.page_title,
+            section.section_title,
+            section.level,
+            section.previous_id,
+            section.parent_tree.copy(),
+            token_count,
+            markdown_to_text(chunk),
+        )
+        chunk_count += 1
+        page_sections.append(new_section)
+    return page_sections
+    # return page_sections, remaining_content
+
+
 # This function converts Markdown page (#), section (##), and subsection (###)
 # headings into plain English.
 def process_markdown_page(markdown_text, header_id_spaces: str = "_"):
@@ -388,38 +464,19 @@ def process_markdown_page(markdown_text, header_id_spaces: str = "_"):
         name_id, level, title, content, remaining_content = make_markdown_chunk(
             markdown_text=remaining_content, header_id_spaces=header_id_spaces
         )
+        # Ensure parent_level is an int
         parent_level = int(parent_level)
-        if level == "":
-            level = 0
-        else:
-            level = int(level)
-        token_count = tokenCount.returnHighestTokens(content)
-        section_id += 1
         # Indicates the first encountered header since parent_level and parent_tree have base values
-        if parent_level == 0 and parent_tree == [0]:
+        if parent_level == 0 and parent_tree == [0] and "title" not in data:
             page_title = title
-        # In a regular child level the length of the parent_tree should be greater
-        # than the current level, so for example a header 2 (level 2) may have a
-        # parent_tree of [0, 1], in this case we want to append the previous previous_id
-        # Conditions to be aware of:
-        # If headers are out of order, you may end up with an array level with
-        # the same value, such as a header 4 that ends with a parent_tree of
-        # [0, 1, 25, 25] indicates that you jumped from a header 2, right into a 4
-        # todo: cleanup parent_tree when headers are out of order
-        if len(parent_tree) != level:
-            first = True
-            while len(parent_tree) != level:
-                if len(parent_tree) >= level:
-                    parent_tree.pop()
-                elif len(parent_tree) <= level:
-                    parent_tree.append(previous_id)
-        # The length of the parent_tree should always equal the level before this exits
-        # elif (len(parent_tree) == level):
-        #     #Do not do anything here as these are siblings with shared parents
-        #     print ("No change to parent headers")
-        # Clean the markdown content such as comments
-        content = markdown_to_text(content)
-        # Create a Section object for each section of the doc. Copy ensures parent_tree doesn't get overwritten
+        # Builds the parent tree based on current section level and the previous_id
+        parent_tree = build_parent_tree(parent_tree, level, previous_id)
+        plain_text_content = markdown_to_text(content)
+        token_count = tokenCount.returnHighestTokens(plain_text_content)
+        # This goes up as sections start at 1
+        section_id += 1
+        # Initializes a Section, content may be replaced if too large
+        # Copy ensures parent_tree doesn't get overwritten
         section = Section(
             section_id,
             name_id,
@@ -429,13 +486,22 @@ def process_markdown_page(markdown_text, header_id_spaces: str = "_"):
             previous_id,
             parent_tree.copy(),
             token_count,
-            content,
+            plain_text_content,
         )
-        # Make a list of section objects
-        page_sections.append(section)
-        # print ("Tree:")
-        # print (parent_tree)
-        # print ("Count: " + str(section_count) + "\nParent id: " + str(previous_id) + "\nParent level: " + str(parent_level) + "\nHeading level: " + str(level) + "\nTitle: " + title + "\nID: " + name_id + "\nContent:\n" + content)
+        # If content is larger than 5KB - split by lines
+        if len(plain_text_content.encode("utf-8")) > 5000:
+            # Return an array of sections that were split and the remain content
+            logging.info("Chunk is too big - splitting by lines")
+            new_sections = split_sections_by_lines(section=section)
+            # Merge the list of sections and bump up the section_id.
+            # Length has to be reduced by 1 since original chunk was already
+            # counted
+            section_id = section_id + (len(new_sections)-1)
+            page_sections += new_sections
+        # Create a Section object for sections under 6k of the doc.
+        else:
+            # If less than 5kb - append to a list of section objects
+            page_sections.append(section)
         # Prepare previous_id for next section
         previous_id = int(section_id)
         parent_level = int(level)
@@ -557,20 +623,21 @@ def process_document_into_sections(markdown_text):
                     buffer.clear()
         buffer.append(line)
     # Add the last section on the page.
-    content = convert_array_to_buffer(buffer)
-    sections.append(content)
+    contents = construct_chunks(buffer)
+    for content in contents:
+        sections.append(content)
     return sections
 
 
 # Process an array of Markdwon text into an array of string buffers
-# whose size is smaller than 6KB.
+# whose size is smaller than 5KB.
 def construct_chunks(lines):
     contents = []
     buffer_size = get_byte_size(lines)
-    if int(buffer_size) > 6000:
-        # If the protocol is larget than 6KB, divide it into two.
+    if int(buffer_size) > 5000:
+        # If the protocol is larger than 5KB, divide it into two.
         logging.info(
-            "Found a text chunk greater than 6KB (size: " + str(buffer_size) + ")."
+            "Found a text chunk greater than 5KB (size: " + str(buffer_size) + ")."
         )
         (first_half, second_half) = divide_an_array(lines)
         first_content = construct_chunks(first_half)
@@ -582,12 +649,13 @@ def construct_chunks(lines):
         contents.append(chunk)
     return contents
 
+
 # Convert an array into a string buffer.
 def convert_array_to_buffer(lines):
-   content = ""
-   for line in lines:
+    content = ""
+    for line in lines:
         content += line + "\n"
-   return content
+    return content
 
 
 # Get the byte size of lines.
@@ -604,4 +672,3 @@ def divide_an_array(lines):
     first_half = lines[:half_point]
     second_half = lines[half_point:]
     return first_half, second_half
-
