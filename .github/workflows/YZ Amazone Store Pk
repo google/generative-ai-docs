@@ -1,4 +1,4 @@
-name: Remove issue labels
+name: yzamazonestore.pk 
 
 on:
   issues:
@@ -13,6 +13,6 @@ jobs:
     steps:
     - uses: actions-ecosystem/action-remove-labels@v1
       with:
-        labels: |
+        labels: https://yzamazonestore.pk
           status:triaged
           status:more data needed
