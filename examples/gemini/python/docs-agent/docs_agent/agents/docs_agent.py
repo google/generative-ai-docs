@@ -41,7 +41,12 @@ class DocsAgent:
     """DocsAgent class"""
 
     # Temporary parameter of init_chroma
-    def __init__(self, config: ProductConfig, init_chroma: bool = True, init_semantic: bool = True):
+    def __init__(
+        self,
+        config: ProductConfig,
+        init_chroma: bool = True,
+        init_semantic: bool = True,
+    ):
         # Models settings
         self.config = config
         self.embedding_model = str(self.config.models.embedding_model)
@@ -296,6 +301,22 @@ class DocsAgent:
         else:
             response = self.ask_aqa_model_using_local_vector_store(question)
         return response
+
+    # Retrieve and return chunks that are most relevant to the input question.
+    def retrieve_chunks_from_corpus(self, question, corpus_name: str = "None"):
+        if corpus_name == "None":
+            corpus_name = self.corpus_name
+        user_query = question
+        results_count = 5
+        # Quick fix: This was needed to allow the method to be called
+        # even when the model is not set to `models/aqa`.
+        retriever_service_client = glm.RetrieverServiceClient()
+        # Make the request
+        request = glm.QueryCorpusRequest(
+            name=corpus_name, query=user_query, results_count=results_count
+        )
+        query_corpus_response = retriever_service_client.query_corpus(request)
+        return query_corpus_response
 
     # Use this method for asking a Gemini content model for fact-checking
     def ask_content_model_to_fact_check(self, context, prev_response):

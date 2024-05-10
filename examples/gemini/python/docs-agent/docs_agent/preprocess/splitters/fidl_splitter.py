@@ -58,8 +58,8 @@ def divide_a_protocol(lines):
 def construct_chunks(library_name: str, protocol_name: str, lines):
     contents = []
     buffer_size = get_byte_size(lines)
-    if int(buffer_size) > 6000:
-        # If the protocol is larget than 6KB, divide it into two.
+    if int(buffer_size) > 5000:
+        # If the protocol is larget than 5KB, divide it into two.
         logging.info(
             "Found a text chunk ("
             + str(protocol_name)
