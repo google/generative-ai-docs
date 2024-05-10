@@ -3,10 +3,15 @@
 This page provides a list of the Docs Agent command lines and their usages
 and examples.
 
-**Important**: All `agent` commands in this page need to run in the
-`poetry shell` environment.
+The Docs Agent CLI helps developers to manage the Docs Agent project and
+interact with language models. It can handle various tasks such as
+processing documents, populating vector databases, launching the chatbot,
+running benchmark test, sending prompts to language models, and more.
 
-## Processing of Markdown files
+**Important**: All `agent` commands need to run in the `poetry shell`
+environment.
+
+## Processing documents
 
 ### Chunk Markdown files into small text chunks
 
@@ -53,7 +58,16 @@ The command below deletes development databases specified in the
 agent cleanup-dev
 ```
 
-## Docs Agent chatbot web app
+### Write logs to a CSV file
+
+The command below writes the summaries of all captured debugging information
+(in the `logs/debugs` directory) to  a `.csv` file:
+
+```sh
+agent write-logs-to-csv
+```
+
+## Launching the chatbot web app
 
 ### Launch the Docs Agent web app
 
@@ -89,7 +103,7 @@ a log view page (which is accessible at `<APP_URL>/logs`):
 agent chatbot --enable_show_logs
 ```
 
-## Docs Agent benchmark test
+## Running benchmark test
 
 ### Run the Docs Agent benchmark test
 
@@ -158,7 +172,44 @@ absolure or relative path, for example:
 agent helpme write comments for this C++ file? --file ../my-project/test.cc
 ```
 
-## Online corpus management
+### Ask for advice in a session
+
+The command below starts a new session (`--new`), which tracks responses,
+before running the `agent helpme` command:
+
+```sh
+agent helpme <REQUEST> --file <PATH_TO_FILE> --new
+```
+
+For example:
+
+```sh
+agent helpme write a draft of all features found in this README file? --file ./README.md --new
+```
+
+After starting a session, use the `--cont` flag to include the previous
+responses as context to the request:
+
+```sh
+agent helpme <REQUEST> --cont
+```
+
+For example:
+
+```sh
+agent helpme write a concept doc that delves into more details of these features? --cont
+```
+
+### Ask for advice using RAG
+
+The command below uses a local or online vector database (specified in
+the `config.yaml` file) to retrieve relevant context for the request:
+
+```sh
+agent helpme <REQUEST> --file <PATH_TO_FILE> --rag
+```
+
+## Managing online corpora
 
 ### List all existing online corpora
 

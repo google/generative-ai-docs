@@ -28,6 +28,7 @@ from docs_agent.utilities.helpers import (
     return_pure_dir,
     end_path_backslash,
     start_path_no_backslash,
+    resolve_path,
 )
 from docs_agent.preprocess import files_to_plain_text as chunker
 from docs_agent.preprocess import populate_vector_database as populate_script
@@ -36,10 +37,12 @@ from docs_agent.interfaces import chatbot as chatbot_flask
 from docs_agent.interfaces import run_console as console
 from docs_agent.storage.google_semantic_retriever import SemanticRetriever
 from docs_agent.storage.chroma import ChromaEnhanced
+from docs_agent.memory.logging import write_logs_to_csv_file
 import socket
 import os
 import string
 import re
+import time
 
 
 def common_options(func):
@@ -209,12 +212,18 @@ def show_config(config_file: typing.Optional[str], product: list[str] = [""]):
 
 @cli_client.command(name="tellme")
 @click.argument("words", nargs=-1)
+@click.option(
+    "--model",
+    help="Specify a model to use. Overrides the model (language_model) for all loaded product configurations.",
+    default=None,
+    multiple=False,
+)
 @common_options
-def tellme(words, config_file: typing.Optional[str], product: list[str] = [""]):
+def tellme(words, config_file: typing.Optional[str], product: list[str] = [""], model: typing.Optional[str] = None):
     """Answer a question related to the product."""
     # Loads configurations from common options
     loaded_config, product_configs = return_config_and_product(
-        config_file=config_file, product=product
+        config_file=config_file, product=product, model=model
     )
     if product == ():
         # Extracts the first product by default
@@ -230,69 +239,230 @@ def tellme(words, config_file: typing.Optional[str], product: list[str] = [""]):
 @cli_client.command()
 @click.argument("words", nargs=-1)
 @click.option(
+    "--model",
+    help="Specify a model to use. Overrides the model (language_model) for all loaded product configurations.",
+    default=None,
+    multiple=False,
+)
+@click.option(
     "--file",
     type=click.Path(),
-    help="Only available with Gemini 1.5 Pro. Specify a file with which a task is performed.",
+    help="Specify a file to be included as context.",
+)
+@click.option(
+    "--path",
+    type=click.Path(),
+    help="Specify a path where the request will be applied to all files found in the directory.",
+)
+@click.option(
+    "--file_ext",
+    help="Works with --path. Specify the file type to be selected. By default it is set to None.",
 )
 @click.option(
     "--rag",
     is_flag=True,
-    help="Only works with --file. Augments the context input with content from your configured RAG system.",
+    help="Add entries found in the knowledge database as context.",
+)
+@click.option(
+    "--yaml",
+    is_flag=True,
+    help="Works with --path. Store the output as a responses.yaml file.",
+)
+@click.option(
+    "--new",
+    is_flag=True,
+    help="Works with --file. Clear the previous responses buffer.",
+)
+@click.option(
+    "--cont",
+    is_flag=True,
+    help="Use the previous responses buffer as context.",
 )
 @common_options
 def helpme(
     words,
     config_file: typing.Optional[str],
     file: typing.Optional[str] = None,
+    path: typing.Optional[str] = None,
+    file_ext: typing.Optional[str] = None,
     rag: bool = False,
+    yaml: bool = False,
+    new: bool = False,
+    cont: bool = False,
     product: list[str] = [""],
+    model: typing.Optional[str] = None,
 ):
-    """(Experimental) Ask AI to perform a task using console output.
-    Use --file to perform a task on a specific file."""
+    """Ask the AI model to perform a task from the terminal."""
     # Loads configurations from common options
     loaded_config, product_configs = return_config_and_product(
-        config_file=config_file, product=product
+        config_file=config_file, product=product, model=model
     )
     if product == ():
         # Extracts the first product by default
         product_config = ConfigFile(products=[product_configs.products[0]])
     else:
         product_config = product_configs
+
+    # Get the language model.
+    this_model = product_config.products[0].models.language_model
+    # This feature is only available to the Gemini Pro models (not AQA).
+    if not this_model.startswith("models/gemini"):
+        click.echo(f"File mode is not supported with this model: {this_model}")
+        exit(1)
+
+    # Get the question string.
     question = ""
     for word in words:
         question += word + " "
     question = question.strip()
-    if file and file != "None":
-        # This feature is only available in gemini 1.5 pro (large context)
-        if product_config.products[0].models.language_model.startswith(
-            "models/gemini-1.5-pro"
-        ):
-            try:
-                this_file = os.path.realpath(os.path.join(os.getcwd(), file))
-                with open(this_file, "r", encoding="utf-8") as auto:
-                    # Read the input content
-                    content = auto.read()
-                    auto.close()
-                final_file = f"THE CONTENT OF THE FILE {file} BELOW:\n\n" + content
-                console.ask_model_with_file(
-                    question.strip(), product_config, file=final_file, rag=rag
-                )
-            except FileNotFoundError:
-                click.echo(f"File not found: {file}")
-        else:
-            click.echo(
-                f"File mode is not supported with this model: {product_config.products[0].models.language_model}"
+
+    # Set the filename for recording exchanges with the Gemini models.
+    history_file = "/tmp/docs_agent_responses"
+
+    # 4 different mode: Terminal output (default), All files, Single file,
+    # and Previous exchanges
+    helpme_mode = "TERMINAL_OUTPUT"
+    if path:
+        helpme_mode = "ALL_FILES"
+    elif file and file != "None":
+        helpme_mode = "SINGLE_FILE"
+    elif cont:
+        helpme_mode = "PREVIOUS_EXCHANGES"
+
+    if helpme_mode == "PREVIOUS_EXCHANGES":
+        # Continue mode, which uses the previous exchangs as the main context.
+        this_output = console.ask_model_with_file(
+            question.strip(),
+            product_config,
+            context_file=history_file,
+            rag=rag,
+            return_output=True,
+        )
+        print()
+        print(f"{this_output}")
+        print()
+        with open(history_file, "a", encoding="utf-8") as out_file:
+            out_file.write(f"QUESTION: {question}\n\n")
+            out_file.write(f"RESPONSE:\n\n{this_output}\n")
+            out_file.close()
+    elif helpme_mode == "SINGLE_FILE":
+        # Single file mode.
+        this_file = os.path.realpath(os.path.join(os.getcwd(), file))
+        this_output = ""
+        if cont:
+            # if the `--cont` flag is set, inlcude the previous exchanges as additional context.
+            this_output = console.ask_model_with_file(
+                question.strip(),
+                product_config,
+                file=this_file,
+                context_file=history_file,
+                rag=rag,
+                return_output=True,
             )
+        else:
+            # By default, do not inlcude any additional context.
+            this_output = console.ask_model_with_file(
+                question.strip(),
+                product_config,
+                file=this_file,
+                rag=rag,
+                return_output=True,
+            )
+        print()
+        print(f"{this_output}")
+        print()
+        # Read the file content to be included in the history file.
+        file_content = ""
+        with open(this_file, "r", encoding="utf-8") as target_file:
+            file_content = target_file.read()
+            target_file.close()
+        # If the `--new` flag is set, overwrite the history file.
+        write_mode = "a"
+        if new:
+            write_mode = "w"
+        # Record this exchange in the history file.
+        with open(history_file, write_mode, encoding="utf-8") as out_file:
+            out_file.write(f"QUESTION: {question}\n\n")
+            out_file.write(f"FILE NAME: {file}\n")
+            out_file.write(f"FILE CONTENT:\n\n{file_content}\n")
+            out_file.write(f"RESPONSE:\n\n{this_output}\n")
+            out_file.close()
+    elif helpme_mode == "ALL_FILES":
+        # All files mode, which makes the request to all files in the path.
+        # Set the `file_type` variable for display only.
+        file_type = "." + str(file_ext)
+        if file_ext == None:
+            file_type = "All types"
+
+        # Ask the user to confirm.
+        if click.confirm(
+            f"Making a request to all files found in the path below:\n"
+            + f"Question: {question}\nPath:  {path}\nFile type: {file_type}\n"
+            + f"Do you want to continue?",
+            abort=True,
+        ):
+            print()
+            out_buffer = ""
+            for root, dirs, files in os.walk(resolve_path(path)):
+                for file in files:
+                    file_path = os.path.realpath(os.path.join(root, file))
+                    if file_ext == None:
+                        # Apply to all files.
+                        print(f"# File: {file_path}")
+                        this_output = console.ask_model_with_file(
+                            question,
+                            product_config,
+                            file=file_path,
+                            rag=rag,
+                            return_output=True,
+                        )
+                        this_output = this_output.strip()
+                        print()
+                        print(f"{this_output}")
+                        print()
+                        if yaml is True:
+                            out_buffer += (
+                                f"  - question: {question}\n"
+                                + f"    response: {this_output}\n"
+                                + f"    file: {file_path}\n"
+                            )
+                        time.sleep(2)
+                    elif file.endswith(file_ext):
+                        print(f"# File: {file_path}")
+                        this_output = console.ask_model_with_file(
+                            question,
+                            product_config,
+                            file=file_path,
+                            rag=rag,
+                            return_output=True,
+                        )
+                        this_output = this_output.strip()
+                        print()
+                        print(f"{this_output}")
+                        print()
+                        if yaml is True:
+                            out_buffer += (
+                                f"  - question: {question}\n"
+                                + f"    response: {this_output}\n"
+                                + f"    file: {file_path}\n"
+                            )
+                        time.sleep(2)
+
+            if yaml is True:
+                output_filename = "./responses.yaml"
+                with open(output_filename, "w", encoding="utf-8") as out_file:
+                    out_file.write("benchmarks:\n")
+                    out_file.write(out_buffer)
+                    out_file.close()
     else:
+        # Terminal output mode, which reads the terminal ouput as context.
         terminal_output = ""
         # Set the default filename created from the `script` command.
         file_path = "/tmp/docs_agent_console_input"
         # Set the maximum number of lines to read from the terminal.
         lines_limit = -150
-        if product_config.products[0].models.language_model.startswith(
-            "models/gemini-1.5-pro"
-        ):
-            # Read, at the most, 5000 lines printed from the latest command ran on the terminal.
+        # For the new 1.5 pro model, increase the limit to 5000 lines.
+        if this_model.startswith("models/gemini-1.5-pro"):
             lines_limit = -5000
         try:
             with open(file_path, "r", encoding="utf-8") as file:
@@ -308,16 +478,22 @@ def helpme(
         except:
             terminal_output = "No console output is provided."
         context = "THE FOLLOWING IS MY CONSOLE OUTPUT:\n\n" + terminal_output
-        console.ask_model_for_help(question.strip(), context, product_config)
+        console.ask_model_for_help(question, context, product_config)
 
 
 @cli_admin.command()
+@click.option(
+    "--model",
+    help="Specify a model to use. Overrides the model (language_model) for all loaded product configurations.",
+    default=None,
+    multiple=False,
+)
 @common_options
-def benchmark(config_file: typing.Optional[str], product: list[str] = [""]):
+def benchmark(config_file: typing.Optional[str], product: list[str] = [""],  model: typing.Optional[str] = None):
     """Run the Docs Agent benchmark test."""
     # Loads configurations from common options
     loaded_config, product_config = return_config_and_product(
-        config_file=config_file, product=product
+        config_file=config_file, product=product, model=model
     )
     benchmarks.run_benchmarks()
 
@@ -536,6 +712,35 @@ def backup_chroma(
         click.echo(f"Successfully backed up {input_chroma} to {final_output_dir}.")
     else:
         click.echo(f"Can't backup chroma database specified: {input_chroma}")
+
+
+@cli_admin.command()
+@click.option("--date", default="None")
+@common_options
+def write_logs_to_csv(
+    date: typing.Optional[str],
+    config_file: typing.Optional[str],
+    product: list[str] = [""],
+):
+    """Write captured debug information to a CSV file."""
+    # Loads configurations from common options
+    loaded_config, product_config = return_config_and_product(
+        config_file=config_file, product=product
+    )
+    output_filename = "debug-info-all.csv"
+    if date != "None":
+        output_filename = "debug-info-" + str(date) + ".csv"
+        click.echo(
+            f"Writing all debug logs from {date} to the logs/{output_filename} file:\n"
+        )
+    else:
+        click.echo(f"Writing all debug logs to the logs/{output_filename} file:\n")
+    # Write the target debug logs to a CSV file.
+    write_logs_to_csv_file(log_date=date)
+    # Print the content of the CSV file.
+    with open("./logs/" + output_filename, "r") as f:
+        print(f.read())
+        f.close()
 
 
 if __name__ == "__main__":

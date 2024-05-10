@@ -309,6 +309,7 @@ class ProductConfig:
         feedback_mode: str = "rewrite",
         enable_show_logs: str = "False",
         enable_logs_to_markdown: str = "False",
+        enable_logs_for_debugging: str = "False",
         enable_delete_chunks: str = "False",
         secondary_db_type: typing.Optional[str] = None,
         secondary_corpus_name: typing.Optional[str] = None,
@@ -328,6 +329,7 @@ class ProductConfig:
         self.feedback_mode = feedback_mode
         self.enable_show_logs = enable_show_logs
         self.enable_logs_to_markdown = enable_logs_to_markdown
+        self.enable_logs_for_debugging = enable_logs_for_debugging
         self.enable_delete_chunks = enable_delete_chunks
         self.secondary_db_type = secondary_db_type
         self.secondary_corpus_name = secondary_corpus_name
@@ -350,6 +352,7 @@ App port: {self.app_port}\n\
 Feedback mode: {self.feedback_mode}\n\
 Enable show logs: {self.enable_show_logs}\n\
 Enable logs to Markdown: {self.enable_logs_to_markdown}\n\
+Enable logs for debugging: {self.enable_logs_for_debugging}\n\
 Enable delete chunks: {self.enable_delete_chunks}\n\
 Markdown splitter: {self.markdown_splitter}\n\
 Database type: {self.db_type}\n\
@@ -444,6 +447,10 @@ class ReadConfig:
                 except KeyError:
                     enable_logs_to_markdown = "False"
                 try:
+                    enable_logs_for_debugging = item["enable_logs_for_debugging"]
+                except KeyError:
+                    enable_logs_for_debugging = "False"
+                try:
                     enable_delete_chunks = item["enable_delete_chunks"]
                 except KeyError:
                     enable_delete_chunks = "False"
@@ -471,7 +478,7 @@ class ReadConfig:
                         app_port=app_port,
                         feedback_mode=feedback_mode,
                         enable_show_logs=enable_show_logs,
-                        enable_logs_to_markdown=enable_logs_to_markdown,
+                        enable_logs_for_debugging=enable_logs_for_debugging,
                         enable_delete_chunks=enable_delete_chunks,
                         secondary_db_type=secondary_db_type,
                         secondary_corpus_name=secondary_corpus_name,
@@ -528,7 +535,7 @@ class ReadConfig:
 
 # Function to make using common_options simpler
 def return_config_and_product(
-    config_file: typing.Optional[str] = None, product: list[str] = [""]
+    config_file: typing.Optional[str] = None, product: list[str] = [""], model: typing.Optional[str] = None
 ):
     if config_file is None:
         loaded_config = ReadConfig()
@@ -542,5 +549,9 @@ def return_config_and_product(
         for item in product:
             product_config = loaded_config.returnProducts(product=item)
             final_products.append(product_config.products[0])
+    # Overwrites the language_model for all products
+    if model is not None:
+        for item in final_products:
+            item.models.language_model = model
     product_config = ConfigFile(products=final_products)
     return loaded_config, product_config
