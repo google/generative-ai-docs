@@ -439,7 +439,11 @@ class DocsAgent:
         plain_token = 0
         sources = []
         final_pages = []
-        for i in range(max_sources):
+        # Quick fix: Ensure max_sources is not larger than the array size of search_result.
+        this_range = len(search_result)
+        if this_range > max_sources:
+            this_range = max_sources
+        for i in range(this_range):
             # The current section that is being built
             # eval turns str representation of array into an array
             curr_section_id = search_result[i].section.name_id

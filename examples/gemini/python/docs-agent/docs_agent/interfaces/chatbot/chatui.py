@@ -472,7 +472,9 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
         # Log debug information.
 
         if docs_agent.config.enable_logs_for_debugging == "True":
-            top_source_url = search_result[0].section.url
+            top_source_url = ""
+            if len(search_result) > 0:
+                top_source_url = search_result[0].section.url
             source_urls = ""
             index = 1
             for result in search_result:
