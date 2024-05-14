@@ -137,6 +137,25 @@
 <div class="hidden" id="uuid-box">
   {{ uuid | safe }}
 </div>
+{% elif feedback_mode == "like_and_dislike" %}
+<div id="feedback-buttons-box">
+  <input type="button" class="notselected" value="Like this response &#128077;" id="like-button">
+  <input type="button" class="notselected" value="Disike &#128078;" id="dislike-button">
+  {% if aqa_response_in_html != "" %}
+  <span id="answerable-span">
+    (<b>Answerable probability</b>: {{"%.3f"|format(probability|float)}})
+  </span>
+  {% endif %}
+</div>
+<div class="hidden" id="uuid-box">
+  {{ uuid | safe }}
+</div>
+<div class="hidden" id="feedback-question-span">
+  {{ question | replace("+", " ") | replace("%3F", "?")}}
+</div>
+<div class="hidden" id="feedback-response-span">
+  {{ md_to_html(response) | safe }}
+</div>
 {% else %}
 <div id="feedback-buttons-box">
   <input type="button" value="Provide feedback" id="feedback-button">

@@ -218,187 +218,146 @@ def ask_model_with_file(
     question: str,
     product_configs: ConfigFile,
     file: typing.Optional[str] = None,
+    context_file: typing.Optional[str] = None,
     rag: bool = False,
+    return_output: bool = False,
 ):
     # Initialize Rich console
     ai_console = Console(width=160)
     full_prompt = ""
     final_context = ""
-    results_num = 5
-    # Initialize Docs Agent
+    response = ""
+
+    # Get the content of the target file.
+    file_content = ""
+    if file != None:
+        try:
+            with open(file, "r", encoding="utf-8") as auto:
+                content = auto.read()
+                auto.close()
+            file_content = f"\nTHE CONTENT BELOW IS FROM THE FILE {file}:\n\n" + content
+        except:
+            print(f"Cannot open the file {file}")
+            exit(1)
+
+    # Get the content of the context file.
+    context_file_content = ""
+    if context_file != None:
+        try:
+            with open(context_file, "r", encoding="utf-8") as auto:
+                content = auto.read()
+                auto.close()
+            context_file_content = (
+                f"\nTHE CONTENT BELOW IS FROM THE PREVIOUS EXCHANGES WITH GEMINI:\n\n"
+                + content
+            )
+            file_content = context_file_content + "\n\n" + file_content
+        except:
+            print(f"Cannot open the context file {file}")
+            exit(1)
+
+    # Use the first product by default.
+    product = product_configs.products[0]
+    language_model = product.models.language_model
     with Progress(transient=True) as progress:
-        search_results = []
-        responses = []
-        links = []
         task_docs_agent = progress.add_task(
             "[turquoise4 bold]Starting Docs Agent ", total=None, refresh=True
         )
-        for product in product_configs.products:
-            if "gemini" in product.models.language_model:
-                if rag and product.db_type == "chroma":
-                    docs_agent = DocsAgent(config=product, init_chroma=True)
-                else:
-                    docs_agent = DocsAgent(config=product, init_chroma=False)
+        if rag:
+            # RAG specified. Retrieve additional context from a database.
+            if product.db_type == "chroma":
+                # Use a local Chroma database.
+                # Initialize Docs Agent.
+                docs_agent = DocsAgent(
+                    config=product, init_chroma=True, init_semantic=False
+                )
+                # Get the Chroma collection name.
+                collection = docs_agent.return_chroma_collection()
+                # Set the progress bar.
+                label = f"[turquoise4 bold]Asking Gemini (model: {language_model}, source: {collection}) "
                 progress.update(
-                    task_docs_agent,
-                    description=f"[turquoise4 bold]Asking Gemini (model: {product.models.language_model}, source: {docs_agent.return_chroma_collection()}) ",
-                    total=None,
+                    task_docs_agent, description=label, total=None, refresh=True
                 )
-                if docs_agent.config.docs_agent_config == "experimental":
-                    results_num = 10
-                    new_question_count = 5
-                else:
-                    results_num = 5
-                    new_question_count = 5
-                if file is not None:
-                    results_num = 15
-                    if rag:
-                        (
-                            search_result,
-                            final_context,
-                        ) = docs_agent.query_vector_store_to_build(
-                            question=question,
-                            token_limit=500000,
-                            results_num=results_num,
-                            max_sources=results_num,
-                        )
-                        final_context = (
-                            "This is the file: \n" + str(file) + "\n\n" + final_context
-                        )
-                    else:
-                        search_result = []
-                        link = ""
-                        final_context = "This is the file: \n" + str(file) + "\n"
-                else:
-                    # Issue if max_sources > results_num, so leave the same for now
-                    (
-                        search_result,
-                        final_context,
-                    ) = docs_agent.query_vector_store_to_build(
-                        question=question,
-                        token_limit=30000,
-                        results_num=results_num,
-                        max_sources=results_num,
-                    )
+                # Retrieve context from the local Chroma database.
                 (
-                    response,
-                    full_prompt,
-                ) = docs_agent.ask_content_model_with_context_prompt(
-                    context=final_context, question=question
+                    search_result,
+                    returned_context,
+                ) = docs_agent.query_vector_store_to_build(
+                    question=question,
+                    token_limit=500000,
+                    results_num=5,
+                    max_sources=5,
                 )
-                if len(search_result) >= 1:
-                    if search_result[0].section.url == "":
-                        link = str(search_result[0].section)
-                    else:
-                        link = search_result[0].section.url
-                search_results.append(search_result)
-                responses.append(response)
-                links.append(link)
-            elif "aqa" in product.models.language_model:
-                if product.db_type == "google_semantic_retriever":
-                    docs_agent = DocsAgent(config=product, init_chroma=False)
-                    label = f"[turquoise4 bold]Asking Gemini (model: {product.models.language_model}, "
-                    corpus_name = ""
-                    link = ""
-                    for db_config in product.db_configs:
-                        if db_config.db_type == "google_semantic_retriever":
-                            corpus_name = db_config.corpus_name
-                    if corpus_name != "":
-                        label += "source: " + corpus_name + ") "
-                    progress.update(
-                        task_docs_agent, description=label, total=None, refresh=True
-                    )
-                    (response, search_result) = docs_agent.ask_aqa_model_using_corpora(
-                        question=question
-                    )
-                    if len(search_result) >= 1:
-                        if search_result[0].section.url == "":
-                            link = str(search_result[0].section)
-                        else:
-                            link = search_result[0].section.url
-                    search_results.append(search_result)
-                    responses.append(response)
-                    link = ""
-                    links.append(link)
-                elif product.db_type == "chroma":
-                    docs_agent = DocsAgent(config=product, init_chroma=True)
-                    progress.update(
-                        task_docs_agent,
-                        description=f"[turquoise4 bold]Asking Gemini (model: {product.models.language_model}, source: {docs_agent.return_chroma_collection()}) ",
-                        total=None,
-                    )
-                    (
-                        response,
-                        search_result,
-                    ) = docs_agent.ask_aqa_model_using_local_vector_store(
-                        question=question, results_num=results_num
-                    )
-                    if len(search_result) >= 1:
-                        if search_result[0].section.url == "":
-                            link = str(search_result[0].section)
-                        else:
-                            link = search_result[0].section.url
-                    search_results.append(search_result)
-                    responses.append(response)
-                    links.append(link)
-                else:
-                    logging.error(f"Unknown db_type: {product.db_type}")
-        final_search = []
-        final_responses = []
-        final_response_md = ""
-        final_links = []
-        count = 0
-        # Prune the generated answers as needed
-        for item in search_results:
-            # Gemini-pro + chroma will give distance instead of probability
-            # if (item[0].probability != 0):
-            final_search.append(search_results[count])
-            final_responses.append(responses[count])
-            final_response_md += responses[count] + "\n"
-            final_links.append(links[count])
-            count += 1
-        count = 0
-        synthesize = False
-        synthesize_product = None
-        # Currently only triggers from a gemini entry into the provided products
-        for product in product_configs.products:
-            if "gemini" in product.models.language_model:
-                synthesize_product = product
-        if synthesize and not (synthesize_product == None):
-            docs_agent = DocsAgent(config=synthesize_product, init_chroma=False)
+                context_from_database = ""
+                chunk_count = 0
+                for item in search_result:
+                    context_from_database += item.section.content
+                    context_from_database += f"\nReference [{chunk_count}]\n\n"
+                    chunk_count += 1
+                # Construct the final context for the question.
+                final_context = (
+                    "\nTHE CONTENT BELOW IS RETRIEVED FROM THE LOCAL DATABASE:\n\n"
+                    + context_from_database.strip()
+                    + "\n\n"
+                    + str(file_content)
+                )
+            elif product.db_type == "google_semantic_retriever":
+                # Use an online corpus from the Semantic Retrieval API.
+                # Initialize Docs Agent.
+                docs_agent = DocsAgent(
+                    config=product, init_chroma=False, init_semantic=True
+                )
+                # Get the corpus name.
+                corpus_name = ""
+                for db_config in product.db_configs:
+                    if db_config.db_type == "google_semantic_retriever":
+                        corpus_name = db_config.corpus_name
+                # Set the progress bar.
+                label = f"[turquoise4 bold]Asking Gemini (model: {language_model}, source: {corpus_name}) "
+                progress.update(
+                    task_docs_agent, description=label, total=None, refresh=True
+                )
+                # Retrieve context from the online corpus.
+                context_chunks = docs_agent.retrieve_chunks_from_corpus(
+                    question, corpus_name=str(corpus_name)
+                )
+                context_from_corpus = ""
+                chunk_count = 0
+                for chunk in context_chunks.relevant_chunks:
+                    context_from_corpus += chunk.chunk.data.string_value
+                    context_from_corpus += f"\nReference [{chunk_count}]\n\n"
+                    chunk_count += 1
+                # Construct the final context for the question.
+                final_context = (
+                    "\nTHE CONTENT BELOW IS RETRIEVED FROM THE ONLINE DATABASE:\n\n"
+                    + context_from_corpus.strip()
+                    + "\n\n"
+                    + str(file_content)
+                )
+            else:
+                logging.error(f"Unknown db_type: {product.db_type}")
+                exit(1)
+        else:
+            # No RAG specified. No additional context to be retrieved from a database.
+            docs_agent = DocsAgent(
+                config=product, init_chroma=False, init_semantic=False
+            )
             progress.update(
                 task_docs_agent,
-                description=f"[turquoise4 bold]Asking {docs_agent.context_model} to synthesize a response",
+                description=f"[turquoise4 bold]Asking Gemini (model: {language_model}) ",
                 total=None,
             )
-            new_question = f"Help me synthesize the context above into a cohesive response to help me answer my original question. Only use content from the provided context. My original question: {question}"
-            (
-                good_response,
-                new_prompt,
-            ) = docs_agent.ask_content_model_with_context_prompt(
-                context=final_response_md, question=new_question, prompt=""
-            )
-            progress.update(task_docs_agent, visible=False, refresh=True)
-            # Final printing to console
-            ai_console.print()
-            ai_console.print(Markdown(good_response))
-        else:
-            # This returns the responses as is for each agent interaction
-            progress.update(task_docs_agent, visible=False, refresh=True)
-            ai_console.print()
-            ai_console.print(Markdown(final_response_md))
-        # Print results
-        for item in final_search:
-            count += 1
-        count = 0
+            final_context = file_content
+        # print(f"Context:\n{final_context}")
+        # print(f"Question:\n{question}")
+        # Ask Gemini with the question and final context.
+        (
+            response,
+            full_prompt,
+        ) = docs_agent.ask_content_model_with_context_prompt(
+            context=final_context, question=question
+        )
+        if return_output:
+            return str(response.strip())
         ai_console.print()
-        md_links = ""
-        for item in final_links:
-            if isinstance(item, str):
-                if not item.startswith("UUID"):
-                    md_links += f"\n* [{item}]({item})\n"
-                    count += 1
-        # Avoid printing links if first link is blank
-        if final_links[0] != "":
-            ai_console.print(Markdown("To verify this information, see:\n"))
-            ai_console.print(Markdown(md_links))
+        ai_console.print(Markdown(response.strip()))

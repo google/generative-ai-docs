@@ -88,6 +88,7 @@ if (feedbackButton != null){
 
 // Toggle the selected class on the `like this response` button.
 let likeButton = document.getElementById('like-button');
+let dislikeButton = document.getElementById('dislike-button');
 
 if (likeButton != null){
   likeButton.addEventListener('click',function (){
@@ -99,6 +100,13 @@ if (likeButton != null){
       let uuid = "Unknown";
       if (uuidBox != null){
         uuid =  uuidBox.textContent;
+      }
+      if (dislikeButton != null){
+        dislikeButton.classList.add("hidden");
+        if (dislikeButton.classList.contains("selected")) {
+          dislikeButton.classList.remove("selected");
+          dislikeButton.classList.add("notselected");
+	}
       }
       let xhr = new XMLHttpRequest();
       // The value of `urlLike` is specified in the html template,
@@ -118,6 +126,13 @@ if (likeButton != null){
       if (uuidBox != null){
         uuid =  uuidBox.textContent;
       }
+      if (dislikeButton != null){
+        dislikeButton.classList.remove("hidden");
+        if (dislikeButton.classList.contains("selected")) {
+          dislikeButton.classList.remove("selected");
+          dislikeButton.classList.add("notselected");
+	}
+      }
       let xhr = new XMLHttpRequest();
       // The value of `urlLike` is specified in the html template,
       // which is set by the Flask server.
@@ -126,6 +141,63 @@ if (likeButton != null){
       xhr.setRequestHeader("Accept", "application/json");
       xhr.setRequestHeader("Content-Type", "application/json");
       let data = JSON.stringify({"like": false, "uuid": uuid});
+      xhr.send(data);
+    }
+  });
+}
+
+// Toggle the selected class on the `dislike` button.
+if (dislikeButton != null){
+  dislikeButton.addEventListener('click',function (){
+    if (dislikeButton.classList.contains("notselected")) {
+      this.classList.remove("notselected");
+      this.classList.add("selected");
+      this.value = "Disliked"
+      let uuidBox = document.getElementById('uuid-box');
+      let uuid = "Unknown";
+      if (uuidBox != null){
+        uuid =  uuidBox.textContent;
+      }
+      if (likeButton != null){
+        likeButton.classList.add("hidden");
+        if (likeButton.classList.contains("selected")) {
+          likeButton.classList.remove("selected");
+          likeButton.classList.add("notselected");
+	}
+      }
+      let xhr = new XMLHttpRequest();
+      // The value of `urlLike` is specified in the html template,
+      // which is set by the Flask server.
+      // See chatbot/templates/chatui/base.html
+      xhr.open("POST", urlLike, true);
+      xhr.setRequestHeader("Accept", "application/json");
+      xhr.setRequestHeader("Content-Type", "application/json");
+      let data = JSON.stringify({"dislike": true, "uuid": uuid});
+      xhr.send(data);
+    }else{
+      this.classList.remove("selected");
+      this.classList.add("notselected");
+      this.value = 'Dislike \uD83D\uDC4E';
+      let uuidBox = document.getElementById('uuid-box');
+      let uuid = "Unknown";
+      if (uuidBox != null){
+        uuid =  uuidBox.textContent;
+      }
+      if (likeButton != null){
+        likeButton.classList.remove("hidden");
+        if (likeButton.classList.contains("selected")) {
+          likeButton.classList.remove("selected");
+          likeButton.classList.add("notselected");
+	}
+      }
+      let xhr = new XMLHttpRequest();
+      // The value of `urlLike` is specified in the html template,
+      // which is set by the Flask server.
+      // See chatbot/templates/chatui/base.html
+      xhr.open("POST", urlLike, true);
+      xhr.setRequestHeader("Accept", "application/json");
+      xhr.setRequestHeader("Content-Type", "application/json");
+      let data = JSON.stringify({"dislike": false, "uuid": uuid});
       xhr.send(data);
     }
   });

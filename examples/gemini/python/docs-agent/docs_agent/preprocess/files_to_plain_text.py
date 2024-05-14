@@ -325,6 +325,8 @@ def process_fidl_file(
         filename_to_save = make_file_chunk_name(
             new_path=new_path, filename_prefix=filename_prefix, index=chunk_number
         )
+        # Get the text chunk filename string (after `docs-agent/data`).
+        text_chunk_filename = get_relative_path_and_filename(filename_to_save)
         # Prepare metadata for this FIDL protocol chunk.
         md_hash = uuid.uuid3(namespace_uuid, fidl_protocol)
         uuid_file = uuid.uuid3(namespace_uuid, filename_to_save)
@@ -350,6 +352,7 @@ def process_fidl_file(
             "previous_id": int(1),
             "URL": str(fidl_url),
             "md_hash": str(md_hash),
+            "text_chunk_filename": str(text_chunk_filename),
             "token_estimate": float(1.0),
             "full_token_estimate": float(1.0),
         }
@@ -410,7 +413,7 @@ def process_files_from_input(
     file_index = []
     full_file_metadata = {}
     resolved_output_path = resolve_path(product_config.output_path)
-    chunk_group_name = "text_chunks_" + '{:03d}'.format(input_path_count)
+    chunk_group_name = "text_chunks_" + "{:03d}".format(input_path_count)
     # Get the total file count.
     file_count = sum(len(files) for _, _, files in os.walk(resolve_path(inputpath)))
     # Set up a status bar for the terminal display.
@@ -432,11 +435,17 @@ def process_files_from_input(
             # Displays status bar
             progress_bar.set_description_str(f"Processing file {file}", refresh=True)
             progress_bar.update(1)
+            # Skip this file if it starts with `_`.
+            if file.startswith("_"):
+                continue
             # Get the full path to this input file.
             filename_to_open = os.path.join(root, file)
             # Construct a new sub-directory for storing output plain text files.
-            new_path = resolved_output_path + "/" + chunk_group_name + re.sub(
-                resolve_path(inputpath), "", os.path.join(root, "")
+            new_path = (
+                resolved_output_path
+                + "/"
+                + chunk_group_name
+                + re.sub(resolve_path(inputpath), "", os.path.join(root, ""))
             )
             is_exist = os.path.exists(new_path)
             if not is_exist:
@@ -445,66 +454,67 @@ def process_files_from_input(
             relative_path = make_relative_path(
                 file=file, root=root, inputpath=inputpath
             )
-            # Check the input file type: Markdown, FIDL, or HTML.
-            if file.endswith(".md") and not file.startswith("_"):
-                # Add filename to a list
-                file_index.append(relative_path)
-                # Increment the Markdown file count.
-                md_count += 1
-                # Process a Markdown file.
-                this_file_metadata = process_markdown_file(
-                    filename_to_open,
-                    root,
-                    inputpathitem,
-                    splitter,
-                    new_path,
-                    file,
-                    namespace_uuid,
-                    relative_path,
-                    url_prefix,
-                )
-                # Merge this file's metadata to the global metadata.
-                full_file_metadata.update(this_file_metadata)
-            elif file.endswith(".fidl") and not file.startswith("_"):
-                # Add filename to a list
-                file_index.append(relative_path)
-                # Increment the FIDL file count.
-                fidl_count += 1
-                # Process a FIDL protocol file.
-                this_file_metadata = process_fidl_file(
-                    filename_to_open,
-                    root,
-                    inputpathitem,
-                    splitter,
-                    new_path,
-                    file,
-                    namespace_uuid,
-                    relative_path,
-                    url_prefix,
-                )
-                # Merge this file's metadata to the global metadata.
-                full_file_metadata.update(this_file_metadata)
-            elif (
-                file.endswith(".htm") or file.endswith(".html")
-            ) and not file.startswith("_"):
-                # Add filename to a list
-                file_index.append(relative_path)
-                # Increment the HTML file count.
-                html_count += 1
-                # Process a HTML file.
-                this_file_metadata = process_html_file(
-                    filename_to_open,
-                    root,
-                    inputpathitem,
-                    splitter,
-                    new_path,
-                    file,
-                    namespace_uuid,
-                    relative_path,
-                    url_prefix,
-                )
-                # Merge this file's metadata to the global metadata.
-                full_file_metadata.update(this_file_metadata)
+            # Select Splitter mode: Markdown, FIDL, or HTML.
+            if splitter == "token_splitter" or splitter == "process_sections":
+                if file.endswith(".md"):
+                    # Add filename to a list
+                    file_index.append(relative_path)
+                    # Increment the Markdown file count.
+                    md_count += 1
+                    # Process a Markdown file.
+                    this_file_metadata = process_markdown_file(
+                        filename_to_open,
+                        root,
+                        inputpathitem,
+                        splitter,
+                        new_path,
+                        file,
+                        namespace_uuid,
+                        relative_path,
+                        url_prefix,
+                    )
+                    # Merge this file's metadata to the global metadata.
+                    full_file_metadata.update(this_file_metadata)
+            elif splitter == "fidl_splitter":
+                if file.endswith(".fidl"):
+                    # Add filename to a list
+                    file_index.append(relative_path)
+                    # Increment the FIDL file count.
+                    fidl_count += 1
+                    # Process a FIDL protocol file.
+                    this_file_metadata = process_fidl_file(
+                        filename_to_open,
+                        root,
+                        inputpathitem,
+                        splitter,
+                        new_path,
+                        file,
+                        namespace_uuid,
+                        relative_path,
+                        url_prefix,
+                    )
+                    # Merge this file's metadata to the global metadata.
+                    full_file_metadata.update(this_file_metadata)
+            else:
+                if file.endswith(".htm") or file.endswith(".html"):
+                    # Add filename to a list
+                    file_index.append(relative_path)
+                    # Increment the HTML file count.
+                    html_count += 1
+                    # Process a HTML file.
+                    this_file_metadata = process_html_file(
+                        filename_to_open,
+                        root,
+                        inputpathitem,
+                        splitter,
+                        new_path,
+                        file,
+                        namespace_uuid,
+                        relative_path,
+                        url_prefix,
+                    )
+                    # Merge this file's metadata to the global metadata.
+                    full_file_metadata.update(this_file_metadata)
 
     # The processing of input files is finished.
     progress_bar.set_description_str(f"Finished processing files.", refresh=False)
@@ -705,19 +715,21 @@ def get_chunk_size_distribution_from_product(input_product: ProductConfig):
                 else:
                     count = chunk_size_map["6000"]
                     chunk_size_map["6000"] = count + 1
+                total_file_count += 1
 
     # Print the distribution result.
-    print("\nDistribution of text chunk sizes and counts:")
+    print("\nSpread of text chunk sizes and counts:")
     prev_size = 0
     for key in list(chunk_size_map):
         count = chunk_size_map[key]
         if int(key) == 50:
-            print(f"Chunks smaller than {key} bytes: {count}")
+            print(f"- Chunks smaller than {key} bytes: {count}")
         elif int(key) == 6000:
-            print(f"Chunks larger than {key} bytes: {count}")
+            print(f"- Chunks larger than {key} bytes: {count}")
         else:
-            print(f"Chunks between {prev_size} and {key} bytes: {count}")
+            print(f"- Chunks between {prev_size} and {key} bytes: {count}")
         prev_size = int(key)
+    print(f"\nTotal number of chunks: {total_file_count}")
 
 
 # Given a ReadConfig object, process all products

@@ -41,7 +41,7 @@ body {
     font-weight: 500;
     font-size: 1.3em;
     margin-top: 0.1em;
-    margin-left: 0.1em;
+    margin-left: 1.0em;
     margin-bottom: 0.9em;
   }
 
@@ -238,8 +238,14 @@ body {
     cursor:pointer;
   }
 
-  .selected {
+  #like-button.selected {
     background-color: #1e6a9c;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  #dislike-button.selected {
+    background-color: #CF5C3F;
     padding-top: 7px;
     padding-bottom: 7px;
   }
@@ -318,6 +324,15 @@ body {
   }
 
   #like-button {
+    border: 0;
+    color: #fff;
+    padding-left: 7px;
+    padding-right: 7px;
+    border-radius: 5px;
+    cursor:pointer;
+  }
+
+  #dislike-button {
     border: 0;
     color: #fff;
     padding-left: 7px;
