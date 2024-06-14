@@ -57,7 +57,7 @@ def ask_model_for_help(question: str, context: str, product_configs: ConfigFile)
 
 # This function is used by the `tellme` command to ask the Gemini AQA model
 # a question from an online corpus.
-def ask_model(question: str, product_configs: ConfigFile):
+def ask_model(question: str, product_configs: ConfigFile, return_output: bool = False):
     # Initialize Rich console
     ai_console = Console(width=160)
     full_prompt = ""
@@ -167,6 +167,8 @@ def ask_model(question: str, product_configs: ConfigFile):
             final_response_md += responses[count] + "\n"
             final_links.append(links[count])
             count += 1
+
+        # Print the response.
         count = 0
         synthesize = False
         synthesize_product = None
@@ -174,6 +176,7 @@ def ask_model(question: str, product_configs: ConfigFile):
         for product in product_configs.products:
             if "gemini" in product.models.language_model:
                 synthesize_product = product
+
         if synthesize and not (synthesize_product == None):
             docs_agent = DocsAgent(config=synthesize_product, init_chroma=False)
             progress.update(
@@ -197,23 +200,67 @@ def ask_model(question: str, product_configs: ConfigFile):
             progress.update(task_docs_agent, visible=False, refresh=True)
             ai_console.print()
             ai_console.print(Markdown(final_response_md))
-        # Print results
-        for item in final_search:
-            count += 1
-        count = 0
-        ai_console.print()
-        ai_console.print(Markdown("To verify this information, see:\n"))
+
+        # Get the link to the source.
         md_links = ""
         for item in final_links:
             if isinstance(item, str):
                 if not item.startswith("UUID"):
                     md_links += f"\n* [{item}]({item})\n"
-                    count += 1
+
+        # Print the link to the source.
+        ai_console.print()
+        ai_console.print(Markdown("To verify this information, see:\n"))
         ai_console.print(Markdown(md_links))
 
+        # Retrun the output if the `return_output` flag is set.
+        if return_output:
+            return_string = (
+                str(final_response_md.strip())
+                + "\n\nTo verify this information, see:\n"
+                + md_links
+            )
+            return return_string
 
-# This function is used by the `helpme` command to ask the Gemini AQA model
-# a question from an online corpus.
+
+# This function is used by the `helpme` command to ask a Gemini model
+# a question without additional context.
+def ask_model_without_context(
+    question: str,
+    product_configs: ConfigFile,
+    return_output: bool = False,
+):
+    # Initialize Rich console
+    ai_console = Console(width=160)
+    full_prompt = ""
+    final_context = ""
+    response = ""
+
+    # Use the first product by default.
+    product = product_configs.products[0]
+    language_model = product.models.language_model
+    with Progress(transient=True) as progress:
+        task_docs_agent = progress.add_task(
+            "[turquoise4 bold]Starting Docs Agent ", total=None, refresh=True
+        )
+        # Initialize Docs Agent.
+        docs_agent = DocsAgent(config=product, init_chroma=False, init_semantic=False)
+        # Set the progress bar.
+        label = f"[turquoise4 bold]Asking Gemini (model: {language_model}) "
+        progress.update(task_docs_agent, description=label, total=None, refresh=True)
+        final_context = "No additional context is necessary for this question."
+        # Ask Gemini with the question without additional context.
+        response = docs_agent.ask_content_model_with_context(
+            context=final_context, question=question
+        )
+    if return_output:
+        return str(response.strip())
+    ai_console.print()
+    ai_console.print(Markdown(response.strip()))
+
+
+# This function is used by the `helpme` command to ask a Gemini model
+# a question with various context sources.
 def ask_model_with_file(
     question: str,
     product_configs: ConfigFile,

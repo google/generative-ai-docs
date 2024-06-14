@@ -47,7 +47,7 @@ fi
 
 # Check if the POETRY_ACTIVE environment variable is set
 if [ -z "$POETRY_ACTIVE" ]; then
-  cd "$docs_agent_dir" && poetry run agent helpme "$request" --file "$filename"
+  cd "$docs_agent_dir" && poetry run agent helpme $request --file "$filename"
 else
-  agent helpme "$request" --file "$filename"
+  agent helpme $request --file "$filename"
 fi

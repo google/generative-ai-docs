@@ -25,7 +25,17 @@ from uuid import UUID
 
 # Save this question and response pair as a file.
 def log_question_to_file(user_question: str, response: str, probability: str = "None"):
-    filename = str(user_question).lower().replace(" ", "-").replace("?", "")
+    filename = (
+        str(user_question)
+        .lower()
+        .replace(" ", "-")
+        .replace("?", "")
+        .replace("'", "")
+        .replace("`", "")
+    )
+    filename = re.sub("[^a-zA-Z0-9\-]", "", filename)
+    if len(filename) > 64:
+        filename = filename[:64]
     log_dir = "./logs/responses"
     log_filename = f"{log_dir}/{filename}.md"
     if not os.path.exists(log_dir):
@@ -66,7 +76,17 @@ def log_debug_info_to_file(
     date = datetime.now(tz=pytz.utc)
     date = date.astimezone(pytz.timezone("US/Pacific"))
     date_formatted = str(date.strftime("%Y-%m-%d-%H-%M-%S"))
-    question_formatted = str(user_question).lower().replace(" ", "-").replace("?", "")
+    question_formatted = (
+        str(user_question)
+        .lower()
+        .replace(" ", "-")
+        .replace("?", "")
+        .replace("'", "")
+        .replace("`", "")
+    )
+    question_formatted = re.sub("[^a-zA-Z0-9\-]", "", question_formatted)
+    if len(question_formatted) > 32:
+        question_formatted = question_formatted[:32]
     filename = date_formatted + "-" + question_formatted + "-" + str(uid) + ".txt"
     # Set the directory location.
     debug_dir = "./logs/debugs"

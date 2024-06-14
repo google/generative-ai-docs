@@ -49,8 +49,17 @@ class DocsAgent:
     ):
         # Models settings
         self.config = config
+        self.language_model = str(self.config.models.language_model)
         self.embedding_model = str(self.config.models.embedding_model)
         self.api_endpoint = str(self.config.models.api_endpoint)
+
+        # Initialize the default Gemini model.
+        if self.language_model.startswith("models/gemini"):
+            self.gemini = Gemini(
+                models_config=config.models, conditions=config.conditions
+            )
+            self.context_model = self.language_model
+
         # Use the new chroma db for all queries
         # Should make a function for this or clean this behavior
         if init_chroma:
@@ -69,9 +78,28 @@ class DocsAgent:
                     self.config.models.api_key, self.embedding_model
                 ),
             )
+
         # AQA model settings
         if init_semantic:
-            if self.config.models.language_model == "models/aqa":
+            # Except in "full" and "pro" modes, the semantic retriever option requires
+            # the AQA model. If not, exit the program.
+            if (
+                self.config.app_mode != "full"
+                and self.config.app_mode != "widget-pro"
+                and self.config.db_type == "google_semantic_retriever"
+            ):
+                if self.language_model != "models/aqa":
+                    logging.error(
+                        "The db_type `google_semnatic_retriever` option"
+                        + " requires the AQA model (`models/aqa`)."
+                    )
+                    exit(1)
+            # If the AQA model is selected or the web app is on "full" and "pro" modes.
+            if (
+                self.language_model == "models/aqa"
+                or self.config.app_mode == "full"
+                or self.config.app_mode == "widget-pro"
+            ):
                 # AQA model setup
                 self.generative_service_client = glm.GenerativeServiceClient()
                 self.retriever_service_client = glm.RetrieverServiceClient()
@@ -86,7 +114,7 @@ class DocsAgent:
                 self.gemini = Gemini(
                     models_config=gemini_model_config, conditions=config.conditions
                 )
-            # Semantic retriever
+            # If semantic retriever is selected as the main database.
             if self.config.db_type == "google_semantic_retriever":
                 for item in self.config.db_configs:
                     if "google_semantic_retriever" in item.db_type:
@@ -99,13 +127,7 @@ class DocsAgent:
                             )
                 self.aqa_response_buffer = ""
 
-        if self.config.models.language_model.startswith("models/gemini"):
-            self.gemini = Gemini(
-                models_config=config.models, conditions=config.conditions
-            )
-            self.context_model = self.config.models.language_model
-
-        # Always initialize the gemini-pro model for other tasks.
+        # Always initialize the Gemini 1.0 pro model for other tasks.
         gemini_pro_model_config = Models(
             language_model="models/gemini-pro",
             embedding_model=self.embedding_model,
@@ -115,10 +137,10 @@ class DocsAgent:
             models_config=gemini_pro_model_config, conditions=config.conditions
         )
 
-        if self.config.app_mode == "1.5":
-            # Initialize the gemini-1.5.pro model for summarization.
+        if self.config.app_mode == "full" or self.config.app_mode == "widget-pro":
+            # Initialize the Gemini 1.5 model for generating main responses.
             gemini_15_model_config = Models(
-                language_model="models/gemini-1.5-pro-latest",
+                language_model=self.language_model,
                 embedding_model=self.embedding_model,
                 api_endpoint=self.api_endpoint,
             )
@@ -174,7 +196,7 @@ class DocsAgent:
             )
             verbose_prompt += "\nID: " + index_id + "\n" + returned_context + "\n"
         req = glm.GenerateAnswerRequest(
-            model=self.config.models.language_model,
+            model="models/aqa",
             contents=[user_query_content],
             inline_passages=grounding_passages,
             answer_style=answer_style,
@@ -244,19 +266,14 @@ class DocsAgent:
             source=corpus_name, query=user_question_content
         )
 
-        if self.config.models.language_model == "models/aqa":
-            req = glm.GenerateAnswerRequest(
-                model=self.config.models.language_model,
-                contents=[user_question_content],
-                semantic_retriever=retriever_config,
-                answer_style=answer_style,
-            )
-        else:
-            self.aqa_response_buffer = ""
-            logging.error(
-                "This function should only be used with a setting of language_model models/aqa"
-            )
-            return self.config.conditions.model_error_message, search_result
+        # Ask the AQA model.
+        req = glm.GenerateAnswerRequest(
+            model="models/aqa",
+            contents=[user_question_content],
+            semantic_retriever=retriever_config,
+            answer_style=answer_style,
+        )
+
         try:
             aqa_response = self.generative_service_client.generate_answer(req)
             self.aqa_response_buffer = aqa_response
@@ -509,7 +526,7 @@ class DocsAgent:
             response = ""
             if model == "gemini-pro":
                 response = self.gemini_pro.generate_content(contents=new_prompt)
-            elif model == "gemini-1.5-pro":
+            elif model == "gemini-1.5":
                 response = self.gemini_15.generate_content(contents=new_prompt)
             else:
                 response = self.gemini.generate_content(contents=new_prompt)

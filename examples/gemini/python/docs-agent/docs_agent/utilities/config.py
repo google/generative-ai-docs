@@ -49,13 +49,22 @@ class DbConfig:
         self.secondary_corpus_name = secondary_corpus_name
 
     def __str__(self):
-        return f"Database type: {self.db_type}\n\
-Vector database dir: {self.vector_db_dir}\n\
-Collection name: {self.collection_name}\n\
-Corpus name: {self.corpus_name}\n\
-Corpus display: {self.corpus_display}\n\
-Secondary database type: {self.secondary_db_type}\n\
-Secondary corpus name: {self.secondary_corpus_name}\n"
+        help_str = ""
+        help_str += f"Database type: {self.db_type}\n"
+        if self.vector_db_dir is not None and self.vector_db_dir != "":
+            help_str += f"Vector database dir: {self.vector_db_dir}\n"
+        if self.collection_name is not None and self.collection_name != "":
+            help_str += f"Collection name: {self.collection_name}\n"
+        if self.corpus_name is not None and self.corpus_name != "":
+            help_str += f"Corpus name: {self.corpus_name}\n"
+        if self.corpus_display is not None and self.corpus_display != "":
+            help_str += f"Corpus display: {self.corpus_display}\n"
+        if self.secondary_db_type is not None and self.secondary_db_type != "":
+            help_str += f"Secondary database type: {self.secondary_db_type}\n"
+        if self.secondary_corpus_name is not None and self.secondary_corpus_name != "":
+            help_str += f"Secondary corpus name: {self.secondary_corpus_name}\n"
+        return help_str
+
 
     def return_vector_db_dir(self):
         return self.vector_db_dir
@@ -118,10 +127,16 @@ class Input:
         self.exclude_path = exclude_path
 
     def __str__(self):
-        return f"Path: {self.path}\n\
-URL prefix: {self.url_prefix}\n\
-Include path html: {self.include_path_html}\n\
-Exclude path: {self.exclude_path}\n"
+        help_str = ""
+        if self.path is not None and self.path != "":
+            help_str += f"Path: {self.path}\n"
+        if self.url_prefix is not None and self.url_prefix != "":
+            help_str += f"URL prefix: {self.url_prefix}\n"
+        if self.include_path_html is not None and self.include_path_html != "":
+            help_str += f"Include path html: {self.include_path_html}\n"
+        if self.exclude_path is not None and self.exclude_path != "":
+            help_str += f"Exclude path: {self.exclude_path}\n"
+        return help_str
 
 
 class ReadInputs:
@@ -187,12 +202,20 @@ class Models:
             self.embedding_api_call_period = embedding_api_call_period
 
     def __str__(self):
-        return f"Language model: {self.language_model}\n\
-Embedding model: {self.embedding_model}\n\
-API key: {self.api_key}\n\
-API endpoint: {self.api_endpoint}\n\
-Embedding API call limit: {str(self.embedding_api_call_limit)}\n\
-Embedding API call period: {str(self.embedding_api_call_period)}\n"
+        help_str = ""
+        if self.language_model is not None and self.language_model != "":
+            help_str += f"Language model: {self.language_model}\n"
+        if self.embedding_model is not None and self.embedding_model != "":
+            help_str += f"Embedding model: {self.embedding_model}\n"
+        if self.api_key is not None and self.api_key != "":
+            help_str += f"API key: {self.api_key}\n"
+        if self.api_endpoint is not None and self.api_endpoint != "":
+            help_str += f"API endpoint: {self.api_endpoint}\n"
+        if self.embedding_api_call_limit is not None and self.embedding_api_call_limit != "":
+            help_str += f"Embedding API call limit: {self.embedding_api_call_limit}\n"
+        if self.embedding_api_call_period is not None and self.embedding_api_call_period != "":
+            help_str += f"Embedding API call period: {self.embedding_api_call_period}\n"
+        return help_str
 
 
 class ReadModels:
@@ -256,9 +279,14 @@ class Conditions:
             self.model_error_message = model_error_message
 
     def __str__(self):
-        return f"Condition text: {self.condition_text}\n\
-Fact check question: {self.fact_check_question}\n\
-Model error message: {self.model_error_message}\n"
+        help_str = ""
+        if self.condition_text is not None and self.condition_text != "":
+            help_str += f"Condition text: {self.condition_text}\n"
+        if self.fact_check_question is not None and self.fact_check_question != "":
+            help_str += f"Fact check question: {self.fact_check_question}\n"
+        if self.model_error_message is not None and self.model_error_message != "":
+            help_str += f"Model error message: {self.model_error_message}\n"
+        return help_str
 
 
 class ReadConditions:
@@ -345,25 +373,46 @@ class ProductConfig:
         for item in self.db_configs:
             dbconfigs.append(str(item))
         db_config_str = "\n".join(dbconfigs)
-        return f"Product: {self.product_name}\n\
-Docs Agent config: {self.docs_agent_config}\n\
-App mode: {self.app_mode}\n\
-App port: {self.app_port}\n\
-Feedback mode: {self.feedback_mode}\n\
-Enable show logs: {self.enable_show_logs}\n\
-Enable logs to Markdown: {self.enable_logs_to_markdown}\n\
-Enable logs for debugging: {self.enable_logs_for_debugging}\n\
-Enable delete chunks: {self.enable_delete_chunks}\n\
-Markdown splitter: {self.markdown_splitter}\n\
-Database type: {self.db_type}\n\
-Secondary database type: {self.secondary_db_type}\n\
-Secondary corpus name: {self.secondary_corpus_name}\n\
-Output path: {self.output_path}\n\
-\nDatabase configs:\n{db_config_str}\n\
-Log level: {self.log_level}\n\
-\nModels:\n{self.models}\n\
-\nInputs:\n{input_str}\n\
-Conditions:\n{self.conditions}"
+        help_str = ""
+        if self.product_name is not None and self.product_name != "":
+            help_str += f"Product: {self.product_name}\n"
+        if self.docs_agent_config is not None and self.docs_agent_config != "":
+            help_str += f"Docs Agent config: {self.docs_agent_config}\n"
+        if self.app_mode is not None and self.app_mode != "":
+            help_str += f"App mode: {self.app_mode}\n"
+        if self.app_port is not None and self.app_port != "":
+            help_str += f"App port: {self.app_port}\n"
+        if self.feedback_mode is not None and self.feedback_mode != "":
+            help_str += f"Feedback mode: {self.feedback_mode}\n"
+        if self.enable_show_logs is not None and self.enable_show_logs != "":
+            help_str += f"Enable show logs: {self.enable_show_logs}\n"
+        if self.enable_logs_to_markdown is not None and self.enable_logs_to_markdown != "":
+            help_str += f"Enable logs to Markdown: {self.enable_logs_to_markdown}\n"
+        if self.enable_logs_for_debugging is not None and self.enable_logs_for_debugging != "":
+            help_str += f"Enable logs for debugging: {self.enable_logs_for_debugging}\n"
+        if self.enable_delete_chunks is not None and self.enable_delete_chunks != "":
+            help_str += f"Enable delete chunks: {self.enable_delete_chunks}\n"
+        if self.markdown_splitter is not None and self.markdown_splitter != "":
+            help_str += f"Markdown splitter: {self.markdown_splitter}\n"
+        if self.db_type is not None and self.db_type != "":
+            help_str += f"Database type: {self.db_type}\n"
+        if self.secondary_db_type is not None and self.secondary_db_type != "":
+            help_str += f"Secondary database type: {self.secondary_db_type}\n"
+        if self.secondary_corpus_name is not None and self.secondary_corpus_name != "":
+            help_str += f"Secondary corpus name: {self.secondary_corpus_name}\n"
+        if self.output_path is not None and self.output_path != "":
+            help_str += f"Output path: {self.output_path}\n"
+        if db_config_str != "":
+            help_str += f"\nDatabase configs:\n{db_config_str}\n"
+        if self.log_level is not None and self.log_level != "":
+            help_str += f"Log level: {self.log_level}\n"
+        if self.models is not None and self.models != "":
+            help_str += f"\nModels:\n{self.models}\n"
+        if input_str != "":
+            help_str += f"\nInputs:\n{input_str}\n"
+        if self.conditions is not None and self.conditions != "":
+            help_str += f"Conditions:\n{self.conditions}\n"
+        return help_str
 
 
 # This class is used to store the content of a list of
@@ -420,7 +469,13 @@ class ReadConfig:
                     logging.error(f"Your configuration is missing a {error}")
                     return sys.exit()
                 # Set the default value of `app_mode` to "web"
-                supported_app_modes = ["web", "experimental", "widget", "1.5"]
+                supported_app_modes = [
+                    "web",
+                    "full",
+                    "widget",
+                    "widget-pro",
+                    "experimental",
+                ]
                 try:
                     app_mode = item["app_mode"]
                 except KeyError:
@@ -478,6 +533,7 @@ class ReadConfig:
                         app_port=app_port,
                         feedback_mode=feedback_mode,
                         enable_show_logs=enable_show_logs,
+                        enable_logs_to_markdown=enable_logs_to_markdown,
                         enable_logs_for_debugging=enable_logs_for_debugging,
                         enable_delete_chunks=enable_delete_chunks,
                         secondary_db_type=secondary_db_type,
@@ -535,14 +591,16 @@ class ReadConfig:
 
 # Function to make using common_options simpler
 def return_config_and_product(
-    config_file: typing.Optional[str] = None, product: list[str] = [""], model: typing.Optional[str] = None
+    config_file: typing.Optional[str] = None,
+    product: list[str] = [""],
+    model: typing.Optional[str] = None,
 ):
     if config_file is None:
         loaded_config = ReadConfig()
     else:
         loaded_config = ReadConfig(yaml_path=config_file)
     final_products = []
-    if product == ():
+    if product == () or product == [""]:
         product_config = loaded_config.returnProducts()
         final_products = product_config.products
     else:

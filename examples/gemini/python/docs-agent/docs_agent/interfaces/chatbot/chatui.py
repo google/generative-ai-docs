@@ -78,11 +78,14 @@ def construct_blueprint(
         app_template = "chatui-experimental/index.html"
         redirect_index = "chatui-experimental.index"
     elif app_mode == "widget":
-        app_template = "chat-widget/index.html"
-        redirect_index = "chat-widget.index"
-    elif app_mode == "1.5":
-        app_template = "chatui-1.5/index.html"
-        redirect_index = "chatui-1.5.index"
+        app_template = "chatui-widget/index.html"
+        redirect_index = "chatui-widget.index"
+    elif app_mode == "full":
+        app_template = "chatui-full/index.html"
+        redirect_index = "chatui-full.index"
+    elif app_mode == "widget-pro":
+        app_template = "chatui-widget-pro/index.html"
+        redirect_index = "chatui-widget-pro.index"
     else:
         app_template = "chatui/index.html"
         redirect_index = "chatui.index"
@@ -310,36 +313,13 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
         can_be_logged = False
 
     # Retrieve context and ask the question.
-    if "gemini" in docs_agent.config.models.language_model:
-        # For the `gemini-*` model
-        if docs_agent.config.docs_agent_config == "experimental":
-            results_num = 10
-            new_question_count = 5
-        else:
-            results_num = 5
-            new_question_count = 5
-        # Note: Error if max_sources > results_num, so leave the same for now.
-        if docs_agent.config.db_type == "none":
-            search_result = []
-            final_context = ""
-            # response = ask_content_model_with_context(context="", question=question)
-            # Issue if max_sources > results_num, so leave the same for now
-        else:
-            search_result, final_context = docs_agent.query_vector_store_to_build(
-                question=question,
-                token_limit=30000,
-                results_num=results_num,
-                max_sources=results_num,
-            )
-        try:
-            response, full_prompt = docs_agent.ask_content_model_with_context_prompt(
-                context=final_context, question=question
-            )
-            aqa_response_in_html = ""
-        except:
-            logging.error("Failed to ask content model with context prompt.")
-    elif "aqa" in docs_agent.config.models.language_model:
-        # For the AQA model
+    if (
+        docs_agent.config.app_mode == "full"
+        or docs_agent.config.app_mode == "widget-pro"
+        or "aqa" in docs_agent.config.models.language_model
+    ):
+        # For "full" and "pro" modes, use the AQA model for the first request.
+        # For the AQA model, check the DB type.
         if docs_agent.config.db_type == "chroma":
             (
                 response,
@@ -360,6 +340,37 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
             aqa_response_in_html = json.dumps(
                 type(aqa_response_json).to_dict(aqa_response_json), indent=2
             )
+    else:
+        # For the `gemini-*` model, alway use the Chroma database.
+        if docs_agent.config.docs_agent_config == "experimental":
+            results_num = 10
+            new_question_count = 5
+        else:
+            results_num = 5
+            new_question_count = 5
+        # Note: Error if max_sources > results_num, so leave the same for now.
+        if docs_agent.config.db_type == "none":
+            search_result = []
+            final_context = ""
+            # response = ask_content_model_with_context(context="", question=question)
+            # Issue if max_sources > results_num, so leave the same for now
+        else:
+            this_token_limit = 30000
+            if docs_agent.config.models.language_model.startswith("models/gemini-1.5"):
+                this_token_limit = 50000
+            search_result, final_context = docs_agent.query_vector_store_to_build(
+                question=question,
+                token_limit=this_token_limit,
+                results_num=results_num,
+                max_sources=results_num,
+            )
+        try:
+            response, full_prompt = docs_agent.ask_content_model_with_context_prompt(
+                context=final_context, question=question
+            )
+            aqa_response_in_html = ""
+        except:
+            logging.error("Failed to ask content model with context prompt.")
 
     ### Check the AQA model's answerable_probability field
     probability = "None"
@@ -370,9 +381,13 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
         except:
             probability = 0.0
 
-    # For the 1.5 mode, retrieve additional context from the secondary knowledge database.
+    # For "full" and "pro" modes, retrieve additional context from
+    # the secondary knowledge database.
     additional_context = ""
-    if docs_agent.config.app_mode == "1.5":
+    if (
+        docs_agent.config.app_mode == "full"
+        or docs_agent.config.app_mode == "widget-pro"
+    ):
         if docs_agent.config.secondary_db_type == "chroma":
             (
                 additional_search_result,
@@ -431,11 +446,14 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
     new_uuid = uuid.uuid1()
     server_url = request.url_root.replace("http", "https")
 
-    ### The code below is added for the new Gemini 1.5 model.
-    # Ask the Gemini 1.5 model to generate a full summary.
-    if docs_agent.config.app_mode == "1.5" and docs_agent.config.db_type != "none":
+    ### The code below is added for "full" and "pro" modes.
+    # Ask the model to generate the main response.
+    if (
+        docs_agent.config.app_mode == "full"
+        or docs_agent.config.app_mode == "widget-pro"
+    ) and docs_agent.config.db_type != "none":
         if additional_context != "":
-            extended_context = f"RELEVANT CONTEXT FOUND IN DOCUMENTATION:\n\n{additional_context}\n\nRELEVANT CONVERSATIONS:\n\n{final_context}\n"
+            extended_context = f"RELEVANT CONTEXT FOUND IN SECONDARY KNOWLEDGE SOURCE:\n\n{additional_context}\n\nRELEVANT CONTEXT FOUND IN PRIMARY KNOWLEDGE SOURCE:\n\n{final_context}\n"
         else:
             extended_context = f"{final_context}\n"
         additional_condition = (
@@ -449,7 +467,7 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
             context=extended_context,
             question=question,
             prompt=new_condition,
-            model="gemini-1.5-pro",
+            model="gemini-1.5",
         )
         log_lines = f"{response}\n\n{summary_response}"
     else:
