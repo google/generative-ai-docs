@@ -44,7 +44,7 @@ async function invokeGeminiPro() {
  */
 async function invokeGeminiProVision() {
   const model = new ChatGoogleGenerativeAI({
-    modelName: 'gemini-pro-vision',
+    modelName: 'gemini-1.5-flash',
     maxOutputTokens: 1024,
   });
 
