@@ -48,6 +48,4 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.poetry.scripts]
-agent = "docs_agent.interfaces.cli:cli"
-agent_admin = "docs_agent.interfaces.cli:cli_admin"
-agent_client = "docs_agent.interfaces.cli:cli_client"
+agent = "docs_agent.interfaces.cli.cli:cli"
