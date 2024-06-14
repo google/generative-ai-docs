@@ -94,6 +94,16 @@ a widget-friendly template:
 agent chatbot --app_mode widget
 ```
 
+### Launch the Docs Agent web app in full mode
+
+The command below launches the Docs Agent web app to use
+a special template that uses three Gemini models (AQA, Gemini 1.5,
+and Gemini 1.0):
+
+```sh
+agent chatbot --app_mode full
+```
+
 ### Launch the Docs Agent web app with a log view enabled
 
 The command below launches the Docs Agent web app while enabling
@@ -172,6 +182,15 @@ absolure or relative path, for example:
 agent helpme write comments for this C++ file? --file ../my-project/test.cc
 ```
 
+### Ask for advice using RAG
+
+The command below uses a local or online vector database (specified in
+the `config.yaml` file) to retrieve relevant context for the request:
+
+```sh
+agent helpme <REQUEST> --file <PATH_TO_FILE> --rag
+```
+
 ### Ask for advice in a session
 
 The command below starts a new session (`--new`), which tracks responses,
@@ -200,14 +219,62 @@ For example:
 agent helpme write a concept doc that delves into more details of these features? --cont
 ```
 
-### Ask for advice using RAG
+### Print the context in the current session
 
-The command below uses a local or online vector database (specified in
-the `config.yaml` file) to retrieve relevant context for the request:
+The command below prints the questions, files, and responses that
+are being used as context in the current session:
 
 ```sh
-agent helpme <REQUEST> --file <PATH_TO_FILE> --rag
+agent show-session
 ```
+
+### Ask the model to perform the request to each file in a directory
+
+The command below applies the request to each file found in the
+specified directory:
+
+```sh
+agent helpme <REQUEST> --perfile <PATH_TO_DIRECTORY>
+```
+
+For example:
+
+```sh
+agent helpme explain what this file does? --perfile ~/my-project --new
+```
+
+### Ask the model to include all files in a directory as context
+
+The command below includes all files found in the specified directory
+as context to the request:
+
+```sh
+agent helpme <REQUEST> --allfiles <PATH_TO_DIRECTORY>
+```
+
+For example:
+
+```sh
+agent helpme write a concept doc covering all features in this project? --allfiles ~/my-project --new
+```
+
+### Ask the model to run a pre-defined chain of prompts
+
+The command below runs a task (a sequence of prompts) defined in
+a `.yaml` file stored in the [`tasks`][tasks-dir] directory:
+
+```sh
+agent runtask --task <TASK>
+```
+
+For example:
+
+```sh
+agent runtask --task DraftReleaseNotes
+```
+
+To see the list of all tasks available in your project, run
+`agent runtask` without any arguments.
 
 ## Managing online corpora
 
@@ -267,3 +334,4 @@ agent delete-corpus --name corpora/example01
 [benchmarks-yaml]: ../docs_agent/benchmarks/benchmarks.yaml
 [set-up-docs-agent-cli]: ../docs_agent/interfaces/README.md
 [semantic-api]: https://ai.google.dev/docs/semantic_retriever
+[tasks-dir]: ../tasks

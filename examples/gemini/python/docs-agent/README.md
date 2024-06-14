@@ -63,6 +63,15 @@ The following list summarizes the tasks and features supported by Docs Agent:
   `gemini-1.5-pro-latest` and `text-embedding-004`. The new ["1.5"][new-15-mode] web app
   mode uses all three Gemini models to their strength: AQA (`aqa`), Gemini 1.0 Pro
   (`gemini-pro`), and Gemini 1.5 Pro (`gemini-1.5-pro-latest`).
+- **Complete a task using the Docs Agent CLI**: The `agent runtask` command allows you
+  to run pre-defined chains of prompts, which are referred to as tasks. These tasks
+  simplify complex interactions by defining a series of steps that the Docs Agent will
+  execute. The tasks are defined in .yaml files stored in the [`tasks`][tasks-dir]
+  directory of your Docs Agent project. To run a task in this directory, for example:
+
+  ```sh
+  agent runtask --task DraftReleaseNotes
+  ```
 
 For more information on Docs Agent's architecture and features,
 see the [Docs Agent concepts][docs-agent-concepts] page.
@@ -279,13 +288,17 @@ Update settings in the Docs Agent project to use your custom dataset:
 
    (**Optional**) Or if you want to use the Gemini AQA model and populate
    a corpus online via the [Semantic Retrieval API][semantic-api], use the
-   following settings:
+   following settings (and update the `corpus_name` field):
 
    ```
    models:
      - language_model: "models/aqa"
    ...
    db_type: "google_semantic_retriever"
+   db_configs:
+     ...
+     - db_type: "google_semantic_retriever"
+       corpus_name: "corpora/flutter-dev"
    ```
 
 7. Save the `config.yaml` file and exit the text editor.
@@ -416,3 +429,4 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [cli-reference]: docs/cli-reference.md
 [chunking-process]: docs/chunking-process.md
 [new-15-mode]: docs/config-reference.md#app_mode
+[tasks-dir]: tasks/

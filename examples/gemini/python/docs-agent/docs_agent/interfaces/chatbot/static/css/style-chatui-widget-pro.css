@@ -1,0 +1,635 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* ======= General style for HTML elements ======= */
+
+body {
+    font: 16px/1.5em Overpass, "Open Sans", Helvetica, sans-serif;
+    color: #333;
+    font-weight: 300;
+    max-width: 960px;
+    margin: auto;
+    background-color: white;
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+
+  a {
+    color: #0a619a;
+  }
+
+  p {
+    margin: 0 0 1em;
+    line-height: 130%;
+  }
+
+  h1 {
+    margin: 0 0 0.5em;
+    font-weight: 500;
+    font-size: 1.3em;
+    margin-top: 0.1em;
+    margin-left: 1.0em;
+    margin-bottom: 0.9em;
+  }
+
+  h2 {
+    margin: 0;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    font-weight: normal;
+    font-size: 1.4em;
+  }
+
+  h3 {
+    margin: 0;
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+
+  h4 {
+    color: #505050;
+    margin-top: 3px;
+    margin-left: 5px;
+    margin-bottom: 8px;
+  }
+
+  li {
+    margin: 0 0 0.3em;
+  }
+
+  code {
+    font-family: math;
+    color: darkgreen;
+    text-wrap: pretty;
+  }
+
+  /* ======= Style layout by ID ======= */
+
+  #iframe-box {
+    margin: 0px;
+    max-width: 760px;
+    font: 15px arial, sans-serif;
+    background-color: white;
+    padding-bottom: 0px;
+    padding-left: 0px;
+  }
+
+  #callout-box {
+    margin: auto;
+    max-width: 800px;
+    font: 13px arial, sans-serif;
+    background-color: white;
+    border-style: solid;
+    border-width: 1px;
+    padding: 10px 25px;
+    box-shadow: 5px 5px 5px grey;
+    border-radius: 15px;
+  }
+
+  #important-box {
+    font-size: 0.9em;
+    font-family: system-ui;
+    line-height: 150%;
+    word-break: break-word;
+    #padding: 4px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    background-color: #fcb8a1;
+    border-radius: 5px;
+    border-width: 2px;
+    border-style: solid;
+  }
+
+  #tldr-response-box {
+    font-size: 0.8em;
+    font-family: sans-serif;
+    line-height: 140%;
+    margin-top: 10px;
+    margin-bottom: 25px;
+    border-width: 2px;
+    border-style: solid;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    background-color: #b1d8f1;
+    border-radius: 5px;
+    border-width: 2px;
+    border-style: solid;
+  }
+
+  #response-box {
+    font-size: 1.0em;
+    font-family: sans-serif;
+    line-height: 140%;
+    margin-top: 10px;
+  }
+  #suggested-questions {
+    font-family: sans-serif;
+    word-break: break-word;
+  }
+
+  #context-content{
+    background: #d7dbd7;
+    font-family: sans-serif;
+    word-break: break-all;
+  }
+
+  #context-pre {
+    font-size: small;
+    font-family: monospace;
+    text-wrap: pretty;
+    margin-top: 0.3px;
+  }
+
+  #probability-box {
+    font-size: small;
+    padding: 4px;
+    margin-bottom: 10px;
+  }
+
+  #grounding-box {
+    font-size: small;
+    padding: 4px;
+    word-break: break-all;
+  }
+
+  #grounding-pre {
+    font-size: small;
+    font-family: monospace;
+    text-wrap: pretty;
+  }
+
+  #reference-box {
+    font-size: 0.9em;
+    font-family: system-ui;
+    text-wrap: pretty;
+    word-break: break-all;
+    margin-bottom: 12px;
+    line-height: 1.5em;
+  }
+
+  #reference-box-no-aqa {
+    font-size: 0.9em;
+    font-family: system-ui;
+    text-wrap: pretty;
+    word-break: break-all;
+    line-height: 1.5em;
+  }
+
+  #aqa-content{
+    background: #9fc7db;
+    font-family: math;
+  }
+
+  #aqa-label{
+    background: #49a5d2;
+  }
+
+  #aqa-json {
+    font-family: system-ui;
+    font-size: small;
+    text-wrap: pretty;
+    word-break: break-all;
+    margin: 0;
+  }
+
+  #rewrite-buttons-box {
+    margin-top: 12px;
+  }
+
+  #feedback-buttons-box {
+    margin-top: 12px;
+  }
+
+  #answerable-span {
+    font-size: small;
+    font-family: system-ui;
+    float: right;
+    padding: 10px;
+  }
+
+  /* ======= Style by class ======= */
+
+  .hidden {
+    display: none;
+  }
+
+  .disable {
+    display: none;
+  }
+
+  .header-wrapper {
+    display: flex;
+  }
+
+  .loading {
+    font: 15px arial, sans-serif;
+    width: 100%;
+    margin-left: 12px;
+    color: #505050;
+    padding: 2px;
+  }
+
+  .notselected {
+    background-color: #303936e6;
+    padding-top: 3px;
+    padding-bottom: 5px;
+  }
+
+  .notselected:hover {
+    background-color: #121a17e6;
+    cursor:pointer;
+  }
+
+  #like-button.selected {
+    background-color: #1e6a9c;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  #dislike-button.selected {
+    background-color: #CF5C3F;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  .selected:hover {
+    background-color: #0a619a;
+    cursor:pointer;
+  }
+
+  .rewrite {
+    padding: 15px;
+    border: 2px solid #000;
+    margin-top: 6px;
+    border-radius: 15px;
+  }
+
+  .feedback {
+    padding: 15px;
+    border: 2px solid #000;
+    margin-top: 6px;
+    border-radius: 15px;
+  }
+
+  .question, .response, .response-text, .fact-checked-text {
+    max-width: 700px;
+    margin-left: 3px;
+  }
+
+  .full-response {
+    max-width: 700px;
+    margin-left: 10px;
+  }
+
+  .related-questions {
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    line-height: 140%;
+  }
+
+  /* ======= Style buttons by ID ======= */
+
+  #rewrite-button {
+    border: 0;
+    background-color: #cf633ff2;
+    color: #fff;
+    padding: 7px;
+    border-radius: 5px;
+    cursor:pointer;
+    margin-top: 0.3em;
+  }
+
+  #rewrite-button:hover {
+    background: #ce3705f2;
+    cursor:pointer;
+  }
+
+  #feedback-button {
+    border: 0;
+    background-color: #cf633ff2;
+    color: #fff;
+    padding: 7px;
+    border-radius: 5px;
+    cursor:pointer;
+    margin-top: 0.3em;
+  }
+
+  #feedback-button:hover {
+    background: #ce3705f2;
+    cursor:pointer;
+  }
+
+  #like-button {
+    border: 0;
+    color: #fff;
+    padding-left: 7px;
+    padding-right: 7px;
+    border-radius: 5px;
+    cursor:pointer;
+  }
+
+  #dislike-button {
+    border: 0;
+    color: #fff;
+    padding-left: 7px;
+    padding-right: 7px;
+    border-radius: 5px;
+    cursor:pointer;
+  }
+
+  #submit-button {
+    border: 0;
+    background: none;
+    background-color: #CF5C3F;
+    color: #fff;
+    padding: 7px;
+    border-radius: 5px;
+    cursor:pointer;
+  }
+
+  #submit-button:hover {
+    background: #ce3705f2;
+    cursor:pointer;
+  }
+
+  #submit-result {
+    color: #027f02d6;
+    font-family: fantasy;
+  }
+  #feedback-submit-button {
+    border: 0;
+    background: none;
+    background-color: #CF5C3F;
+    color: #fff;
+    padding: 7px;
+    border-radius: 5px;
+    cursor:pointer;
+  }
+
+  #feedback-submit-button:hover {
+    background: #ce3705f2;
+    cursor:pointer;
+  }
+
+  #feedback-submit-result {
+    color: #027f02d6;
+    font-family: fantasy;
+  }
+
+  #edit-text-area {
+    font: 13px/1.5em Overpass, "Open Sans", Helvetica, sans-serif;
+    max-height: 500px;
+    max-width: -webkit-fill-available;
+    height: 300px;
+    width: 650px;
+    padding: 8px;
+  }
+
+  #feedback-text-area {
+    font: 13px/1.5em Overpass, "Open Sans", Helvetica, sans-serif;
+    max-height: 500px;
+    max-width: -webkit-fill-available;
+    height: 300px;
+    width: 580px;
+    padding: 8px;
+  }
+
+  #rewrite-question-header {
+    margin: 0;
+    margin-bottom: 5px;
+  }
+
+  #rewrite-response-header {
+    margin: 0;
+    margin-top: 10px;
+    margin-bottom: 5px;
+  }
+
+  #user-id {
+    margin: 0;
+    margin-top: 10px;
+    margin-bottom: 15px;
+  }
+
+  #fact-check-url {
+    margin: 0 0 0.7em;
+  }
+
+  #source-para {
+    margin: 0 0 0.7em;
+  }
+
+  #distance-para {
+    margin: 0 0 0.7em;
+    font: 11px/1.5em Overpass, "Open Sans", Helvetica, sans-serif;
+  }
+  /* ======= Search Box ======= */
+
+  .search {
+    border: 2px solid #CF5C3F;
+    overflow: auto;
+    max-width: 700px;
+    margin-top: 15px;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+  }
+
+  .search input[type="text"] {
+    border: 0;
+    width: calc(100% - 65px);
+    padding: 10px;
+  }
+
+  .search input[type="text"]:focus {
+    outline: 0;
+  }
+
+  .search input[type="submit"] {
+    border: 0;
+    background: none;
+    background-color: #CF5C3F;
+    color: #fff;
+    float: right;
+    padding: 10px;
+    -moz-border-radius-top-right: 5px;
+    -webkit-border-radius-top-right: 5px;
+    -moz-border-radius-bottom-right: 5px;
+    -webkit-border-radius-bottom-right: 5px;
+    cursor:pointer;
+  }
+
+  /* ======= Accordion ======= */
+
+  .accordion {
+    max-width: 65em;
+    #margin-bottom: 1em;
+  }
+
+  .accordion > input[type="checkbox"] {
+    position: absolute;
+    left: -100vw;
+  }
+
+  .accordion .content {
+    overflow-y: hidden;
+    height: 0;
+    transition: height 0.3s ease;
+  }
+
+  .accordion .reference-content {
+    font-size: 15px;
+    font-family: serif;
+  }
+
+  .accordion > input[type="checkbox"]:checked ~ .content {
+    height: auto;
+    overflow: visible;
+    padding: 15px;
+    border: 2px solid #000;
+    margin-top: 6px;
+    border-radius: 15px;
+  }
+
+  .accordion .handle {
+    margin: 0;
+    font-size: 1.0em;
+  }
+
+  .accordion label {
+    display: block;
+    font-weight: normal;
+    border: 2px solid #000;
+    #padding: 12px;
+    background: #4490b8ab;
+    #border-radius: 15px;
+    padding: 5px;
+    #background: #027f023b;
+    border-radius: 10px;
+  }
+
+  .accordion label:hover,
+  .accordion label:focus {
+    background: #d9d9d9;
+    cursor:pointer;
+  }
+
+  .accordion .handle label::before {
+    font-family: fontawesome, sans-serif;
+    display: inline-block;
+    content: "\2964";
+    margin-right: 10px;
+    font-size: .58em;
+    line-height: 1.556em;
+    vertical-align: middle;
+  }
+
+  .accordion > input[type="checkbox"]:checked ~ .handle label::before {
+    content: "\2965";
+  }
+
+  .accordion p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ======= Accordion Source ======= */
+
+  .accordion-source {
+    max-width: 65em;
+    margin-bottom: 1em;
+  }
+
+  .accordion-source > input[type="checkbox"] {
+    position: absolute;
+    left: -100vw;
+  }
+
+  .accordion-source .content {
+    overflow-y: hidden;
+    height: 0;
+    transition: height 0.3s ease;
+  }
+
+  .accordion-source .content{
+    font-size: 13px;
+  }
+
+  .accordion-source > input[type="checkbox"]:checked ~ .content {
+    height: auto;
+    overflow: visible;
+    padding: 15px;
+    border: 2px solid #000;
+    margin-top: 6px;
+    border-radius: 15px;
+  }
+
+  .accordion-source .handle {
+    margin: 0;
+    font-size: 1em;
+    line-height: 1.2em;
+  }
+
+  .accordion-source label {
+    display: block;
+    font-weight: normal;
+    border: 1px solid #000;
+    padding: 6px;
+    background: #4490b8ab;
+    border-radius: 15px;
+  }
+
+  .accordion-source label:hover,
+  .accordion-source label:focus {
+    background: #d9d9d9;
+    cursor:pointer;
+  }
+
+  .accordion-source .handle label::before {
+    font-family: fontawesome, sans-serif;
+    display: inline-block;
+    content: "\2964";
+    margin-right: 10px;
+    font-size: .58em;
+    line-height: .556em;
+    vertical-align: middle;
+  }
+
+  .accordion-source > input[type="checkbox"]:checked ~ .handle label::before {
+    content: "\2965";
+  }
+
+  .accordion-source p:last-child {
+    margin-bottom: 0;
+  }
+
+/* Loader animation */
+/* Source: https://css-loaders.com/classic/ */
+.loader {
+  width: fit-content;
+  font-family: monospace;
+  font-size: 14px;
+  margin-left: 13px;
+  clip-path: inset(0 3ch 0 0);
+  animation: animation 1s steps(4) infinite;
+}
+.loader:before {
+  content:"Generating a response..."
+}
+@keyframes animation {to{clip-path: inset(0 -1ch 0 0)}}

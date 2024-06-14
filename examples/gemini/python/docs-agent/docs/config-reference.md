@@ -28,14 +28,10 @@ The options are:
   app_mode: "widget"
   ```
 
-* `1.5`: This special mode is designed to be used with the Gemini 1.5 Pro
-  model.
+* `full`: This special mode is designed to be used with Gemini 1.5 models.
 
   ```
-  models:
-    - language_model: "models/aqa"
-  ...
-  app_mode: "1.5"
+  app_mode: "full"
   ```
 
 When this field is not specified, the web app is set to use the standard mode.

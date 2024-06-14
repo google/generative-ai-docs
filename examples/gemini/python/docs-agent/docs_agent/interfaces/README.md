@@ -93,6 +93,9 @@ Setting up Docs Agent requires the following prerequisite items:
 **Note**: This step may not be necessary if you already have OAuth client
 credentials (via `gcloud`) stored on your host machine.
 
+**Note**: This step is **only necessary** if you plan on using the
+`agent tellme` command to interact with your online corpora on Google Cloud.
+
 1. Download the `client_secret.json` file from your
    [Google Cloud project][authorize-credentials].
 
@@ -142,18 +145,28 @@ from your `$HOME` directory.
    poetry install
    ```
 
+At this point, you can start using the `agent helpme`, `agent tellme`,
+and `agent runtask` commands to interact with the Gemini models from
+your terminal. For more information on these commands, see the
+[Interacting with language models][cli-reference-helpme] section in
+the CLI reference page.
+
+Proceed to the next section if you want to set up an alias for the
+`agent tellme` command.
+
 ## 5. Set up an alias to the gemini command
 
 **Note**: If your Docs Agent project is not cloned in the `$HOME` directory,
-you need to edit the `tellme.sh` script in your `docs-agent` project directory.
+you need to edit the `scripts/tellme.sh` script in your `docs-agent` project directory.
 
 Update your shell environment so that the `gemini` command can be run
 from anywhere in the terminal:
 
-1. (**Optional**) Open the `tellme.sh` file using a text editor, for example:
+1. (**Optional**) Open the `scripts/tellme.sh` file using a text editor,
+   for example:
 
    ```
-   nano tellme.sh
+   nano scripts/tellme.sh
    ```
 
    If necessary, adjust the path (`$HOME/docs-agent`) to match your
@@ -164,12 +177,12 @@ from anywhere in the terminal:
    docs_agent_dir="$HOME/docs-agent"
    ```
 
-   Save the file and close text editor.
+   Save the file and close the text editor.
 
 2. Add the following `alias` line to your `$HOME/.bashrc` file:
 
    ```
-   alias gemini='$HOME/docs-agent/tellme.sh'
+   alias gemini='$HOME/docs-agent/scripts/tellme.sh'
    ```
 
    Similarly, if necessary, you need to adjust the path
@@ -224,10 +237,11 @@ host machine is **not required**.
 
 To set up this `helpme` command in your terminal, do the following:
 
-1. (**Optional**) Open the `helpme.sh` file using a text editor, for example:
+1. (**Optional**) Open the `scripts/helpme.sh` file using a text editor,
+   for example:
 
    ```
-   nano helpme.sh
+   nano scripts/helpme.sh
    ```
 
    If necessary, adjust the path (`$HOME/docs-agent`) to match your
@@ -243,7 +257,7 @@ To set up this `helpme` command in your terminal, do the following:
 2. Add the following `alias` lines to your `$HOME/.bashrc` file:
 
    ```
-   alias gemini-pro='$HOME/docs-agent/helpme.sh'
+   alias gemini-pro='$HOME/docs-agent/scripts/helpme.sh'
    alias start_agent='script -f -o 200MiB -O /tmp/docs_agent_console_input'
    alias stop_agent='exit'
    ```
@@ -303,3 +317,4 @@ To set up this `helpme` command in your terminal, do the following:
 [oauth-client]: https://ai.google.dev/docs/oauth_quickstart#set-cloud
 [authorize-credentials]: https://ai.google.dev/docs/oauth_quickstart#authorize-credentials
 [genai-doc-site]: https://ai.google.dev/docs/gemini_api_overview
+[cli-reference-helpme]: ../../docs/cli-reference.md#interacting-with-language-models

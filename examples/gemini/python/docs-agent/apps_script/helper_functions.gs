@@ -25,6 +25,17 @@ function folderExists(folderName) {
   }
 }
 
+// Checks to see if a folder already exists in the specified root folder
+function folderExistsInRoot(folderName, rootFolder) {
+  const folderIterator = rootFolder.getFoldersByName(folderName);
+  if(folderIterator.hasNext()) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
 // Checks to see if a folder already exists in the drive and exits if it doesn't. Useful for input directories
 function folderExistsInput(folderName){
   if (folderExists(folderName)) {
@@ -49,6 +60,20 @@ function folderExistsOrCreate(folderName){
     return true;
   }
 }
+
+// Checks to see if folder exists or creates it. Useful for output directories
+function folderExistsOrCreateSubdir(folderName, rootFolder){
+  if(folderExistsInRoot(folderName, rootFolder)) {
+    Logger.log("Folder exists: "+ folderName);
+    return true;
+  }
+  else {
+    Logger.log("Folder does not exist: "+ folderName + ". Creating the directory.");
+    rootFolder.createFolder(folderName);
+    return true;
+  }
+}
+
 // Checks to see if a file exists in a folder
 function checkFileExists(fileName,folderName){
   let folder = DriveApp.getFoldersByName(folderName);

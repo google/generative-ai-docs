@@ -1,0 +1,16 @@
+tasks:
+  - name: "DraftReleaseNotes"
+    model: "models/gemini-1.5-flash-latest"
+    description: "An agent that generates a draft of Docs Agent release notes from git commit messages."
+    steps:
+      - name: "Read git commit messages"
+        description: "Load the git log commit messages from the local Fuchsia checkout since a target date."
+        function: "posix"
+        prompt: "git --no-pager log --since=2024-05-26"
+      - name: "Create an initial release notes draft"
+        function: "helpme"
+        prompt: "Based on the commit messages above, create an intial release notes draft that introduces new features and brings attention to important messages."
+      - name: "Revise the release notes draft"
+        function: "helpme"
+        prompt: "Revise the release notes draft above to be more concise and better structured, and if appropriate, include practical examples."
+
