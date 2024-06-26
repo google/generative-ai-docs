@@ -1,0 +1,16 @@
+{% extends 'chatui/base.html' %}
+
+{% block content %}
+  <div class="search">
+    <form class="search-form" method="POST" action="/result">
+      <input type="text" name="question" placeholder="Ask me about topics related to {{product}}.">
+      <input type="submit" value="Ask" id="ask-button">
+    </form>
+  </div>
+  <div class="loader hidden" id="loading-div"></div>
+  {% if response %}
+  <div class="full-response">
+    {% include 'chatui/result.html' %}
+  </div>
+  {% endif %}
+{% endblock %}

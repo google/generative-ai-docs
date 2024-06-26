@@ -1,0 +1,32 @@
+'status:awaiting review':
+- '**/*'
+
+'component:demos':
+- demos/**/*
+
+'component:documentation':
+- site/**/*
+
+'demos:docs-agent':
+- demos/palm/python/docs-agent/**/*
+
+'demos:list-it':
+- demos/palm/web/list-it/**/*
+
+'demos:mood-food':
+- demos/palm/web/mood-food/**/*
+
+'demos:pipet':
+- demos/palm/node/pipet-code-agent/**/*
+
+'demos:quick-prompt':
+- demos/palm/web/quick-prompt/**/*
+
+'demos:talking-character':
+- demos/palm/web/talking-character/**/*
+
+'demos:text-fx':
+- demos/palm/web/textfx/**/*
+
+'demos:travel-planner':
+- demos/palm/web/travel-planner/**/*

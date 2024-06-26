@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style-chatui-full.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbox.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <title>{{ product }} ChatBot</title>
+</head>
+<body>
+  <div id='body-box'>
+    <div name="title"><h1>{{ product }} Docs Agent 1.5</h1></div>
+    <div id='chat-border'>
+      <div class="body-content">
+        {% block content %} {% endblock %}
+      </div>
+    </div>
+  </div>
+  <br>
+  <br>
+  <script>
+    let urlRewrite = "{{ server_url }}rewrite";
+    let urlFeedback = "{{ server_url }}feedback";
+    let urlLike = "{{ server_url }}like";
+  </script>
+  <script src="{{ url_for('static', filename='javascript/app.js') }}"></script>
+</body>
+</html>

@@ -20,7 +20,7 @@ _Quick, Prompt!_ is a game where you try to get your AI teammate to guess a give
 
 A live demo of _Quick, Prompt!_ is available at [quickprompt.withgoogle.com](https://quickprompt.withgoogle.com).
 
-This demo is an example of how you can use the PaLM API to build conversation-driven applications that leverage Google’s state of the art large language models (LLMs).
+This demo is an example of how you can use the PaLM API to build applications that leverage Google’s state of the art large language models (LLMs).
 
 The PaLM API consists of two APIs, each with a distinct method for generating content:
 
@@ -76,18 +76,18 @@ Below is an excerpt of the prompt used in _Quick, Prompt!_:
 
 The Chat API is suitable for use cases that require the model to base its responses on previous interactions within a session. In the case of _Quick, Prompt!_, the model references previous hints along with the most recent hint for a target word as it tries to guess that word. We keep track of the alternating user/model turns in the `messages` array, which is included in the prompt object that we send to the model. With each call to `generateMessage()`, the model generates a response to the final string in `messages` based on the provided `context`, `examples`, and previous messages.
 
-You can find the complete prompt in [priming.js](/src/lib/priming.js).
+You can find the complete prompt in `src/lib/priming.js`.
 
 ## Requirements
 
-- Node.js (v18.15.0 or higher)
+- Node.js (version 18.15.0 or higher)
 - Firebase project
 
 Make sure you have either `npm` or `yarn` set up on your machine.
 
 ## Developer Setup
 
-Although the PaLM API provides a [REST resource](https://developers.generativeai.google/api/rest/generativelanguage/models?hl=en), it is best practice to avoid embedding API keys directly into code (or in files inside your application’s source tree). If you want to call the PaLM API from the client side as we do in this demo, we recommend using Firebase with the Call PaLM API Securely extension.
+Although the PaLM API provides a [REST resource](https://developers.generativeai.google/api/rest/generativelanguage/models?hl=en), it is best practice to avoid embedding API keys directly into code (or in files inside your application’s source tree). If you want to call the PaLM API from the client side as we do in this demo, we recommend using a Firebase project with the Call PaLM API Securely extension enabled.
 
 To set up Firebase:
 
@@ -115,9 +115,9 @@ To run the application locally:
 
 2. Run `npm i` or `yarn` in the root folder to install dependencies.
 
-3. Add your Firebase info to [`firebase.config.js`](/src/lib/firebase.config.js).
+3. Add your Firebase info to `src/lib/firebase.config.js`.
 
-4. Run `npm run dev` or `yarn dev` to start the application. The application will be served on localhost:5555. You can change the port in [`vite.config.js`](/vite.config.js) if desired.
+4. Run `npm run dev` or `yarn dev` to start the application. The application will be served on localhost:5555. You can change the port in `vite.config.js` if desired.
 
 ## Contributors
 

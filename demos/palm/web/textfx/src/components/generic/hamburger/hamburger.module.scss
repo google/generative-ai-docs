@@ -1,0 +1,195 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~/styles/variables';
+
+$burgerSize: 1.8rem;
+
+.burgerContainer {
+  box-sizing: content-box;
+  height: $burgerSize;
+  height: 2.4rem;
+  padding: 2.8rem 2rem 2rem 2rem;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: $burgerSize;
+  width: 2.4rem;
+  z-index: 99;
+
+  @media screen and (min-width: $medium) {
+    padding: 2.8rem;
+  }
+
+  .burger {
+    display: block;
+    height: 2.4rem;
+    position: relative;
+    width: 2.4rem;
+  }
+
+  &.light {
+    color: $light;
+  }
+  &.dark {
+    color: $dark;
+  }
+
+  .burgerLine {
+    display: block;
+    height: 0.2rem;
+    margin-bottom: 0;
+    position: absolute;
+    top: calc(50% - 0.1rem);
+    transform-origin: center;
+    width: 100%;
+
+    &__top,
+    &__bottom {
+      background-color: transparent;
+
+      &::after,
+      &::before {
+        background-color: currentColor;
+        color: currentColor;
+        content: '';
+        height: 100%;
+        position: absolute;
+        transform: rotate(0) translate(0, 0);
+        transition: transform 0.5s ease-in-out, color 0.2s ease-in-out 0.5s;
+        width: 50%;
+      }
+
+      &::after {
+        right: 0;
+      }
+
+      &::before {
+        left: 0;
+      }
+    }
+
+    &__top {
+      &::after,
+      &::before {
+        transform: translate(0rem, -$burgerSize * 0.4 + 0.1rem);
+      }
+
+      &::after {
+        transform-origin: 0% 50%;
+      }
+
+      &::before {
+        transform-origin: 100% 50%;
+      }
+    }
+
+    &__middle {
+      background-color: transparent;
+
+      &::before {
+        background-color: currentColor;
+        color: currentColor;
+        content: '';
+        height: 100%;
+        left: 0;
+        position: absolute;
+        transform: rotate(0) translate(0, 0);
+        transition: transform 0.5s ease-in-out, color 0.2s ease-in-out 0.5s;
+        width: 100%;
+      }
+    }
+
+    &__bottom {
+      &::after,
+      &::before {
+        transform: translate(0rem, calc($burgerSize * 0.4 - 0.1rem));
+      }
+
+      &::after {
+        transform-origin: 0% 50%;
+      }
+
+      &::before {
+        transform-origin: 100% 50%;
+      }
+    }
+  }
+
+  &.isOpen {
+    .burgerLine {
+      &__top,
+      &__bottom {
+        &::before,
+        &::after {
+          background-color: theme('colors.black');
+          transition: transform 0.5s ease-in-out;
+        }
+      }
+
+      &__top {
+        &::before {
+          transform: rotate(45deg);
+        }
+        &::after {
+          transform: rotate(-45deg);
+        }
+      }
+
+      &__middle {
+        &::before {
+          background-color: theme('colors.black');
+          transform: scaleX(0);
+          transition: transform 0.5s ease-in-out;
+        }
+      }
+
+      &__bottom {
+        &::before {
+          transform: rotate(-45deg);
+        }
+        &::after {
+          transform: rotate(45deg);
+        }
+      }
+    }
+
+    &.darkMode {
+      .burgerLine {
+        &__top,
+        &__bottom {
+          &::before,
+          &::after {
+            background-color: theme('colors.orange');
+          }
+        }
+
+        &__middle {
+          &::before {
+            background-color: theme('colors.orange');
+          }
+        }
+      }
+    }
+  }
+}
+
+:global(.mobile-hide-hamburger) .burgerContainer {
+  @media screen and (max-width: $medium) {
+    opacity: 0;
+    right: -99999;
+  }
+}

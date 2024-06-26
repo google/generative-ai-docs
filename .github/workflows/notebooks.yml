@@ -6,11 +6,12 @@ on:
   # Relevant PRs
   pull_request:
     paths:
-    - "site/en/**"
+    - "**.ipynb"
   # Allow manual runs
   workflow_dispatch:
 
 jobs:
+  # Format all notebooks.
   nbfmt:
     name: Notebook format
     runs-on: ubuntu-latest
@@ -28,7 +29,7 @@ jobs:
           readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
         else
           # Manual run, check everything
-          readarray -t changed_notebooks < <(find site/en/ -name '*.ipynb')
+          readarray -t changed_notebooks < <(find -name '*.ipynb')
         fi
         if [[ ${#changed_notebooks[@]} == 0 ]]; then
           echo "No notebooks modified in this pull request."
@@ -44,21 +45,59 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          website:
+            - 'site/en/**/**.ipynb'
+          github_docs:
+            - 'examples/**/**.ipynb'
+            - 'demos/**/**.ipynb'
+          templates:
+            - 'templates/**/**.ipynb'
     - name: Install tensorflow-docs
       run: python3 -m pip install -U git+https://github.com/tensorflow/docs
     - name: Fetch main branch
       run: git fetch -u origin main:main
-    - name: Lint notebooks
+
+    # Full lint for website notebooks (incl. website button)
+    - name: Lint website notebooks
+      if: steps.filter.outputs.website == 'true'
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
           # Only check notebooks modified in this pull request
-          readarray -t changed_notebooks < <(git diff --name-only main | grep '\.ipynb$' || true)
+          readarray -t changed_notebooks < <(git diff --name-only main site/en/ |grep '\.ipynb$' || true)
         else
           # Manual run, check everything
           readarray -t changed_notebooks < <(find site/en/ -name '*.ipynb')
         fi
         if [[ ${#changed_notebooks[@]} == 0 ]]; then
-          echo "No notebooks modified in this pull request."
+          echo "No website notebooks modified in this pull request."
+          exit 0
+        else
+          echo "Lint check with nblint:"
+          python3 -m tensorflow_docs.tools.nblint \
+            --styles=google,tensorflow \
+            --arg=repo:google/generative-ai-docs --arg=branch:main \
+            --arg=base_url:https://ai.google.dev/ \
+            --exclude_lint=tensorflow::button_download \
+            "${changed_notebooks[@]}"
+        fi
+
+    # Reduced lint for notebooks hosted in GitHub
+    - name: Lint documentation notebooks
+      if: steps.filter.outputs.github_docs == 'true'
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          # Only check notebooks modified in this pull request
+          readarray -t changed_notebooks < <(git diff --name-only main demos/ examples/ |grep '\.ipynb$' || true)
+        else
+          # Manual run, check everything
+          readarray -t changed_notebooks < <(find demos/ examples/ -name '*.ipynb')
+        fi
+        if [[ ${#changed_notebooks[@]} == 0 ]]; then
+          echo "No GitHub doc notebooks modified in this pull request."
           exit 0
         else
           echo "Lint check with nblint:"
@@ -67,5 +106,33 @@ jobs:
             --arg=repo:google/generative-ai-docs --arg=branch:main \
             --arg=base_url:https://developers.generativeai.google/ \
             --exclude_lint=tensorflow::button_download \
+            --exclude_lint=tensorflow::button_website \
             "${changed_notebooks[@]}"
         fi
+
+    # Basic lint for template notebooks
+    - name: Lint template notebooks
+      if: steps.filter.outputs.templates == 'true'
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          # Only check notebooks modified in this pull request
+          readarray -t changed_notebooks < <(git diff --name-only main templates/ |grep '\.ipynb$' || true)
+        else
+          # Manual run, check everything
+          readarray -t changed_notebooks < <(find templates/ -name '*.ipynb')
+        fi
+        if [[ ${#changed_notebooks[@]} == 0 ]]; then
+          echo "No template notebooks modified in this pull request."
+          exit 0
+        else
+          echo "Lint check with nblint:"
+          python3 -m tensorflow_docs.tools.nblint \
+            --styles=google,tensorflow \
+            --arg=repo:google/generative-ai-docs --arg=branch:main \
+            --exclude_lint=tensorflow::button_download \
+            --exclude_lint=tensorflow::button_website \
+            --exclude_lint=tensorflow::button_colab \
+            --exclude_lint=tensorflow::button_github \
+            "${changed_notebooks[@]}"
+        fi
+
