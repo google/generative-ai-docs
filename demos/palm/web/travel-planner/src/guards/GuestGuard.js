@@ -28,7 +28,7 @@ GuestGuard.propTypes = {
 export default function GuestGuard({ children }) {
   const { isAuthenticated } = useAuth();
   if (isAuthenticated) {
-    return <Navigate to="/wanderlust"/>;
+    return <Navigate replace={true} to="/wanderlust"/>;
   }
 
   return <>{children}</>;
