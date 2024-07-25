@@ -6,9 +6,9 @@ the Gemini API and Gemma.
 
 | Path | Description |
 | ---- | ----------- |
-| [`site/`](site/) | Notebooks and other content used directly on ai.google.dev. |
-| [`demos/`](demos/) | Demos apps. Larger than examples, typically consists of working apps. |
-| [`examples/`](examples/) | Examples. Smaller, single-purpose code for demonstrating specific concepts. |
+| [`site/`](Notebooks and other content used directly on ai.google.dev.) | Notebooks and other content used directly on ai.google.dev. |
+| [`demos/`](Larger than examples, typically consists of working apps.) | Demos apps. Larger than examples, typically consists of working apps. |
+| [`examples/`](Smaller, single-purpose code for demonstrating specific concepts.) | Examples. Smaller, single-purpose code for demonstrating specific concepts. |
 
 
 
