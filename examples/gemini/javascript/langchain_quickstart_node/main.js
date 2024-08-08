@@ -39,10 +39,10 @@ async function invokeGeminiPro() {
 }
 
 /**
- * Creates a Gemini Pro Vision multimodal chat model, invokes the model with an
+ * Creates a Gemini Flash multimodal chat model, invokes the model with an
  * input containing text and image data, and logs the result.
  */
-async function invokeGeminiProVision() {
+async function invokeGeminiFlash() {
   const model = new ChatGoogleGenerativeAI({
     modelName: 'gemini-1.5-flash',
     maxOutputTokens: 1024,
@@ -87,7 +87,7 @@ async function embedText() {
  */
 async function run() {
   invokeGeminiPro();
-  invokeGeminiProVision();
+  invokeGeminiFlash();
   embedText();
 }
 
