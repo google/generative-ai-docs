@@ -4,6 +4,9 @@ These are the source files for the guide and tutorials on
 the [Generative AI developer site](https://ai.google.dev/), home to
 the Gemini API and Gemma.
 
+Note: Much of the example content here has moved to the [Gemini API
+Cookbook](https://github.com/google-gemini/).
+
 | Path | Description |
 | ---- | ----------- |
 | [`site/`](site/) | Notebooks and other content used directly on ai.google.dev. |
