@@ -273,8 +273,29 @@ For example:
 agent runtask --task DraftReleaseNotes
 ```
 
+### View the list of available Docs Agent tasks
+
 To see the list of all tasks available in your project, run
-`agent runtask` without any arguments.
+`agent runtask` without any arguments:
+
+```sh
+agent runtask
+```
+
+### Ask the model to run a task using custom input
+
+If a task script has a `<INPUT>` placeholder, you can provide
+a custom input string to the task:
+
+```sh
+agent runtask --task <TASK> --custom_input <INPUT_STRING>
+```
+
+For example:
+
+```sh
+agent runtask --task IndexPageGenerator --custom_input ~/my_example/docs/development/
+```
 
 ## Managing online corpora
 

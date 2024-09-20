@@ -9,7 +9,7 @@ tasks:
         prompt: "git --no-pager log --since=2024-05-26"
       - name: "Create an initial release notes draft"
         function: "helpme"
-        prompt: "Based on the commit messages above, create an intial release notes draft that introduces new features and brings attention to important messages."
+        prompt: "Based on the commit messages above, create an initial release notes draft that introduces new features and brings attention to important messages."
       - name: "Revise the release notes draft"
         function: "helpme"
         prompt: "Revise the release notes draft above to be more concise and better structured, and if appropriate, include practical examples."

@@ -1,0 +1,13 @@
+tasks:
+  - name: "HelpPolishPrompts"
+    model: "models/gemini-1.5-flash-latest"
+    description: "An agent that helps polish prompts in a task file."
+    preamble: "When writing a prompt, always be direct and concise."
+    steps:
+      - prompt: "Revise the prompts in this task YAML file to improve their effectiveness in generating responses."
+        flags:
+          file: "<INPUT>"
+          default_input: "./tasks/index-page-generator-task.yaml"
+          file_ext: "yaml"
+      - prompt: "Replace the original prompts in the task YAML file with the revised prompts."
+      - prompt: "Suggest additional prompts relevant to the main task in this task YAML file."

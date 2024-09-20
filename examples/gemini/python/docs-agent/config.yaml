@@ -17,7 +17,7 @@
 configs:
   - product_name: "Fuchsia"
     models:
-      - language_model: "models/aqa"
+      - language_model: "models/gemini-1.5-flash-latest"
         embedding_model: "models/embedding-001"
         api_endpoint: "generativelanguage.googleapis.com"
         embedding_api_call_limit: 1400
@@ -25,7 +25,7 @@ configs:
     docs_agent_config: "normal"
     markdown_splitter: "token_splitter"
     log_level: "NORMAL"
-    db_type: "google_semantic_retriever"
+    db_type: "chroma"
     db_configs:
       - db_type: "chroma"
         vector_db_dir: "vector_stores/chroma"

@@ -395,8 +395,9 @@ def ask_model_with_file(
                 total=None,
             )
             final_context = file_content
-        # print(f"Context:\n{final_context}")
-        # print(f"Question:\n{question}")
+
+        #print(f"Context:\n{final_context}")
+        #print(f"Question:\n{question}")
         # Ask Gemini with the question and final context.
         (
             response,

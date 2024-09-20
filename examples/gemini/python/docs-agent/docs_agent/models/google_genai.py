@@ -125,12 +125,25 @@ class Gemini:
     # TODO: bring in limit values from config files
     @sleep_and_retry
     @limits(calls=max_text_per_minute, period=minute)
-    def generate_content(self, contents):
+    def generate_content(self, contents, log_level: typing.Optional[str] = "NORMAL"):
         if self.language_model is None:
             raise GoogleUnsupportedModelError(self.language_model, self.api_endpoint)
         model = google.generativeai.GenerativeModel(model_name=self.language_model)
-        response = model.generate_content(contents)
+        try:
+            response = model.generate_content(contents)
+        except google.api_core.exceptions.InvalidArgument:
+            return self.model_error_message
+        if log_level == "VERBOSE" or log_level == "DEBUG":
+            print("[Response JSON]")
+            print(response)
+            print()
         for chunk in response:
+            if not hasattr(chunk, "candidates"):
+                return self.model_error_message
+            if len(chunk.candidates) == 0:
+                return self.model_error_message
+            if not hasattr(chunk.candidates[0], "content"):
+                return self.model_error_message
             if str(chunk.candidates[0].content) == "":
                 return self.model_error_message
         return response.text
@@ -138,7 +151,11 @@ class Gemini:
     # Use this method for talking to a Gemini content model
     # Optionally provide a prompt, if not use the one from config.yaml
     def ask_content_model_with_context_prompt(
-        self, context: str, question: str, prompt: typing.Optional[str] = None
+        self,
+        context: str,
+        question: str,
+        prompt: typing.Optional[str] = None,
+        log_level: typing.Optional[str] = "NORMAL",
     ):
         if prompt == None:
             prompt = self.prompt_condition
@@ -152,7 +169,17 @@ class Gemini:
             response = self.generate_content(new_prompt)
         except google.api_core.exceptions.InvalidArgument:
             return self.model_error_message
+        if log_level == "VERBOSE" or log_level == "DEBUG":
+            print("[Response JSON]")
+            print(response)
+            print()
         for chunk in response:
+            if not hasattr(chunk, "candidates"):
+                return self.model_error_message
+            if len(chunk.candidates) == 0:
+                return self.model_error_message
+            if not hasattr(chunk.candidates[0], "content"):
+                return self.model_error_message
             if str(chunk.candidates[0].content) == "":
                 return self.model_error_message
         return response.text, new_prompt

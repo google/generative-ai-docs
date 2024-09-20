@@ -359,7 +359,11 @@ class DocsAgent:
 
     # Return true if the aqa model used in this Docs Agent setup
     def check_if_aqa_is_used(self):
-        if self.config.models.language_model == "models/aqa":
+        if (
+            self.config.models.language_model == "models/aqa"
+            or self.config.app_mode == "full"
+            or self.config.app_mode == "widget-pro"
+        ):
             return True
         else:
             return False
@@ -525,16 +529,21 @@ class DocsAgent:
         try:
             response = ""
             if model == "gemini-pro":
-                response = self.gemini_pro.generate_content(contents=new_prompt)
+                response = self.gemini_pro.generate_content(
+                    contents=new_prompt, log_level=self.config.log_level
+                )
             elif model == "gemini-1.5":
-                response = self.gemini_15.generate_content(contents=new_prompt)
+                response = self.gemini_15.generate_content(
+                    contents=new_prompt, log_level=self.config.log_level
+                )
             else:
-                response = self.gemini.generate_content(contents=new_prompt)
-        except:
+                response = self.gemini.generate_content(
+                    contents=new_prompt, log_level=self.config.log_level
+                )
+        except Exception as e:
+            print("Error in generate_content()")
+            print(e)
             return self.config.conditions.model_error_message, new_prompt
-        # for chunk in response:
-        #     if str(chunk.candidates[0].content) == "":
-        #         return self.config.conditions.model_error_message, new_prompt
         return response, new_prompt
 
     # Use this method for talking to a Gemini content model
@@ -549,9 +558,6 @@ class DocsAgent:
             response = self.gemini.generate_content(contents=new_prompt)
         except google.api_core.exceptions.InvalidArgument:
             return self.config.conditions.model_error_message
-        # for chunk in response:
-        #     if str(chunk.candidates[0].content) == "":
-        #         return self.config.conditions.model_error_message
         return response
 
     # Use this method for asking a Gemini content model for fact-checking.

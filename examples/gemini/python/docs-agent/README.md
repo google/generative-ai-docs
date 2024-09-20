@@ -7,9 +7,9 @@ Docs Agent provides a set of easy-to-use self-service tools designed to give you
 your team access to Google's [Gemini API][genai-doc-site] for learning, experimentation,
 and project deployment.
 
-## Overview
+## Docs Agent web app
 
-Docs Agent apps use a technique known as Retrieval Augmented Generation (RAG), which
+Docs Agent uses a technique known as **Retrieval Augmented Generation (RAG)**, which
 allows you to bring your own documents as knowledge sources to AI language models.
 This approach helps the AI language models to generate relevant and accurate responses
 that are grounded in the information that you provide and control.
@@ -18,13 +18,24 @@ that are grounded in the information that you provide and control.
 
 **Figure 1**. Docs Agent uses a vector database to retrieve context for augmenting prompts.
 
-Docs Agent apps are designed to be easily set up and configured in a Linux environment.
-If you want to set up and launch the Docs Agent chat app on your host machine, check out
-the [Set up Docs Agent][set-up-docs-agent] section below.
+The Docs Agent chatbot web app is designed to be easily set up and configured in a Linux
+environment. If you want to set up and launch the Docs Agent chat app on your host machine,
+check out the [Set up Docs Agent][set-up-docs-agent] section below.
 
-### Summary of features
+## Docs Agent tasks
 
-The following list summarizes the tasks and features supported by Docs Agent:
+Docs Agent's `agent runtask` command allows you to run pre-defined chains of prompts,
+which are referred to as **tasks**. These tasks simplify complex interactions by defining
+a series of steps that the Docs Agent will execute. The tasks are defined in `.yaml` files
+stored in the [`tasks`][tasks-dir] directory of your Docs Agent project. The tasks are
+designed to be reusable and can be used to automate common workflows, such as generating
+release notes, updating documentation, or analyzing complex information.
+
+To set up and run the `agent runtask` command, see [Set up Docs Agent CLI][cli-readme].
+
+## Summary of features
+
+The list below summarizes the tasks and features supported by Docs Agent:
 
 - **Process Markdown**: Split Markdown files into small plain text chunks. (See
   [Docs Agent chunking process][chunking-process].)
@@ -60,9 +71,9 @@ The following list summarizes the tasks and features supported by Docs Agent:
   [Set up the Docs Agent CLI][cli-readme] to make requests to the Gemini models
   from anywhere in a terminal.
 - **Support the Gemini 1.5 models**: Docs Agent works with the Gemini 1.5 models,
-  `gemini-1.5-pro-latest` and `text-embedding-004`. The new ["1.5"][new-15-mode] web app
-  mode uses all three Gemini models to their strength: AQA (`aqa`), Gemini 1.0 Pro
-  (`gemini-pro`), and Gemini 1.5 Pro (`gemini-1.5-pro-latest`).
+  `gemini-1.5-pro`, `gemini-1.5-flash`, and `text-embedding-004`. The new
+  [`full`][new-15-mode] web app mode uses all three Gemini models to their strength:
+  AQA (`aqa`), Gemini 1.0 Pro (`gemini-pro`), and Gemini 1.5 Pro (`gemini-1.5-pro`).
 - **Complete a task using the Docs Agent CLI**: The `agent runtask` command allows you
   to run pre-defined chains of prompts, which are referred to as tasks. These tasks
   simplify complex interactions by defining a series of steps that the Docs Agent will
