@@ -1,35 +1,22 @@
 # Set up Docs Agent CLI
 
 This guide provides instructions on setting up Docs Agent's command-line
-interface (CLI) that allows you to ask questions from anywhere in a terminal.
+interface (CLI) on your host machine for running Docs Agent tasks.
 
-Using Docs Agent, you can configure your host machine's environment to make
-the `gemini` command run from anywhere in your terminal. The `gemini` command
-(which is an `alias` to Docs Agent's `agent tellme` command) reads a question
-from the arguments, asks the [Gemini AQA][gemini-aqa] model, and prints its
-response in the terminal.
+Docs Agent's `agent runtask` command allows you to run pre-defined chains of
+prompts, which are referred to as **tasks**. These tasks simplify complex
+interactions by defining a series of steps that the Docs Agent will execute.
+The tasks are defined in `.yaml` files stored in the [`tasks`][docs-agent-tasks]
+directory of your Docs Agent project. The tasks are designed to be reusable and
+can be used to automate common workflows, such as generating release notes,
+updating documentation, or analyzing complex information.
 
-The example below shows that a user can run the `gemini` command directly
-from a terminal:
+To set up the Docs Agent CLI, the steps are:
 
-```
-user@user01:~$ gemini does Flutter support material design 3?
-
-As of the Flutter 3.16 release, Material 3 is enabled by default.
-
-To verify this information, see:
-
- • https://docs.flutter.dev/ui/design/material/index#more-information
-
-user@user01:~$
-```
-
-In this setup guide, Docs Agent's AQA model is configured to use an example
-online corpus. However, using the tools available in the Docs Agent project,
-you can [create and populate a new corpus][populate-corpus] with your own
-documents and adjust your Docs Agent configuration to use that corpus
-instead – you can also [share the corpus][share-corpus] with other members
-in your team.
+1. [Prerequisites](#1-prerequisites)
+2. [Update your host machine's environment](#2-update-your-host-machines-environment)
+3. [Clone the Docs Agent project repository](#3-clone-the-docs-agent-project-repository)
+4. [Try the Docs Agent CLI](#4-try-the-docs-agent-cli)
 
 ## 1. Prerequisites
 
@@ -37,15 +24,10 @@ Setting up Docs Agent requires the following prerequisite items:
 
 - A Linux host machine
 
-- A [Google Cloud][google-cloud] project with the setup below:
+- A [Google Cloud][google-cloud] project with an API key enabled with the
+  Generative Language API (that is, the [Gemini API][genai-doc-site])
 
-  - An API key enabled with the Generative Language API (that is,
-    the [Gemini API][genai-doc-site])
-
-  - (**Optional**) [Authenticated OAuth client credentials][oauth-client]
-    stored on the host machine
-
-## 2 Update your host machine's environment
+## 2. Update your host machine's environment
 
 1. Update the Linux package repositories on the host machine:
 
@@ -88,13 +70,79 @@ Setting up Docs Agent requires the following prerequisite items:
    source ~/.bashrc
    ```
 
-## 3. Authorize credentials for Docs Agent
+## 3. Clone the Docs Agent project
+
+**Note**: This guide assumes that you're creating a new project directory
+from your `$HOME` directory.
+
+1. Clone the following repo:
+
+   ```
+   git clone https://github.com/google/generative-ai-docs.git
+   ```
+
+2. Go to the Docs Agent project directory:
+
+   ```
+   cd generative-ai-docs/examples/gemini/python/docs-agent
+   ```
+
+3. Install dependencies using `poetry`:
+
+   ```
+   poetry install
+   ```
+
+## 4. Try the Docs Agent CLI
+
+1. Enter the `poetry shell` environment:
+
+   ```
+   poetry shell
+   ```
+
+   Entering the `poetry shell` environment is **required** for
+   running the `agent` command.
+
+2. Run the `agent helpme` command, for example:
+
+   ```
+   agent helpme how do I cook pasta?
+   ```
+
+   This command returns the Gemini model's response of your input prompt
+   `how do I cook pasta?`.
+
+3. View the list of Docs Agent tasks available in your setup:
+
+   ```
+   agent runtask
+   ```
+
+   This command prints a list of Docs Agent tasks that you can run.
+   (See the `tasks` directory in your local Docs Agent setup.)
+
+4. Run the `agent runtask` command, for example:
+
+   ```
+   agent runtask --task IndexPageGenerator
+   ```
+
+For more details on these commands, see the
+[Interacting with language models][cli-reference-helpme] section in
+the CLI reference page.
+
+## Appendices
+
+### Authorize credentials for Docs Agent
 
 **Note**: This step may not be necessary if you already have OAuth client
 credentials (via `gcloud`) stored on your host machine.
 
-**Note**: This step is **only necessary** if you plan on using the
+This step is **only necessary** if you plan on using the
 `agent tellme` command to interact with your online corpora on Google Cloud.
+
+Do the following:
 
 1. Download the `client_secret.json` file from your
    [Google Cloud project][authorize-credentials].
@@ -122,45 +170,45 @@ credentials (via `gcloud`) stored on your host machine.
    (`application_default_credentials.json`) in the `$HOME/.config/gcloud/`
    directory of your host machine.
 
-## 4. Clone the Docs Agent project
+### Set up an alias to the gemini command
 
-**Note**: This guide assumes that you're creating a new project directory
-from your `$HOME` directory.
+This section provides instructions on setting up the Docs Agent CLI to enable
+you to ask questions from anywhere in a terminal.
 
-1. Clone the following repo:
+Using Docs Agent, you can configure your host machine's environment to make
+the `gemini` command run from anywhere in your terminal. The `gemini` command
+(which is an `alias` to Docs Agent's `agent tellme` command) reads a question
+from the arguments, asks the [Gemini AQA][gemini-aqa] model, and prints its
+response in the terminal.
 
-   ```
-   git clone https://github.com/google/generative-ai-docs.git
-   ```
+The example below shows that a user can run the `gemini` command directly
+from a terminal:
 
-2. Go to the Docs Agent project directory:
+```
+user@user01:~$ gemini does Flutter support material design 3?
 
-   ```
-   cd generative-ai-docs/examples/gemini/python/docs-agent
-   ```
+As of the Flutter 3.16 release, Material 3 is enabled by default.
 
-3. Install dependencies using `poetry`:
+To verify this information, see:
 
-   ```
-   poetry install
-   ```
+ • https://docs.flutter.dev/ui/design/material/index#more-information
 
-At this point, you can start using the `agent helpme`, `agent tellme`,
-and `agent runtask` commands to interact with the Gemini models from
-your terminal. For more information on these commands, see the
-[Interacting with language models][cli-reference-helpme] section in
-the CLI reference page.
+user@user01:~$
+```
 
-Proceed to the next section if you want to set up an alias for the
-`agent tellme` command.
+In this setup, Docs Agent's AQA model is configured to use an example
+online corpus. However, using the tools available in the Docs Agent project,
+you can [create and populate a new corpus][populate-corpus] with your own
+documents and adjust your Docs Agent configuration to use that corpus
+instead – you can also [share the corpus][share-corpus] with other members
+in your team.
 
-## 5. Set up an alias to the gemini command
+To update your shell environment so that the `gemini` command can be run
+from anywhere in the terminal, do the following:
 
 **Note**: If your Docs Agent project is not cloned in the `$HOME` directory,
-you need to edit the `scripts/tellme.sh` script in your `docs-agent` project directory.
-
-Update your shell environment so that the `gemini` command can be run
-from anywhere in the terminal:
+you need to edit the `scripts/tellme.sh` script in your `docs-agent` project
+directory.
 
 1. (**Optional**) Open the `scripts/tellme.sh` file using a text editor,
    for example:
@@ -207,8 +255,6 @@ from anywhere in the terminal:
    user@user01:~/temp$ gemini does flutter support material design 3?
    ```
 
-## Appendices
-
 ### Set up your terminal to run the helpme command
 
 **Note**: This is an experimental setup.
@@ -230,6 +276,7 @@ These tasks include, but not limited to:
 - Rewrite `README` file to be instructional and linear.
 - Rewrite `README` file to be more concise and better structured.
 - Format `README` to collect reference links at the bottom.
+- Write a protocol description.
 - Write comments for a C++ source file.
 
 **Note**: Since this setup uses the Gemini Pro model, setting up OAuth on your
@@ -318,3 +365,4 @@ To set up this `helpme` command in your terminal, do the following:
 [authorize-credentials]: https://ai.google.dev/docs/oauth_quickstart#authorize-credentials
 [genai-doc-site]: https://ai.google.dev/docs/gemini_api_overview
 [cli-reference-helpme]: ../../docs/cli-reference.md#interacting-with-language-models
+[docs-agent-tasks]: ../../tasks

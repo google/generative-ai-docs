@@ -78,6 +78,11 @@ def cli_runtask(ctx, config_file, product):
     default=None,
     multiple=True,
 )
+@click.option(
+    "--custom_input",
+    help="Specify an input string for the task.",
+    default=None,
+)
 @click.pass_context
 def runtask(
     # Words can be used to try to find an agent or match to helpme/tellme
@@ -85,6 +90,7 @@ def runtask(
     words,
     task_config: typing.Optional[str],
     task: typing.Optional[str],
+    custom_input: typing.Optional[str] = None,
     model: typing.Optional[str] = None,
     force: bool = False,
     # task: typing.Optional[str] = None,
@@ -150,7 +156,15 @@ def runtask(
             exit(1)
     # Get the words before any flags.
     user_query = ""
-    if words == () and (task == () or task == None) and (task_config == "" or task_config == None or task_config == os.path.join(get_project_path(), "tasks")):
+    if (
+        words == ()
+        and (task == () or task == None)
+        and (
+            task_config == ""
+            or task_config == None
+            or task_config == os.path.join(get_project_path(), "tasks")
+        )
+    ):
         print()
         print("Please specify a task. These are the available tasks:")
         for item in tasks_config.tasks:
@@ -177,11 +191,15 @@ def runtask(
         try:
             result = re.match(md_cb_regex, output)
             if result is None:
-                print(f"The LLM did not return a valid response for {user_query}. Try again.")
+                print(
+                    f"The LLM did not return a valid response for {user_query}. Try again."
+                )
                 exit(1)
             found = re.search("^name=(.*)$", result.group(1))
             if found is None:
-                print(f"The LLM did not return a valid response for {user_query}. Try again.")
+                print(
+                    f"The LLM did not return a valid response for {user_query}. Try again."
+                )
                 exit(1)
             # Prints the remaining response from model
             print()
@@ -204,10 +222,10 @@ def runtask(
                 )
                 exit(1)
             elif found.group(1) == "helpme":
-            #     and click.confirm(
-            #     f"Should I try to help you with {user_query}?",
-            #     abort=True,
-            # ):
+                #     and click.confirm(
+                #     f"Should I try to help you with {user_query}?",
+                #     abort=True,
+                # ):
                 print()
                 ctx.invoke(
                     helpme,
@@ -216,13 +234,15 @@ def runtask(
                     new=True,
                     model="models/gemini-1.5-flash-latest",
                 )
-                print("Follow-up usage: agent helpme <more text> --cont --models/gemini-1.5-flash-latest")
+                print(
+                    "Follow-up usage: agent helpme <more text> --cont --models/gemini-1.5-flash-latest"
+                )
                 exit(1)
             elif found.group(1) == "tellme":
-            # and click.confirm(
-            #     f"Should I tell you more about your question - {user_query}?",
-            #     abort=True,
-            # ):
+                # and click.confirm(
+                #     f"Should I tell you more about your question - {user_query}?",
+                #     abort=True,
+                # ):
                 print()
                 # Call helpme instead of tellme until rag is properly hooked in
                 ctx.invoke(
@@ -265,6 +285,14 @@ def runtask(
         ):
             this_preamble = curr_task.preamble
 
+        # Check if a custom input string is provided.
+        if custom_input is not None:
+            print()
+            print(f"Custom input: {custom_input}")
+            print(
+                f"This input string will replace the <INPUT> placeholder in this task run."
+            )
+
         # Ask the user to confirm.
         if force or click.confirm(
             f"\nPreparing to launch task:\n\n"
@@ -278,6 +306,7 @@ def runtask(
             else:
                 print(f"Starting task: {curr_task.name}")
                 # print(f"{curr_task}")
+            list_of_output_files = ""
             this_step = 0
             for task in curr_task.steps:
                 this_step += 1
@@ -328,6 +357,7 @@ def runtask(
                 this_yaml = None
                 this_rag = None
                 this_terminal = None
+                this_default_input = None
                 if hasattr(task, "flags"):
                     if hasattr(task.flags, "file"):
                         this_file = task.flags.file
@@ -345,6 +375,8 @@ def runtask(
                         this_rag = task.flags.rag
                     if hasattr(task.flags, "terminal"):
                         this_terminal = task.flags.terminal
+                    if hasattr(task.flags, "default_input"):
+                        this_default_input = task.flags.default_input
 
                 # Set the out filename to the default name.
                 if this_out is None or this_out == "":
@@ -355,6 +387,53 @@ def runtask(
                         + "{:02d}".format(this_step)
                         + ".md"
                     )
+
+                list_of_output_files += (
+                    "* Step {:d}:".format(this_step) + " agent_out/" + this_out + "\n"
+                )
+
+                # Update the file-related fields if they are set to <INPUT> in the task file.
+                if custom_input is not None:
+                    # First try to replace them with the custom input value provided by
+                    # the --custom_input flag at runtime
+                    if this_file == "<INPUT>":
+                        this_file = custom_input
+                    if this_perfile == "<INPUT>":
+                        this_perfile = custom_input
+                    if this_allfiles == "<INPUT>":
+                        this_allfiles = custom_input
+                elif this_default_input is not None:
+                    # If no custom_input value is provided at runtime,
+                    # try to replace them with the default input value provided in the task file.
+                    if this_file == "<INPUT>":
+                        this_file = this_default_input
+                    if this_perfile == "<INPUT>":
+                        this_perfile = this_default_input
+                    if this_allfiles == "<INPUT>":
+                        this_allfiles = this_default_input
+                else:
+                    # Error and exit if there is still <INPUT> in any fields.
+                    if (
+                        this_file == "<INPUT>"
+                        or this_perfile == "<INPUT>"
+                        or this_allfiles == "<INPUT>"
+                    ):
+                        print()
+                        print(
+                            f"Error: Detected <INPUT> in the task fields. You must use the --custom_input flag to specify an input string for the task."
+                        )
+                        print(
+                            f"Usage: agent runtask --task <TASK_NAME> --custom_input <CUSTOM_INPUT_STRING>"
+                        )
+                        exit(1)
+
+                # If not specified, set the function field to "helpme".
+                if task.function is None:
+                    task.function = "helpme"
+
+                # If not specified, set the name field to an empty string.
+                if task.name is None:
+                    task.name = ""
 
                 # Select the command type: helpme, tellme, posix
                 if task.function == "helpme":
@@ -379,7 +458,12 @@ def runtask(
                         print(f"Prompt: {task.prompt}")
                         print(f"===================")
                         print()
-                    overwrite_words = this_preamble + "\n" + task.prompt
+                    overwrite_words = (
+                        "FOLLOW THESE RULES FOR THE USER PROMPT: "
+                        + this_preamble
+                        + "\n\nUSER PROMPT: "
+                        + task.prompt
+                    )
                     overwrite_words = overwrite_words.split()
                     ctx.invoke(
                         helpme,
@@ -422,7 +506,12 @@ def runtask(
                         print(f"Prompt: {task.prompt}")
                         print(f"===================")
                         print()
-                    overwrite_words = this_preamble + "\n" + task.prompt
+                    overwrite_words = (
+                        "FOLLOW THESE RULES FOR THE USER PROMPT: "
+                        + this_preamble
+                        + "\n\nUSER PROMPT: "
+                        + task.prompt
+                    )
                     overwrite_words = overwrite_words.split()
                     ctx.invoke(
                         tellme,
@@ -464,6 +553,10 @@ def runtask(
                     logging.error("Unsupported task function: %s", task.function)
                     exit(1)
                 time.sleep(3)
+
+        print()
+        print("[Output files]\n")
+        print(list_of_output_files)
 
 
 cli = click.CommandCollection(
