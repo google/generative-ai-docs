@@ -119,7 +119,7 @@ Content hash: {self.md_hash}\n"
 
 
 def DictionarytoSection(metadata: dict) -> Section:
-    if "section_id" in metadata:
+    if "section_id" in metadata and metadata["section_id"] != '':
         section_id = int(metadata["section_id"])
     else:
         section_id = ""
@@ -135,11 +135,11 @@ def DictionarytoSection(metadata: dict) -> Section:
         page_title = str(metadata["page_title"])
     else:
         page_title = ""
-    if "section_level" in metadata:
+    if "section_level" in metadata and metadata["section_level"] != '':
         section_level = int(metadata["section_level"])
     else:
         section_level = ""
-    if "previous_id" in metadata:
+    if "previous_id" in metadata and metadata["previous_id"] != '':
         previous_id = int(metadata["previous_id"])
     else:
         previous_id = ""
@@ -147,7 +147,7 @@ def DictionarytoSection(metadata: dict) -> Section:
         parent_tree = metadata["parent_tree"]
     else:
         parent_tree = []
-    if "token_estimate" in metadata:
+    if "token_estimate" in metadata and metadata["token_estimate"] != '':
         token_estimate = int(metadata["token_estimate"])
     else:
         token_estimate = ""
