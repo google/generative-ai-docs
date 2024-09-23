@@ -31,6 +31,23 @@ stored in the [`tasks`][tasks-dir] directory of your Docs Agent project. The tas
 designed to be reusable and can be used to automate common workflows, such as generating
 release notes, updating documentation, or analyzing complex information.
 
+A task file example:
+
+```yaml
+tasks:
+  - name: "ExtractWorkflows"
+    model: "models/gemini-1.5-flash-latest"
+    description: "An agent that extracts workflows from a source doc."
+    steps:
+      - prompt: "Summarize the contents of this document in a concise and informative manner. Focus on the key procedures, steps, or workflows described."
+        flags:
+          file: "<INPUT>"
+          default_input: "./README.md"
+      - prompt: "Identify and list all key workflows described in the document. Provide a brief description for each workflow, highlighting its purpose and key steps."
+      - prompt: "Identify all command lines used in the workflows described in the document. Focus on command lines that are essential for executing the workflow steps."
+      - prompt: "For each identified command line, provide a detailed description of its function and purpose. Include specific examples of its usage, showcasing how it is integrated within the workflows."
+```
+
 To set up and run the `agent runtask` command, see [Set up Docs Agent CLI][cli-readme].
 
 ## Summary of features
