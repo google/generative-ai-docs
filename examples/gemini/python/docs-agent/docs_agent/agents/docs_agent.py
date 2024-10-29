@@ -17,6 +17,7 @@
 """Docs Agent"""
 
 import typing
+import os, pathlib
 
 from absl import logging
 import google.api_core
@@ -573,6 +574,73 @@ class DocsAgent:
     def generate_embedding(self, text, task_type: str = "SEMANTIC_SIMILARITY"):
         return self.gemini.embed(text, task_type)[0]
 
+    # Generate a response to an image
+    def ask_model_about_image(self, prompt: str, image):
+        if not prompt:
+            prompt = f"Describe this image:"
+        if self.context_model.startswith("models/gemini-1.5"):
+            try:
+                # Adding prompt in the beginning allows long contextual
+                # information to be added.
+                response = self.gemini.generate_content([prompt, image])
+            except google.api_core.exceptions.InvalidArgument:
+                return self.config.conditions.model_error_message
+        else:
+            logging.error(f"The {self.context_model} can't read an image.")
+            response = None
+            exit(1)
+        return response
+
+    # Generate a response to audio
+    def ask_model_about_audio(self, prompt: str, audio):
+        if not prompt:
+            prompt = f"Describe this audio clip:"
+        audio_size = os.path.getsize(audio)
+        # Limit is 20MB
+        if audio_size > 20000000:
+            logging.error(f"The audio clip {audio} is too large: {audio_size} bytes.")
+            exit(1)
+        # Get the mime type of the audio file and trim the . from the extension.
+        mime_type = "audio/" + pathlib.Path(audio).suffix[:1]
+        audio_clip = {
+            "mime_type": mime_type,
+            "data": pathlib.Path(audio).read_bytes()
+        }
+        if self.context_model.startswith("models/gemini-1.5"):
+            try:
+                response = self.gemini.generate_content([prompt, audio_clip])
+            except google.api_core.exceptions.InvalidArgument:
+                return self.config.conditions.model_error_message
+        else:
+            logging.error(f"The {self.context_model} can't read an audio clip.")
+            exit(1)
+        return response
+
+    # Generate a response to video
+    def ask_model_about_video(self, prompt: str, video):
+        if not prompt:
+            prompt = f"Describe this video clip:"
+        video_size = os.path.getsize(video)
+        # Limit is 2GB
+        if video_size > 2147483648:
+            logging.error(f"The video clip {video} is too large: {video_size} bytes.")
+            exit(1)
+        request_options = {
+            "timeout": 600
+        }
+        mime_type = "video/" + pathlib.Path(video).suffix[:1]
+        video_clip_uploaded =self.gemini.upload_file(video)
+        video_clip = self.gemini.get_file(video_clip_uploaded)
+        if self.context_model.startswith("models/gemini-1.5"):
+            try:
+                response = self.gemini.generate_content([prompt, video_clip],
+                                                        request_options=request_options)
+            except google.api_core.exceptions.InvalidArgument:
+                return self.config.conditions.model_error_message
+        else:
+            logging.error(f"The {self.context_model} can't see video clips.")
+            exit(1)
+        return response
 
 # Function to give an embedding function for gemini using an API key
 def embedding_function_gemini_retrieval(api_key, embedding_model: str):

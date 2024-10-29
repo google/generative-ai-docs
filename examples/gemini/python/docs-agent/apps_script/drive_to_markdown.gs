@@ -235,6 +235,6 @@ function convertDriveFolder(folderName, outputFolderName="", indexFile="") {
       insertRichText(sheet, md_chip, "E", row_number);
       insertRichText(sheet, folder_chip, "I", row_number);
     }
+    return gdoc_count, pdf_count, new_file_count, updated_file_count, unchanged_file_count
   }
-  return gdoc_count, pdf_count, new_file_count, updated_file_count, unchanged_file_count
 }

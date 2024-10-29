@@ -83,6 +83,11 @@ def cli_runtask(ctx, config_file, product):
     help="Specify an input string for the task.",
     default=None,
 )
+@click.option(
+    "--plaintext",
+    is_flag=True,
+    help="Do not print output in Rich console.",
+)
 @click.pass_context
 def runtask(
     # Words can be used to try to find an agent or match to helpme/tellme
@@ -93,6 +98,7 @@ def runtask(
     custom_input: typing.Optional[str] = None,
     model: typing.Optional[str] = None,
     force: bool = False,
+    plaintext: bool = False,
     # task: typing.Optional[str] = None,
 ):
     """Perform tasks defined in a yaml file."""
@@ -100,6 +106,8 @@ def runtask(
     ai_console = Console(width=120)
     console_style = Style(color="default", bold=True)
     use_panel = True
+    if plaintext is True:
+        use_panel = False
     task_config_user = os.path.join(os.path.expanduser("~/docs_agent"), "tasks")
     # Read the agent config.
     if task_config is None:
@@ -124,16 +132,44 @@ def runtask(
                 loaded_tasks_config = tasks_config.return_task(task=item)
                 if loaded_tasks_config is None:
                     print()
-                    print(f"Task {item} not found.")
+                    print(f"Task {item} not found. Please specify a task.")
                     print()
-                    print("These are the available tasks:")
+                    if use_panel:
+                        ai_console.print(
+                            f"[bold]Usage[/bold]: agent runtask --task <TASK_NAME> [--custom_input <INPUT>]"
+                        )
+                    else:
+                        print(
+                            f"Usage: agent runtask --task <TASK_NAME> [--custom_input <INPUT>]"
+                        )
                     print()
+                    print("Available tasks:")
                     for item in tasks_config.tasks:
                         print()
-                        print(f"- {item.name}")
-                        if item.description:
-                            print(f"  Description: {item.description}")
-                        print(f"  Usage: agent runtask --task {item.name}")
+                        if use_panel:
+                            if item.description:
+                                ai_console.print(
+                                    f"- [bold]{item.name}[/bold]: {item.description}"
+                                )
+                            else:
+                                ai_console.print(f"- [bold]{item.name}[/bold]")
+                            ai_console.print(
+                                Panel(
+                                    f"agent runtask --task {item.name}",
+                                    title=f"Usage",
+                                    title_align="left",
+                                    padding=(0, 2),
+                                )
+                            )
+                        else:
+                            if item.description:
+                                print(f"- {item.name}")
+                                print()
+                                print(f"  {item.description}")
+                            else:
+                                print(f"- {item.name}")
+                            print()
+                            print(f"  Usage: agent runtask --task {item.name}")
                     print()
                     print("You can also ask me to try to find a task for you.")
                     print()
@@ -144,15 +180,44 @@ def runtask(
         # This checks if a task is specified and if not, suggest a task.
         elif (task is None or task == ()) and words == "":
             print()
-            print(
-                f"No task specified. Please specify a task. These are the available tasks:"
-            )
+            print(f"No task specified. Please specify a task.")
+            print()
+            if use_panel:
+                ai_console.print(
+                    f"[bold]Usage[/bold]: agent runtask --task <TASK_NAME> [--custom_input <INPUT>]"
+                )
+            else:
+                print(
+                    f"Usage: agent runtask --task <TASK_NAME> [--custom_input <INPUT>]"
+                )
+            print()
+            print("Available tasks:")
             for item in tasks_config.tasks:
                 print()
-                print(f"- {item.name}")
-                if item.description:
-                    print(f"  Description: {item.description}")
-                print(f"  Usage: agent runtask --task {item.name}")
+                if use_panel:
+                    if item.description:
+                        ai_console.print(
+                            f"- [bold]{item.name}[/bold]: {item.description}"
+                        )
+                    else:
+                        ai_console.print(f"- [bold]{item.name}[/bold]")
+                    ai_console.print(
+                        Panel(
+                            f"agent runtask --task {item.name}",
+                            title=f"Usage",
+                            title_align="left",
+                            padding=(0, 2),
+                        )
+                    )
+                else:
+                    if item.description:
+                        print(f"- {item.name}")
+                        print()
+                        print(f"  {item.description}")
+                    else:
+                        print(f"- {item.name}")
+                    print()
+                    print(f"  Usage: agent runtask --task {item.name}")
             exit(1)
     # Get the words before any flags.
     user_query = ""
@@ -166,13 +231,42 @@ def runtask(
         )
     ):
         print()
-        print("Please specify a task. These are the available tasks:")
-        for item in tasks_config.tasks:
+        print("Please specify a task.")
+        print()
+        if use_panel:
+            ai_console.print(
+                f"[bold]Usage[/bold]: agent runtask --task <TASK_NAME> [--custom_input <INPUT>]"
+            )
             print()
-            print(f"- {item.name}")
-            if item.description:
-                print(f"  Description: {item.description}")
-            print(f"  Usage: agent runtask --task {item.name}")
+            print("Available tasks:")
+            for item in tasks_config.tasks:
+                print()
+                if item.description:
+                    ai_console.print(f"- [bold]{item.name}[/bold]: {item.description}")
+                else:
+                    ai_console.print(f"- [bold]{item.name}[/bold]")
+                ai_console.print(
+                    Panel(
+                        f"agent runtask --task {item.name}",
+                        title=f"Usage",
+                        title_align="left",
+                        padding=(0, 2),
+                    )
+                )
+        else:
+            print(f"Usage: agent runtask --task <TASK_NAME> [--custom_input <INPUT>]")
+            print()
+            print("Available tasks:")
+            for item in tasks_config.tasks:
+                print()
+                if item.description:
+                    print(f"- {item.name}")
+                    print()
+                    print(f"  {item.description}")
+                else:
+                    print(f"- {item.name}")
+                print()
+                print(f"  Usage: agent runtask --task {item.name}")
         exit(1)
     for word in words:
         user_query += word + " "
@@ -285,19 +379,143 @@ def runtask(
         ):
             this_preamble = curr_task.preamble
 
-        # Check if a custom input string is provided.
-        if custom_input is not None:
+        this_default_input = ""
+
+        # Print the summary of the task about to run.
+        if use_panel:
             print()
-            print(f"Custom input: {custom_input}")
-            print(
-                f"This input string will replace the <INPUT> placeholder in this task run."
-            )
+            ai_console.print(f"Task: [bold]{curr_task.name}[/bold]")
+            ai_console.print(f"Model: {curr_task.model}")
+            ai_console.print(f"Description: {curr_task.description}")
+            print()
+            if this_preamble != "":
+                ai_console.print(
+                    Panel(
+                        f"{this_preamble}",
+                        title=f"Preamble",
+                        title_align="left",
+                        padding=(1, 1),
+                    ),
+                    style=console_style,
+                )
+                print()
+                print(f" * The prompt for each step will begin with this preamble.")
+                print()
+            step_index = 0
+            for step in curr_task.steps:
+                step_index += 1
+                function = "helpme"
+                if step.function is not None and step.function != "":
+                    function = step.function
+                step_name = ""
+                if step.name is not None and step.name != "":
+                    step_name = step.name
+                this_step_buffer = ""
+                this_step_buffer += f"Prompt ({function}): {step.prompt}"
+                if step.flags:
+                    this_step_buffer += f"\n"
+                    if step.flags.file is not None and step.flags.file != "":
+                        this_step_buffer += f"\nfile: {step.flags.file}"
+                    if step.flags.perfile is not None and step.flags.perfile != "":
+                        this_step_buffer += f"\nperfile: {step.flags.perfile}"
+                    if step.flags.allfiles is not None and step.flags.allfiles != "":
+                        this_step_buffer += f"\nallfiles: {step.flags.allfiles}"
+                    if step.flags.file_ext is not None and step.flags.file_ext != "":
+                        this_step_buffer += f"\nfile_ext: {step.flags.file_ext}"
+                    if (
+                        step.flags.default_input is not None
+                        and step.flags.default_input != ""
+                    ):
+                        this_default_input = step.flags.default_input
+                ai_console.print(
+                    Panel(
+                        this_step_buffer,
+                        title=f"Step {step_index}. {step_name}",
+                        title_align="left",
+                        padding=(1, 1),
+                    ),
+                    style=console_style,
+                )
+            # Check if a custom input string is provided.
+            if custom_input is not None:
+                print()
+                ai_console.print(f"Custom input: [bold]{custom_input}[/bold]")
+                print()
+                ai_console.print(
+                    f" * This input string will replace the [bold]<INPUT>[/bold] placeholder in the steps."
+                )
+            elif this_default_input is not None and this_default_input != "":
+                print()
+                ai_console.print(f"Default input: [bold]{this_default_input}[/bold]")
+                print()
+                ai_console.print(
+                    f"This input string will replace the [bold]<INPUT>[/bold] placeholder in the steps."
+                )
+                print()
+                ai_console.print(
+                    f"[bold]Note[/bold]: However, if you want to run this task using your file or directory, run:"
+                )
+                print()
+                ai_console.print(
+                    f"      agent runtask --task {curr_task.name} --custom_input [bold]<YOUR_INPUT>[bold]"
+                )
+
+        else:
+            print()
+            print(f"Task: {curr_task.name}")
+            print(f"Model: {curr_task.model}")
+            print(f"Description: {curr_task.description}")
+            print()
+            print(f"Preamble: {this_preamble}")
+            print()
+            step_index = 0
+            for step in curr_task.steps:
+                step_index += 1
+                print(f"Step {step_index}: {step.prompt}")
+                if step.flags:
+                    this_step_buffer = "\n"
+                    if step.flags.file is not None and step.flags.file != "":
+                        this_step_buffer += f"        file: {step.flags.file}\n"
+                    if step.flags.perfile is not None and step.flags.perfile != "":
+                        this_step_buffer += f"        perfile: {step.flags.perfile}\n"
+                    if step.flags.allfiles is not None and step.flags.allfiles != "":
+                        this_step_buffer += f"        allfiles: {step.flags.allfiles}\n"
+                    if step.flags.file_ext is not None and step.flags.file_ext != "":
+                        this_step_buffer += f"        file_ext: {step.flags.file_ext}\n"
+                    if (
+                        step.flags.default_input is not None
+                        and step.flags.default_input != ""
+                    ):
+                        this_default_input = step.flags.default_input
+                    print(this_step_buffer)
+            # Check if a custom input string is provided.
+            if custom_input is not None:
+                print()
+                print(f"Custom input: {custom_input}")
+                print()
+                print(
+                    f" * This input string will replace the <INPUT> placeholder in the steps."
+                )
+            elif this_default_input is not None and this_default_input != "":
+                print()
+                print(f"Default input: {this_default_input}")
+                print()
+                print(
+                    f"This input string will replace the <INPUT> placeholder in the steps."
+                )
+                print()
+                print(
+                    f"Note: However, if you want to run this task using your file or directory, run:"
+                )
+                print()
+                print(
+                    f"      agent runtask --task {curr_task.name} --custom_input <YOUR_INPUT>"
+                )
+        print()
 
         # Ask the user to confirm.
         if force or click.confirm(
-            f"\nPreparing to launch task:\n\n"
-            + f"{curr_task}"
-            + f"Do you want to launch the task?",
+            f"Start the task?",
             abort=True,
         ):
             print()
@@ -454,7 +672,7 @@ def runtask(
                     else:
                         print()
                         print(f"===================")
-                        print(f"Starting task: {task.name}")
+                        print(f"Step {this_step}. {task.name}")
                         print(f"Prompt: {task.prompt}")
                         print(f"===================")
                         print()

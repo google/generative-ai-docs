@@ -26,10 +26,10 @@ check out the [Set up Docs Agent][set-up-docs-agent] section below.
 
 Docs Agent's `agent runtask` command allows you to run pre-defined chains of prompts,
 which are referred to as **tasks**. These tasks simplify complex interactions by defining
-a series of steps that the Docs Agent will execute. The tasks are defined in `.yaml` files
-stored in the [`tasks`][tasks-dir] directory of your Docs Agent project. The tasks are
+a series of steps that the Docs Agent CLI will execute. The tasks are defined in `.yaml`
+files stored in the [`tasks`][tasks-dir] directory of your Docs Agent project. The tasks are
 designed to be reusable and can be used to automate common workflows, such as generating
-release notes, updating documentation, or analyzing complex information.
+release notes, drafting overview pages, or analyzing complex information.
 
 A task file example:
 
@@ -100,6 +100,16 @@ The list below summarizes the tasks and features supported by Docs Agent:
   ```sh
   agent runtask --task DraftReleaseNotes
   ```
+
+- **Multi-modal support**: Docs Agent's `agent helpme` command can include image,
+  audio, and video files as part of a prompt to the Gemini 1.5 model, for example:
+
+  ```sh
+  agent helpme Provide a concise, descriptive alt text for this PNG image --file ./my_image_example.png
+  ```
+
+  You can use this feature for creating tasks as well. For example, see the
+  [DescribeImages][describe-images] task.
 
 For more information on Docs Agent's architecture and features,
 see the [Docs Agent concepts][docs-agent-concepts] page.
@@ -240,6 +250,13 @@ Clone the Docs Agent project and install dependencies:
 
    **Important**: From this point, all `agent` command lines below need to
    run in this `poetry shell` environment.
+
+5. (**Optional**) To enable autocomplete commands and flags related to
+   Docs Agent in your shell environment, run the following command:
+
+   ```
+   source scripts/autocomplete.sh
+   ```
 
 ### 5. Edit the Docs Agent configuration file
 
@@ -458,3 +475,4 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [chunking-process]: docs/chunking-process.md
 [new-15-mode]: docs/config-reference.md#app_mode
 [tasks-dir]: tasks/
+[describe-images]: tasks/describe-images-for-alt-text-task.yaml

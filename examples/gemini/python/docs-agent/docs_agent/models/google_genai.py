@@ -18,8 +18,10 @@
 
 import typing
 from typing import List
+import time
 
 import google.generativeai
+from google.generativeai.types import GenerationConfig
 from ratelimit import limits
 from ratelimit import sleep_and_retry
 
@@ -49,6 +51,15 @@ class GoogleUnsupportedModelError(Error, RuntimeError):
             f"The specified model {model} is not supported "
             f"on the API endpoint {api_endpoint}"
         )
+
+
+# Create a class for the response schema
+# class DocType(enum.Enum):
+#     CONCEPT = "concept"
+#     CODELAB = "codelab"
+#     REFERENCE = "reference"
+#     OTHER = "other"
+#     GUIDE = "guide"
 
 
 class Gemini:
@@ -85,7 +96,20 @@ class Gemini:
         self.language_model = models_config.language_model
         self.embedding_api_call_limit = models_config.embedding_api_call_limit
         self.embedding_api_call_period = models_config.embedding_api_call_period
-
+        self.response_type = models_config.response_type
+        self.response_schema = models_config.response_schema
+        # Sets the response type to full mime type
+        if self.response_type:
+            match self.response_type:
+                case "x.enum":
+                    self.response_type = "text/x.enum"
+                case "json":
+                    self.response_type = "application/json"
+                case _:
+                    self.response_type = "text/plain"
+            self.generation_config = GenerationConfig(
+                response_mime_type=self.response_type,
+            )
         # Configure the model
         google.generativeai.configure(
             api_key=self.api_key, client_options={"api_endpoint": self.api_endpoint}
@@ -125,12 +149,23 @@ class Gemini:
     # TODO: bring in limit values from config files
     @sleep_and_retry
     @limits(calls=max_text_per_minute, period=minute)
-    def generate_content(self, contents, log_level: typing.Optional[str] = "NORMAL"):
+    def generate_content(
+        self, contents, request_options=None, log_level: typing.Optional[str] = "NORMAL"
+    ):
         if self.language_model is None:
             raise GoogleUnsupportedModelError(self.language_model, self.api_endpoint)
         model = google.generativeai.GenerativeModel(model_name=self.language_model)
         try:
-            response = model.generate_content(contents)
+            if request_options is None:
+                response = model.generate_content(
+                    contents, generation_config=self.generation_config
+                )
+            else:
+                response = model.generate_content(
+                    contents,
+                    request_options=request_options,
+                    generation_config=self.generation_config,
+                )
         except google.api_core.exceptions.InvalidArgument:
             return self.model_error_message
         if log_level == "VERBOSE" or log_level == "DEBUG":
@@ -184,9 +219,22 @@ class Gemini:
                 return self.model_error_message
         return response.text, new_prompt
 
+    # Use this method for uploading a file to File API such as Video
+    # Returns the name of the uploaded file
+    def upload_file(self, file):
+        print(f"Uploading file...")
+        uploaded_file = google.generativeai.upload_file(path=file)
+        print(f"Completed upload: {uploaded_file.uri}")
+        return uploaded_file
 
-#   # Use this method for asking a Gemini content model for fact-checking
-#   def ask_content_model_to_fact_check(self, context, prev_response):
-#     question = self.fact_check_question + "\n\nText: "
-#     question += prev_response
-#     return self.ask_content_model_with_context(context, question)
+    # Use this method for retrieving a file from the File API such as Video
+    # Returns the file object
+    def get_file(self, file):
+        while file.state.name == "PROCESSING":
+            time.sleep(10)
+            file = google.generativeai.get_file(file.name)
+
+        if file.state.name == "FAILED":
+            print(f"Failed to get file: {file.name}")
+            raise ValueError(file.state.name)
+        return file
