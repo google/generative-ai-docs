@@ -1,0 +1,22 @@
+tasks:
+  - name: "DescribeImagesWithoutMarkdown"
+    model: "models/gemini-1.5-flash"
+    description: "An agent that describes each image in the input directory to help write alt text."
+    preamble: "When describing an image, keep it short and concise, and focus on the essence of the image."
+    steps:
+      - prompt: "Provide a concise, descriptive alt text for this JPEG image that captures its essence and is suitable for users with visual impairments."
+        flags:
+          perfile: "<INPUT>"
+          default_input: "./docs"
+          file_ext: "jpg"
+      - prompt: "Provide a concise, descriptive alt text for this PNG image that captures its essence and is suitable for users with visual impairments."
+        flags:
+          perfile: "<INPUT>"
+          default_input: "./docs"
+          file_ext: "png"
+      - prompt: "Provide a concise, descriptive alt text for this GIF image that captures its essence and is suitable for users with visual impairments."
+        flags:
+          perfile: "<INPUT>"
+          default_input: "./docs"
+          file_ext: "gif"
+

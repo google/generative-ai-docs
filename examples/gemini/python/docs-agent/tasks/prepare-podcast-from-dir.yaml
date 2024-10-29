@@ -1,0 +1,19 @@
+tasks:
+  - name: "PreparePodcasteFromDir"
+    model: "models/gemini-1.5-pro-latest"
+    description: "An agent that helps prepare a podcast from a directory of markdown files."
+    preamble: "When writing a prompt, always be direct and concise."
+    steps:
+      - prompt: "Read these documentation files and create a markdown document
+          that highlights the parts that are to the most interesting to talk
+          about in a podcast. Make sure to also include
+          interesting topics to talk about. Most listeners will be software
+          engineers, so make sure to highlight technical topics. Also make sure
+          the conversation flows well and is centered around using tooling
+          when possible. You should list at least 5 high level topics to talk about.
+          At the top of the file include the text: \"Use this script to organize
+          the podcast show that you are about to record.\""
+        flags:
+          allfiles: "<INPUT>"
+          default_input: "~/docs/"
+          file_ext: "md"
