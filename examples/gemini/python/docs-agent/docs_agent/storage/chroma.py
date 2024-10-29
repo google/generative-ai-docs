@@ -28,7 +28,6 @@ from chromadb.utils import embedding_functions
 from chromadb.api.models import Collection
 from chromadb.api.types import QueryResult
 
-from docs_agent.models.palm import PaLM
 from docs_agent.preprocess.splitters.markdown_splitter import Section as Section
 from docs_agent.postprocess.docs_retriever import FullPage as FullPage
 from docs_agent.utilities.helpers import resolve_path, parallel_backup_dir
@@ -40,66 +39,6 @@ class Error(Exception):
 
 class ChromaEmbeddingModelNotSupportedError(Error, RuntimeError):
     """Raised if the embedding model specified by a collection is not supported."""
-
-
-class Chroma:
-    """Chroma wrapper"""
-
-    def __init__(self, chroma_dir) -> None:
-        self.client = chromadb.PersistentClient(path=chroma_dir)
-
-    def list_collections(self):
-        return self.client.list_collections()
-
-    def get_collection(self, name, embedding_function=None, embedding_model=None):
-        if embedding_function is not None:
-            return ChromaCollection(
-                self.client.get_collection(
-                    name=name, embedding_function=embedding_function
-                ),
-                embedding_function,
-            )
-        # Read embedding meta information from the collection
-        collection = self.client.get_collection(name=name)
-        if embedding_model is None and collection.metadata:
-            embedding_model = collection.metadata.get("embedding_model", None)
-            if embedding_model is None:
-                # If embedding_model is not found in the metadata,
-                # use `models/embedding-gecko-001` by default.
-                logging.info(
-                    "Embedding model is not specified in the metadata of "
-                    "the collection %s. Using the default PaLM embedding model.",
-                    name,
-                )
-                embedding_model = "models/embedding-gecko-001"
-        if embedding_model == "local/all-mpnet-base-v2":
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            local_model_dir = os.path.join(base_dir, "models/all-mpnet-base-v2")
-            embedding_function = (
-                embedding_functions.SentenceTransformerEmbeddingFunction(
-                    model_name=local_model_dir
-                )
-            )
-        else:
-            print("Embedding model: " + str(embedding_model))
-            try:
-                palm = PaLM(embed_model=embedding_model, find_models=False)
-                # We cannot redefine embedding_function with def and
-                # have to assign a lambda to it
-                # pylint: disable-next=unnecessary-lambda-assignment
-                embedding_function = lambda texts: [palm.embed(text) for text in texts]
-            except:
-                raise ChromaEmbeddingModelNotSupportedError(
-                    f"Embedding model {embedding_model} specified by collection {name} "
-                    "is not supported."
-                )
-
-        return ChromaCollection(
-            self.client.get_collection(
-                name=name, embedding_function=embedding_function
-            ),
-            embedding_function,
-        )
 
 
 class Format(Enum):
@@ -405,18 +344,10 @@ class ChromaEnhanced:
                 )
             )
         else:
-            print("Embedding model: " + str(embedding_model))
-            try:
-                palm = PaLM(embed_model=embedding_model, find_models=False)
-                # We cannot redefine embedding_function with def and
-                # have to assign a lambda to it
-                # pylint: disable-next=unnecessary-lambda-assignment
-                embedding_function = lambda texts: [palm.embed(text) for text in texts]
-            except:
-                raise ChromaEmbeddingModelNotSupportedError(
-                    f"Embedding model {embedding_model} specified by collection {name} "
-                    "is not supported."
-                )
+            raise ChromaEmbeddingModelNotSupportedError(
+                f"Embedding model {embedding_model} specified by collection {name} "
+                "is not supported."
+            )
 
         return ChromaCollectionEnhanced(
             self.client.get_collection(

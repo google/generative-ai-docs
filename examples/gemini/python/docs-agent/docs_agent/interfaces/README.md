@@ -101,10 +101,16 @@ from your `$HOME` directory.
    poetry shell
    ```
 
-   Entering the `poetry shell` environment is **required** for
-   running the `agent` command.
+   **Important**: You must always enter the `poetry shell` environment
+   to run the `agent` command.
 
-2. Run the `agent helpme` command, for example:
+2. Enable autocomplete for Docs Agent CLI options in your environment:
+
+   ```
+   source scripts/autocomplete.sh
+   ```
+
+3. Run the `agent helpme` command, for example:
 
    ```
    agent helpme how do I cook pasta?
@@ -113,7 +119,7 @@ from your `$HOME` directory.
    This command returns the Gemini model's response of your input prompt
    `how do I cook pasta?`.
 
-3. View the list of Docs Agent tasks available in your setup:
+4. View the list of Docs Agent tasks available in your setup:
 
    ```
    agent runtask
@@ -122,7 +128,7 @@ from your `$HOME` directory.
    This command prints a list of Docs Agent tasks that you can run.
    (See the `tasks` directory in your local Docs Agent setup.)
 
-4. Run the `agent runtask` command, for example:
+5. Run the `agent runtask` command, for example:
 
    ```
    agent runtask --task IndexPageGenerator

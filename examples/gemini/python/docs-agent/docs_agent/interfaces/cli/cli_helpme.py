@@ -133,6 +133,17 @@ def cli_helpme(ctx, config_file, product):
     is_flag=True,
     help="Use a panel for rendering the response.",
 )
+@click.option(
+    "--response_type",
+    type=click.Choice(["text", "json", "x.enum"]),
+    default="text",
+    help="Specify the response type of the response from the model. When using json, you can specify the JSON schema at the end of your question.",
+)
+@click.option(
+    "--response_schema",
+    help="Specify a response schema for the response type.",
+    hidden=True,
+)
 @common_options
 def helpme(
     words,
@@ -152,6 +163,8 @@ def helpme(
     sleep: int = 0,
     panel: bool = False,
     product: list[str] = [""],
+    response_type: typing.Optional[str] = "text",
+    response_schema: typing.Optional[str] = None,
     model: typing.Optional[str] = None,
 ):
     """Ask an AI language model to perform a task from the terminal."""
@@ -177,12 +190,22 @@ def helpme(
     if not this_model.startswith("models/gemini"):
         click.echo(f"File mode is not supported with this model: {this_model}")
         exit(1)
-
+    # This feature is only available to the Gemini 1.5 models.
+    if not this_model.startswith("models/gemini-1.5") and response_type != "text":
+        click.echo(f"x.enum and json only work on gemini-1.5 models. You are using: {this_model}")
+        exit(1)
+    if response_type == "x.enum" and response_schema is None:
+         click.echo(f"You must specify a response_schema when using text/x.enum. Optional for json.")
+         exit(1)
+    if response_type:
+        product_config.products[0].models.response_type = response_type
     # Get the question string.
     question = ""
     for word in words:
         question += word + " "
     question = question.strip()
+    if response_schema:
+        product_config.products[0].models.response_schema = response_schema
     # This is wrapped around the question when --out flag is set, this will
     # help format the output of the final file.
     question_out_wrapper = (
@@ -329,13 +352,37 @@ def helpme(
 
         # Read the file content to be included in the history file.
         file_content = ""
-        try:
-            with open(this_file, "r", encoding="utf-8") as target_file:
-                file_content = target_file.read()
-                target_file.close()
-        except:
-            print(f"[Error] This file cannot be opened: {this_file}\n")
-            exit(1)
+        if (
+            this_file.endswith(".png")
+            or this_file.endswith(".jpg")
+            or this_file.endswith(".gif")
+        ):
+            file_content = "This is an image file.\n"
+        elif (
+            this_file.endswith(".mp3")
+            or this_file.endswith(".wav")
+            or this_file.endswith(".ogg")
+            or this_file.endswith(".flac")
+            or this_file.endswith(".aac")
+            or this_file.endswith(".aiff")
+            or this_file.endswith(".mp4")
+            or this_file.endswith(".mov")
+            or this_file.endswith(".avi")
+            or this_file.endswith(".x-flv")
+            or this_file.endswith(".mpg")
+            or this_file.endswith(".webm")
+            or this_file.endswith(".wmv")
+            or this_file.endswith(".3gpp")
+        ):
+            file_content = "This is an audio file.\n"
+        else:
+            try:
+                with open(this_file, "r", encoding="utf-8") as target_file:
+                    file_content = target_file.read()
+                    target_file.close()
+            except:
+                print(f"[Error] This file cannot be opened: {this_file}\n")
+                exit(1)
 
         # If the `--new` flag is set, overwrite the history file.
         write_mode = "a"
@@ -412,15 +459,23 @@ def helpme(
                     if file_ext == None:
                         # Apply to all files.
                         print(f"# File: {file_path}")
-                        try:
-                            with open(file_path, "r", encoding="utf-8") as auto:
-                                content = auto.read()
-                                auto.close()
-                        except:
-                            print(
-                                f"[Warning] Skipping this file because it cannot be opened: {file}\n"
-                            )
-                            continue
+                        file_content = ""
+                        if (
+                            file.endswith(".png")
+                            or file.endswith(".jpg")
+                            or file.endswith(".gif")
+                        ):
+                            file_content = "This is an image file.\n"
+                        else:
+                            try:
+                                with open(file_path, "r", encoding="utf-8") as auto:
+                                    file_content = auto.read()
+                                    auto.close()
+                            except:
+                                print(
+                                    f"[Warning] Skipping this file because it cannot be opened: {file}\n"
+                                )
+                                continue
                         this_output = console.ask_model_with_file(
                             question,
                             product_config,
@@ -442,11 +497,6 @@ def helpme(
                             print()
                             print(f"{this_output}")
                             print()
-                        # Read the file content to be included in the history file.
-                        file_content = ""
-                        with open(file_path, "r", encoding="utf-8") as target_file:
-                            file_content = target_file.read()
-                            target_file.close()
                         # Prepare output to be saved in the history file.
                         out_buffer += (
                             f"QUESTION: {question}\n\n"
@@ -468,15 +518,23 @@ def helpme(
                         time.sleep(3)
                     elif file.endswith(file_ext):
                         print(f"# File: {file_path}")
-                        try:
-                            with open(file_path, "r", encoding="utf-8") as auto:
-                                content = auto.read()
-                                auto.close()
-                        except:
-                            print(
-                                f"[Warning] Skipping this file becasue it cannot be opened: {file}\n"
-                            )
-                            continue
+                        file_content = ""
+                        if (
+                            file.endswith(".png")
+                            or file.endswith(".jpg")
+                            or file.endswith(".gif")
+                        ):
+                            file_content = "This is an image file.\n"
+                        else:
+                            try:
+                                with open(file_path, "r", encoding="utf-8") as auto:
+                                    file_content = auto.read()
+                                    auto.close()
+                            except:
+                                print(
+                                    f"[Warning] Skipping this file because it cannot be opened: {file}\n"
+                                )
+                                continue
                         this_output = console.ask_model_with_file(
                             question,
                             product_config,
@@ -499,11 +557,6 @@ def helpme(
                             print(f"{this_output}")
                             print()
 
-                        # Read the file content to be included in the history file.
-                        file_content = ""
-                        with open(file_path, "r", encoding="utf-8") as target_file:
-                            file_content = target_file.read()
-                            target_file.close()
                         # Prepare output to be saved in the history file.
                         out_buffer += (
                             f"QUESTION: {question}\n\n"
@@ -594,7 +647,7 @@ def helpme(
                             print(f"Adding this file to context: {file}\n")
                         except:
                             print(
-                                f"[Warning] Skipping this file becasue it cannot be opened: {file}\n"
+                                f"[Warning] Skipping this file because it cannot be opened: {file}\n"
                             )
                             continue
                     elif file.endswith(file_ext):
@@ -610,7 +663,7 @@ def helpme(
                             print(f"Adding this file to context: {file}\n")
                         except:
                             print(
-                                f"[Warning] Skipping this file becasue it cannot be opened: {file}\n"
+                                f"[Warning] Skipping this file because it cannot be opened: {file}\n"
                             )
                             continue
 

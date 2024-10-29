@@ -175,9 +175,13 @@ class Models:
         api_key: typing.Optional[str] = None,
         embedding_api_call_limit: typing.Optional[int] = None,
         embedding_api_call_period: typing.Optional[int] = None,
+        response_type: typing.Optional[str] = "text/plain",
+        response_schema: typing.Optional[dict] = None,
     ):
         self.language_model = language_model
         self.embedding_model = embedding_model
+        self.response_type = response_type
+        self.response_schema = response_schema
         # Set up the Google API key from the environment.
         if api_key is None:
             api_key_var = os.getenv("GOOGLE_API_KEY")
@@ -205,6 +209,10 @@ class Models:
         help_str = ""
         if self.language_model is not None and self.language_model != "":
             help_str += f"Language model: {self.language_model}\n"
+        if self.response_type is not None and self.response_type != "":
+            help_str += f"Response type: {self.response_type}\n"
+        if self.response_schema is not None and self.response_schema != "":
+            help_str += f"Response schema: {self.response_schema}\n"
         if self.embedding_model is not None and self.embedding_model != "":
             help_str += f"Embedding model: {self.embedding_model}\n"
         if self.api_key is not None and self.api_key != "":
@@ -236,6 +244,8 @@ class ReadModels:
                 model_item = Models(
                     language_model=item["language_model"],
                     embedding_model=item["embedding_model"],
+                    response_type=item.get("response_type", "text/plain"),
+                    response_schema=item.get("response_schema", None),
                     api_endpoint=item.get("api_endpoint", None),
                     embedding_api_call_limit=item.get("embedding_api_call_limit", None),
                     embedding_api_call_period=item.get(
