@@ -50,6 +50,8 @@ tasks:
 
 To set up and run the `agent runtask` command, see [Set up Docs Agent CLI][cli-readme].
 
+For creating a new task, see [Create a new Docs Agent task][create-a-new-task].
+
 ## Summary of features
 
 The list below summarizes the tasks and features supported by Docs Agent:
@@ -140,7 +142,7 @@ Setting up Docs Agent requires the following prerequisite items:
   - (**Optional**) [Authenticated OAuth client credentials][oauth-client]
     stored on the host machine
 
-### 2 Update your host machine's environment
+### 2. Update your host machine's environment
 
 Update your host machine's environment to prepare for the Docs Agent setup:
 
@@ -476,3 +478,4 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [new-15-mode]: docs/config-reference.md#app_mode
 [tasks-dir]: tasks/
 [describe-images]: tasks/describe-images-for-alt-text-task.yaml
+[create-a-new-task]: docs/create-a-new-task.md
