@@ -40,6 +40,7 @@ class Flags:
         cont: typing.Optional[str] = None,
         terminal: typing.Optional[str] = None,
         default_input: typing.Optional[str] = None,
+        response_type: typing.Optional[str] = None,
     ):
         self.model = model
         self.file = file
@@ -53,6 +54,7 @@ class Flags:
         self.cont = cont
         self.terminal = terminal
         self.default_input = default_input
+        self.response_type = response_type
 
     def __str__(self):
         help_str = ""
@@ -72,6 +74,8 @@ class Flags:
             help_str += f"RAG: {str(self.rag)}\n"
         if self.yaml is not None and self.yaml != "":
             help_str += f"YAML: {self.yaml}\n"
+        if self.response_type is not None and self.response_type != "":
+            help_str += f"Response type: {self.response_type}\n"
         if self.out is not None and self.out != "":
             help_str += f"Out: {self.out}\n"
         if self.new is not None and self.new != False:
@@ -132,6 +136,10 @@ def dictionaryToFlags(flags: dict) -> Flags:
         default_input = str(flags["default_input"])
     else:
         default_input = ""
+    if "response_type" in flags:
+        response_type = str(flags["response_type"])
+    else:
+        response_type = ""
     flags = Flags(
         model=model,
         file=file,
@@ -145,6 +153,7 @@ def dictionaryToFlags(flags: dict) -> Flags:
         cont=cont,
         terminal=terminal,
         default_input=default_input,
+        response_type=response_type,
     )
     return flags
 
