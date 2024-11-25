@@ -484,7 +484,7 @@ export class GraphRunner {
    * format).
    *
    * Consumers must deserialize the binary representation themselves as this
-   * avoids addding a direct dependency on the Protobuf JSPB target in the graph
+   * avoids adding a direct dependency on the Protobuf JSPB target in the graph
    * library.
    */
   getCalculatorGraphConfig(

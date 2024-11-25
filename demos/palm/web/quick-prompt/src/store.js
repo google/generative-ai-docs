@@ -208,7 +208,7 @@ const useStore = create((set, get) => ({
 
         actions.playSound('sounds/forbidden-word.mp3')
 
-        // Sort matches by their indicies in the passed `text` so the words in `forbiddenPopup` appear in the correct order
+        // Sort matches by their indices in the passed `text` so the words in `forbiddenPopup` appear in the correct order
         matches.sort((a, b) => {
           const aIndex = text.indexOf(a)
           const bIndex = text.indexOf(b)
