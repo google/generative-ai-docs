@@ -462,7 +462,7 @@ const OutputCard = ({output}: {output: IMacroOutput}) => {
                   selected={viewAll}
                   onClick={e => {
                     if (cardHeight === 'auto') {
-                      // Change it back from auto befor animating
+                      // Change it back from auto before animating
                       setCardHeight(`${cardSizerRef.current?.offsetHeight}px`)
                     }
                     setViewAll(e)
