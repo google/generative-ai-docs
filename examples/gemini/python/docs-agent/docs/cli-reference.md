@@ -176,7 +176,7 @@ agent helpme <REQUEST> --file <PATH_TO_FILE>
 ```
 
 Replace `REQUEST` with a prompt and `PATH_TO_FILE` with a file's
-absolure or relative path, for example:
+absolute or relative path, for example:
 
 ```sh
 agent helpme write comments for this C++ file? --file ../my-project/test.cc
