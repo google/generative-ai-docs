@@ -327,7 +327,7 @@ def helpme(
         this_file = os.path.realpath(os.path.join(os.getcwd(), file))
         this_output = ""
 
-        # if the `--cont` flag is set, inlcude the previous exchanges as additional context.
+        # if the `--cont` flag is set, include the previous exchanges as additional context.
         context_file = None
         if cont:
             context_file = history_file
@@ -432,7 +432,7 @@ def helpme(
         if file_ext is None or file_ext == "":
             file_type = "All types"
 
-        # if the `--cont` flag is set, inlcude the previous exchanges as additional context.
+        # if the `--cont` flag is set, include the previous exchanges as additional context.
         context_file = None
         if cont:
             context_file = history_file
@@ -732,7 +732,7 @@ def helpme(
                     print(f"Failed to write the output to file: {out}")
 
     elif helpme_mode == "TERMINAL_OUTPUT":
-        # Terminal output mode, which reads the terminal ouput as context.
+        # Terminal output mode, which reads the terminal output as context.
         terminal_output = ""
         # Set the default filename created from the `script` command.
         file_path = "/tmp/docs_agent_console_input"
