@@ -32,7 +32,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "cp -r third_party/mediapipe/ ./src/apis/ & react-scripts start",
+    "start": "cp -r third_party/mediapipe/ ./src/apis/mediapipe/ & react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
