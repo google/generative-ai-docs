@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {useContext, useEffect} from 'react';
+import {useContext, useEffect, useMemo} from 'react';
 
 import {ConfigContext} from '../context/config';
 import {LANGUAGE_MODEL_URL} from '../context/constants';
@@ -80,7 +80,6 @@ const useLanguageModel = ():
     LanguageModel => {
       const config = useContext(ConfigContext);
 
-      let context = '';
       let messages: MessageProps[] = [];
 
       const sendPrompt = async(prompt: PromptProps, temperature: number):
@@ -102,14 +101,9 @@ const useLanguageModel = ():
             return response.json() as Promise<SendPromptResponse>;
           };
 
-      useEffect(() => {
-        context = `Your task is to acting as a character that has this personality: "${
-            config.state
-                .personality}". Your response must be based on your personality. You have this backstory: "${
-            config.state.backStory}". Your knowledge base is: "${
-            config.state
-                .knowledgeBase}". The response should be one single sentence only.`;
-      }, [config]);
+      const context = useMemo(() => `Your task is to acting as a character that has this personality: "${config.state
+        .personality}". Your response must be based on your personality. You have this backstory: "${config.state.backStory}". Your knowledge base is: "${config.state
+        .knowledgeBase}". The response should be one single sentence only.`, [config])
 
       const sendMessage = async(message: string): Promise<string> => {
         const content = `Please answer within 100 characters. {${
