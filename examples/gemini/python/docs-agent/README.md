@@ -374,7 +374,7 @@ To populate a new vector database:
 
    The command takes documents under the `inputs` fields (specified in your
    `config.yaml` file), splits the documents into small text chunk files, and
-   stores them in the `output_path` direcoty.
+   stores them in the `output_path` directory.
 
 3. Create and populate a new vector database:
 

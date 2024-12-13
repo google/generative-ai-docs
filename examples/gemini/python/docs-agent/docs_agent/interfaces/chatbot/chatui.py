@@ -341,7 +341,7 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
                 type(aqa_response_json).to_dict(aqa_response_json), indent=2
             )
     else:
-        # For the `gemini-*` model, alway use the Chroma database.
+        # For the `gemini-*` model, always use the Chroma database.
         if docs_agent.config.docs_agent_config == "experimental":
             results_num = 10
             new_question_count = 5
