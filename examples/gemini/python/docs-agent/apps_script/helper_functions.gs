@@ -25,6 +25,17 @@ function folderExists(folderName) {
   }
 }
 
+// Checks to see if a folder already exists in the specified root folder
+function folderExistsInRoot(folderName, rootFolder) {
+  const folderIterator = rootFolder.getFoldersByName(folderName);
+  if(folderIterator.hasNext()) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
 // Checks to see if a folder already exists in the drive and exits if it doesn't. Useful for input directories
 function folderExistsInput(folderName){
   if (folderExists(folderName)) {
@@ -49,6 +60,20 @@ function folderExistsOrCreate(folderName){
     return true;
   }
 }
+
+// Checks to see if folder exists or creates it. Useful for output directories
+function folderExistsOrCreateSubdir(folderName, rootFolder){
+  if(folderExistsInRoot(folderName, rootFolder)) {
+    Logger.log("Folder exists: "+ folderName);
+    return true;
+  }
+  else {
+    Logger.log("Folder does not exist: "+ folderName + ". Creating the directory.");
+    rootFolder.createFolder(folderName);
+    return true;
+  }
+}
+
 // Checks to see if a file exists in a folder
 function checkFileExists(fileName,folderName){
   let folder = DriveApp.getFoldersByName(folderName);
@@ -67,18 +92,24 @@ function checkFileExists(fileName,folderName){
 
 // Function to check if an index output sheet exists or creates it. Returns the file object
 // Specify the file output name and outputdirectory
-function checkIndexOutputOrCreate(fileName, folderOutput) {
+function checkIndexOutputOrCreate(fileName, folderOutput, indexFileID="") {
   var timeZone = Session.getScriptTimeZone();
   var date = Utilities.formatDate(new Date(), timeZone, "MM-dd-yyyy hh:mm:ss");
   let file = {title: fileName, mimeType: MimeType.GOOGLE_SHEETS, parents: [{id: folderOutput.getId()}]}
   let params = "title='" + fileName + "' and parents in '" + folderOutput.getId() + "'";
   let file_search = DriveApp.searchFiles(params);
   if (file_search.hasNext()) {
-    let fileId = file_search.next().getId();
+    if (indexFileID=="") {
+      var fileId = file_search.next().getId();
+    }
+    else {
+      var fileId = indexFileID;
+    }
     var sheet = SpreadsheetApp.openById(fileId);
     Logger.log("File index: " + fileName + " exists.");
     var sheet_index = sheet.getSheetByName("Index");
-    if (sheet.getSheetByName("Backup")){
+    // Checks to see if this is a sub directory
+    if (sheet.getSheetByName("Backup")) {
       var sheet_backup = sheet.getSheetByName("Backup");
       sheet.deleteSheet(sheet_backup);
     }

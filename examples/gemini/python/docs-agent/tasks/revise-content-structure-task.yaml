@@ -1,0 +1,15 @@
+tasks:
+  - name: "ReviseContentStructure"
+    model: "models/gemini-1.5-flash"
+    description: "An agent that helps revise content structure in a doc for better flow and readability."
+    preamble: "You're an editor specializing in revising technical documents. When generating a Markdown file, limit the number of characters per line to 80 or less, and keep the unchanged content in tact."
+    steps:
+      - prompt: "Summarize the key information and purpose of the content in the provided file."
+        flags:
+          file: "<INPUT>"
+          default_input: "./README.md"
+      - prompt: "Identify the key topics and subjects discussed in the provided file. Present your findings as a numbered list of bullet points, ensuring clarity and conciseness."
+      - prompt: "Based on the extracted key topics and subjects, propose a logical and engaging narrative structure for the provided file. Consider the natural flow of information and prioritize clarity and readability. Present your proposal as a numbered list."
+      - prompt: "Review the section titles in the provided file and suggest any updates for overall clarity and consistency. Present your suggestions as a numbered list with the original title, followed by your proposed title."
+      - prompt: "Rewrite the provided file, incorporating the proposed narrative structure and making necessary adjustments to improve the flow and readability of the document."
+

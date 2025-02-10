@@ -7,69 +7,111 @@ Docs Agent provides a set of easy-to-use self-service tools designed to give you
 your team access to Google's [Gemini API][genai-doc-site] for learning, experimentation,
 and project deployment.
 
-## Overview
+## Docs Agent web app
 
-Docs Agent apps use a technique known as Retrieval Augmented Generation (RAG), which allows
-you to bring your own documents as knowledge sources to AI language models. This approach
-helps the AI language models to generate relevant and accurate responses that are grounded
-in the information that you provide and control.
+Docs Agent uses a technique known as **Retrieval Augmented Generation (RAG)**, which
+allows you to bring your own documents as knowledge sources to AI language models.
+This approach helps the AI language models to generate relevant and accurate responses
+that are grounded in the information that you provide and control.
 
 ![Docs Agent architecture](docs/images/docs-agent-architecture-01.png)
 
 **Figure 1**. Docs Agent uses a vector database to retrieve context for augmenting prompts.
 
-Docs Agent apps are designed to be easily set up and configured in a Linux environment.
-If you want to set up and launch the Docs Agent chat app on your host machine, check out
-the [Set up Docs Agent][set-up-docs-agent] section below.
+The Docs Agent chatbot web app is designed to be easily set up and configured in a Linux
+environment. If you want to set up and launch the Docs Agent chat app on your host machine,
+check out the [Set up Docs Agent][set-up-docs-agent] section below.
 
-### Summary of features
+## Docs Agent tasks
 
-The following list summarizes the tasks and features supported by Docs Agent:
+Docs Agent's `agent runtask` command allows you to run pre-defined chains of prompts,
+which are referred to as **tasks**. These tasks simplify complex interactions by defining
+a series of steps that the Docs Agent CLI will execute. The tasks are defined in `.yaml`
+files stored in the [`tasks`][tasks-dir] directory of your Docs Agent project. The tasks are
+designed to be reusable and can be used to automate common workflows, such as generating
+release notes, drafting overview pages, or analyzing complex information.
 
-- **Process Markdown**: Split Markdown files into small plain text files. (See the
-  Python scripts in the [`preprocess`][preprocess-dir] directory.)
-- **Generate embeddings**: Use an embedding model to process small plain text files
-  into embeddings, and store them in a vector database. (See the
-  [`populate_vector_database.py`][populate-vector-database] script.)
-- **Perform semantic search**: Compare embeddings in the vector database to retrieve
-  most relevant content given user questions.
-- **Add context to a user question**: Add a list of text chunks returned from
-  a semantic search as context in a prompt. (See the
-  [Structure of a prompt to a language model][prompt-structure] section.)
-- **(Experimental) “Fact-check” responses**: This experimental feature composes
+A task file example:
+
+```yaml
+tasks:
+  - name: "ExtractWorkflows"
+    model: "models/gemini-1.5-flash-latest"
+    description: "An agent that extracts workflows from a source doc."
+    steps:
+      - prompt: "Summarize the contents of this document in a concise and informative manner. Focus on the key procedures, steps, or workflows described."
+        flags:
+          file: "<INPUT>"
+          default_input: "./README.md"
+      - prompt: "Identify and list all key workflows described in the document. Provide a brief description for each workflow, highlighting its purpose and key steps."
+      - prompt: "Identify all command lines used in the workflows described in the document. Focus on command lines that are essential for executing the workflow steps."
+      - prompt: "For each identified command line, provide a detailed description of its function and purpose. Include specific examples of its usage, showcasing how it is integrated within the workflows."
+```
+
+To set up and run the `agent runtask` command, see [Set up Docs Agent CLI][cli-readme].
+
+For creating a new task, see [Create a new Docs Agent task][create-a-new-task].
+
+## Summary of features
+
+The list below summarizes the tasks and features supported by Docs Agent:
+
+- **Process Markdown**: Split Markdown files into small plain text chunks. (See
+  [Docs Agent chunking process][chunking-process].)
+- **Generate embeddings**: Use an embedding model to process text chunks into embeddings
+  and store them in a vector database.
+- **Perform semantic search**: Compare embeddings in a vector database to retrieve
+  chunks that are most relevant to user questions.
+- **Add context to a user question**: Add chunks returned from a semantic search as
+  [context][prompt-structure] to a prompt.
+- **Fact-check responses**: This [experimental feature][fact-check-section] composes
   a follow-up prompt and asks the language model to “fact-check” its own previous response.
-  (See the [Using a language model to fact-check its own response][fact-check-section]
-  section.)
-- **Generate related questions**: In addition to displaying a response to the user
-  question, the web UI displays 5 questions generated by the language model based on
-  the context of the user question. (See the
-  [Using a language model to suggest related questions][related-questions-section]
-  section.)
-- **Return URLs of documentation sources**: Docs Agent's vector database stores URLs
-  as metadata next to embeddings. Whenever the vector database is used to retrieve
-  text chunks for context, the database can also return the URLs of the sources used
-  to generate the embeddings.
-- **Collect feedback from users**: Docs Agent's chatbot web UI includes buttons that
-  allow users to [like generated responses][like-generated-responses] or
-  [submit rewrites][submit-a-rewrite].
+- **Generate related questions**: In addition to answering a question, Docs Agent can
+  [suggest related questions][related-questions-section] based on the context of the
+  question.
+- **Return URLs of source documents**: URLs are stored as chunks' metadata. This enables
+  Docs Agent to return the URLs of the source documents.
+- **Collect feedback from users**: Docs Agent's web app has buttons that allow users
+  to [like responses][like-generated-responses] or [submit rewrites][submit-a-rewrite].
 - **Convert Google Docs, PDF, and Gmail into Markdown files**: This feature uses
-  Apps Script to convert Google Docs, PDF, and Gmail into Markdown files, which then
-  can be used as input datasets for Docs Agent. (See the
-  [`apps_script`][apps-script-readme] directory.)
-- **Run benchmark test to monitor the quality of AI-generated responses**: Using
-  Docs Agent, you can run [benchmark test][benchmark-test] to measure and compare
-  the quality of text chunks, embeddings, and AI-generated responses.
-- **Use the Semantic Retrieval API and AQA model**: You can use Gemini's
-  [Semantic Retrieval API][semantic-api] to upload source documents to an online
-  corpus and use the [AQA model][aqa-model] that is specifically created for answering
-  questions using an online corpus.
-- **Manage online corpora using the Docs Agent CLI**: The Docs Agent CLI enables you
-  to create, populate, update and delete online corpora using the Semantic Retrieval AI.
-  For the list of all available Docs Agent command lines, see the
-  [Docs Agent CLI reference][cli-reference] page.
-- **Run the Docs Agent CLI from anywhere in a terminal**: You can set up the
-  Docs Agent CLI to ask questions to the Gemini model from anywhere in a terminal.
-  For more information, see the [Set up Docs Agent CLI][cli-readme] page.
+  [Apps Script][apps-script-readme] to convert Google Docs, PDF, and Gmail into
+  Markdown files, which then can be used as input datasets for Docs Agent.
+- **Run benchmark test**: Docs Agent can [run benchmark test][benchmark-test] to measure
+  and compare the quality of text chunks, embeddings, and AI-generated responses.
+- **Use the Semantic Retrieval API and AQA model**: Docs Agent can use Gemini's
+  [Semantic Retrieval API][semantic-api] to upload source documents to online corpora
+  and use the [AQA model][aqa-model] for answering questions.
+- **Manage online corpora using the Docs Agent CLI**: The [Docs Agent CLI][cli-reference]
+  lets you create, update and delete online corpora using the Semantic Retrieval AI.
+- **Prevent duplicate chunks and delete obsolete chunks in databases**: Docs Agent
+  uses [metadata in chunks][chunking-process] to prevent uploading duplicate chunks
+  and delete obsolete chunks that are no longer present in the source.
+- **Run the Docs Agent CLI from anywhere in a terminal**:
+  [Set up the Docs Agent CLI][cli-readme] to make requests to the Gemini models
+  from anywhere in a terminal.
+- **Support the Gemini 1.5 models**: Docs Agent works with the Gemini 1.5 models,
+  `gemini-1.5-pro`, `gemini-1.5-flash`, and `text-embedding-004`. The new
+  [`full`][new-15-mode] web app mode uses all three Gemini models to their strength:
+  AQA (`aqa`), Gemini 1.0 Pro (`gemini-pro`), and Gemini 1.5 Pro (`gemini-1.5-pro`).
+- **Complete a task using the Docs Agent CLI**: The `agent runtask` command allows you
+  to run pre-defined chains of prompts, which are referred to as tasks. These tasks
+  simplify complex interactions by defining a series of steps that the Docs Agent will
+  execute. The tasks are defined in .yaml files stored in the [`tasks`][tasks-dir]
+  directory of your Docs Agent project. To run a task in this directory, for example:
+
+  ```sh
+  agent runtask --task DraftReleaseNotes
+  ```
+
+- **Multi-modal support**: Docs Agent's `agent helpme` command can include image,
+  audio, and video files as part of a prompt to the Gemini 1.5 model, for example:
+
+  ```sh
+  agent helpme Provide a concise, descriptive alt text for this PNG image --file ./my_image_example.png
+  ```
+
+  You can use this feature for creating tasks as well. For example, see the
+  [DescribeImages][describe-images] task.
 
 For more information on Docs Agent's architecture and features,
 see the [Docs Agent concepts][docs-agent-concepts] page.
@@ -100,40 +142,37 @@ Setting up Docs Agent requires the following prerequisite items:
   - (**Optional**) [Authenticated OAuth client credentials][oauth-client]
     stored on the host machine
 
-### 2 Update your host machine's environment
+### 2. Update your host machine's environment
 
 Update your host machine's environment to prepare for the Docs Agent setup:
 
 1. Update the Linux package repositories on the host machine:
 
-   ```posix-terminal
+   ```
    sudo apt update
    ```
 
 2. Install the following dependencies:
 
-   ```posix-terminal
-   sudo apt install git pip python3-venv
+   ```
+   sudo apt install git pipx python3-venv
    ```
 
 3. Install `poetry`:
 
-   ```posix-terminal
-   curl -sSL https://install.python-poetry.org | python3 -
+   ```
+   pipx install poetry
    ```
 
-   **Important**: Make sure that `$HOME/.local/bin` is in your `PATH` variable
-   (for example, `export PATH=$PATH:~/.local/bin`).
+4. To add `$HOME/.local/bin` to your `PATH` variable, run the following
+   command:
 
-4. Set the following environment variable:
-
-   ```posix-terminal
-   export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+   ```
+   pipx ensurepath
    ```
 
-   This is a [known issue][poetry-known-issue] in `poetry`.
-
-5. Set the Google API key as a environment variable:
+5. To set the Google API key as a environment variable, add the following
+   line to your `$HOME/.bashrc` file:
 
    ```
    export GOOGLE_API_KEY=<YOUR_API_KEY_HERE>
@@ -142,8 +181,11 @@ Update your host machine's environment to prepare for the Docs Agent setup:
    Replace `<YOUR_API_KEY_HERE>` with the API key to the
    [Gemini API][genai-doc-site].
 
-   **Tip**: To avoid repeating these `export` lines, add them to your
-   `$HOME/.bashrc` file.
+6. Update your environment:
+
+   ```
+   source ~/.bashrc
+   ```
 
 ### 3. (Optional) Authorize credentials for Docs Agent
 
@@ -156,7 +198,13 @@ Authorize Google Cloud credentials on your host machine:
 
 2. Copy the `client_secret.json` file to your host machine.
 
-3. To authenticate credentials, run the following command in the directory of
+3. Install the Google Cloud SDK on your host machine:
+
+   ```
+   sudo apt install google-cloud-sdk
+   ```
+
+4. To authenticate credentials, run the following command in the directory of
    the host machine where the `client_secret.json` file is located:
 
    ```
@@ -165,10 +213,7 @@ Authorize Google Cloud credentials on your host machine:
 
    This command opens a browser and asks to log in using your Google account.
 
-   **Note**: If the `gcloud` command doesn’t exist, install the Google Cloud SDK
-   on your host machine: `sudo apt install google-cloud-sdk`
-
-4. Follow the instructions on the browser and click **Allow** to authenticate.
+5. Follow the instructions on the browser and click **Allow** to authenticate.
 
    This saves the authenticated credentials for Docs Agent
    (`application_default_credentials.json`) in the `$HOME/.config/gcloud/`
@@ -183,30 +228,37 @@ Clone the Docs Agent project and install dependencies:
 
 1. Clone the following repo:
 
-   ```posix-terminal
+   ```
    git clone https://github.com/google/generative-ai-docs.git
    ```
 
 2. Go to the Docs Agent project directory:
 
-   ```posix-terminal
+   ```
    cd generative-ai-docs/examples/gemini/python/docs-agent
    ```
 
 3. Install dependencies using `poetry`:
 
-   ```posix-terminal
+   ```
    poetry install
    ```
 
 4. Enter the `poetry` shell environment:
 
-   ```posix-terminal
+   ```
    poetry shell
    ```
 
    **Important**: From this point, all `agent` command lines below need to
    run in this `poetry shell` environment.
+
+5. (**Optional**) To enable autocomplete commands and flags related to
+   Docs Agent in your shell environment, run the following command:
+
+   ```
+   source scripts/autocomplete.sh
+   ```
 
 ### 5. Edit the Docs Agent configuration file
 
@@ -256,7 +308,7 @@ Update settings in the Docs Agent project to use your custom dataset:
 
    ```
    inputs:
-     - path: "/usr/local/home/user01/website/src"
+     - path: "/usr/local/home/user01/website/src/content"
        url_prefix: "https://docs.flutter.dev"
    ```
 
@@ -265,23 +317,13 @@ Update settings in the Docs Agent project to use your custom dataset:
 
    ```
    inputs:
-     - path: "/usr/local/home/user01/website/src/ui"
+     - path: "/usr/local/home/user01/website/src/content/ui"
        url_prefix: "https://docs.flutter.dev/ui"
-     - path: "/usr/local/home/user01/website/src/tools"
+     - path: "/usr/local/home/user01/website/src/content/tools"
        url_prefix: "https://docs.flutter.dev/tools"
    ```
 
-6. (**Optional**) If you want to use the Gemini AQA model and populate a corpus online
-   via the [Semantic Retrieval API][semantic-api], use the following settings:
-
-   ```
-   models:
-     - language_model: "models/aqa"
-   ...
-   db_type: "google_semantic_retriever"
-   ```
-
-   Or if you want to use the `gemini-pro` model with a local vector database setup
+6. If you want to use the `gemini-pro` model with a local vector database setup
    (`chroma`), use the following settings:
 
    ```
@@ -289,6 +331,21 @@ Update settings in the Docs Agent project to use your custom dataset:
      - language_model: "models/gemini-pro"
    ...
    db_type: "chroma"
+   ```
+
+   (**Optional**) Or if you want to use the Gemini AQA model and populate
+   a corpus online via the [Semantic Retrieval API][semantic-api], use the
+   following settings (and update the `corpus_name` field):
+
+   ```
+   models:
+     - language_model: "models/aqa"
+   ...
+   db_type: "google_semantic_retriever"
+   db_configs:
+     ...
+     - db_type: "google_semantic_retriever"
+       corpus_name: "corpora/flutter-dev"
    ```
 
 7. Save the `config.yaml` file and exit the text editor.
@@ -403,7 +460,6 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [chroma-docs]: https://docs.trychroma.com/
 [flutter-docs-src]: https://github.com/flutter/website/tree/main/src
 [flutter-docs-site]: https://docs.flutter.dev/
-[poetry-known-issue]: https://github.com/python-poetry/poetry/issues/1917
 [apps-script-readme]: ./apps_script/README.md
 [scripts-readme]: ./docs_agent/preprocess/README.md
 [config-yaml]: config.yaml
@@ -418,3 +474,8 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [oauth-client]: https://ai.google.dev/docs/oauth_quickstart#set-cloud
 [cli-readme]: docs_agent/interfaces/README.md
 [cli-reference]: docs/cli-reference.md
+[chunking-process]: docs/chunking-process.md
+[new-15-mode]: docs/config-reference.md#app_mode
+[tasks-dir]: tasks/
+[describe-images]: tasks/describe-images-for-alt-text-task.yaml
+[create-a-new-task]: docs/create-a-new-task.md

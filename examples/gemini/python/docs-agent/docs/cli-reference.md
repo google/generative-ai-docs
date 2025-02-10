@@ -3,10 +3,15 @@
 This page provides a list of the Docs Agent command lines and their usages
 and examples.
 
-**Important**: All `agent` commands in this page need to run in the
-`poetry shell` environment.
+The Docs Agent CLI helps developers to manage the Docs Agent project and
+interact with language models. It can handle various tasks such as
+processing documents, populating vector databases, launching the chatbot,
+running benchmark test, sending prompts to language models, and more.
 
-## Processing of Markdown files
+**Important**: All `agent` commands need to run in the `poetry shell`
+environment.
+
+## Processing documents
 
 ### Chunk Markdown files into small text chunks
 
@@ -26,6 +31,15 @@ by running the `agent chunk` command):
 agent populate
 ```
 
+### Populate a vector database and delete stale text chunks
+
+The command below deletes stale entries in the existing vector database
+before populating it with the new text chunks:
+
+```sh
+agent populate --enable_delete_chunks
+```
+
 ### Show the Docs Agent configuration
 
 The command below prints all the fields and values in the current
@@ -35,7 +49,25 @@ The command below prints all the fields and values in the current
 agent show-config
 ```
 
-## Docs Agent chatbot web app
+### Clean up the Docs Agent development environment
+
+The command below deletes development databases specified in the
+`config.yaml` file:
+
+```sh
+agent cleanup-dev
+```
+
+### Write logs to a CSV file
+
+The command below writes the summaries of all captured debugging information
+(in the `logs/debugs` directory) to  a `.csv` file:
+
+```sh
+agent write-logs-to-csv
+```
+
+## Launching the chatbot web app
 
 ### Launch the Docs Agent web app
 
@@ -53,7 +85,35 @@ The command below launches the Docs Agent web app to run on port 5005:
 agent chatbot --port 5005
 ```
 
-## Docs Agent benchmark test
+### Launch the Docs Agent web app as a widget
+
+The command below launches the Docs Agent web app to use
+a widget-friendly template:
+
+```sh
+agent chatbot --app_mode widget
+```
+
+### Launch the Docs Agent web app in full mode
+
+The command below launches the Docs Agent web app to use
+a special template that uses three Gemini models (AQA, Gemini 1.5,
+and Gemini 1.0):
+
+```sh
+agent chatbot --app_mode full
+```
+
+### Launch the Docs Agent web app with a log view enabled
+
+The command below launches the Docs Agent web app while enabling
+a log view page (which is accessible at `<APP_URL>/logs`):
+
+```sh
+agent chatbot --enable_show_logs
+```
+
+## Running benchmark test
 
 ### Run the Docs Agent benchmark test
 
@@ -106,7 +166,168 @@ You may also specify multiple products, for example:
 agent tellme which modules are available? --product=Flutter --product=Angular --product=Android
 ```
 
-## Online corpus management
+### Ask for advice
+
+The command below reads a request and a filename from the arguments,
+asks the Gemini model, and prints its response:
+
+```sh
+agent helpme <REQUEST> --file <PATH_TO_FILE>
+```
+
+Replace `REQUEST` with a prompt and `PATH_TO_FILE` with a file's
+absolure or relative path, for example:
+
+```sh
+agent helpme write comments for this C++ file? --file ../my-project/test.cc
+```
+
+### Ask for advice using RAG
+
+The command below uses a local or online vector database (specified in
+the `config.yaml` file) to retrieve relevant context for the request:
+
+```sh
+agent helpme <REQUEST> --file <PATH_TO_FILE> --rag
+```
+
+### Ask for advice in a session
+
+The command below starts a new session (`--new`), which tracks responses,
+before running the `agent helpme` command:
+
+```sh
+agent helpme <REQUEST> --file <PATH_TO_FILE> --new
+```
+
+For example:
+
+```sh
+agent helpme write a draft of all features found in this README file? --file ./README.md --new
+```
+
+After starting a session, use the `--cont` flag to include the previous
+responses as context to the request:
+
+```sh
+agent helpme <REQUEST> --cont
+```
+
+For example:
+
+```sh
+agent helpme write a concept doc that delves into more details of these features? --cont
+```
+
+### Print the context in the current session
+
+The command below prints the questions, files, and responses that
+are being used as context in the current session:
+
+```sh
+agent show-session
+```
+
+### Ask the model to perform the request to each file in a directory
+
+The command below applies the request to each file found in the
+specified directory:
+
+```sh
+agent helpme <REQUEST> --perfile <PATH_TO_DIRECTORY>
+```
+
+For example:
+
+```sh
+agent helpme explain what this file does? --perfile ~/my-project --new
+```
+
+### Ask the model to include all files in a directory as context
+
+The command below includes all files found in the specified directory
+as context to the request:
+
+```sh
+agent helpme <REQUEST> --allfiles <PATH_TO_DIRECTORY>
+```
+
+For example:
+
+```sh
+agent helpme write a concept doc covering all features in this project? --allfiles ~/my-project --new
+```
+
+### Ask the model to print the output in JSON
+
+The command below prints the output from the model in JSON format:
+
+```sh
+agent helpme <REQUEST> --response_type json
+```
+
+For example:
+
+```sh
+agent helpme how do I cook pasta? --response_type json
+```
+
+### Ask the model to run a pre-defined chain of prompts
+
+The command below runs a task (a sequence of prompts) defined in
+a `.yaml` file stored in the [`tasks`][tasks-dir] directory:
+
+```sh
+agent runtask --task <TASK>
+```
+
+For example:
+
+```sh
+agent runtask --task DraftReleaseNotes
+```
+
+### View the list of available Docs Agent tasks
+
+To see the list of all tasks available in your project, run
+`agent runtask` without any arguments:
+
+```sh
+agent runtask
+```
+
+### Ask the model to run a task using custom input
+
+If a task script has a `<INPUT>` placeholder, you can provide
+a custom input string to the task:
+
+```sh
+agent runtask --task <TASK> --custom_input <INPUT_STRING>
+```
+
+For example:
+
+```sh
+agent runtask --task IndexPageGenerator --custom_input ~/my_example/docs/development/
+```
+
+### Ask the model to print the output in plain text
+
+By default, the `agent runtask` command uses Python's Rich console
+to format its output. You can disable it by using the `--plaintext`
+flag:
+
+```sh
+agent runtask --task <TASK> --plaintext
+```
+
+For example:
+
+```sh
+agent runtask --task DraftReleaseNotes --plaintext
+```
+
+## Managing online corpora
 
 ### List all existing online corpora
 
@@ -164,3 +385,4 @@ agent delete-corpus --name corpora/example01
 [benchmarks-yaml]: ../docs_agent/benchmarks/benchmarks.yaml
 [set-up-docs-agent-cli]: ../docs_agent/interfaces/README.md
 [semantic-api]: https://ai.google.dev/docs/semantic_retriever
+[tasks-dir]: ../tasks

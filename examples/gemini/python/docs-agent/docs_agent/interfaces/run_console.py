@@ -16,20 +16,49 @@
 
 """Run the Docs Agent console in the terminal"""
 
+import typing
 from absl import logging
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
-import sys
+from rich.text import Text
 from rich.progress import Progress
-import time
+from PIL import Image
 
 from docs_agent.agents.docs_agent import DocsAgent
-from docs_agent.utilities.config import ProductConfig, ReadConfig, ConfigFile
-from docs_agent.interfaces.cli import return_config_and_product
+from docs_agent.utilities.config import ConfigFile
 
 
-def ask_model(question: str, product_configs: ConfigFile):
+# This function is used by the `helpme` command to ask the Gemini Pro model
+# to perform a task based on the console ouput.
+def ask_model_for_help(question: str, context: str, product_configs: ConfigFile):
+    # Initialize Rich console
+    ai_console = Console(width=160)
+    # Filter the input context into text.
+    context_text = Text(context)
+    # Print the console output to be provided as context.
+    ai_console.print("[Context from console output]")
+    ai_console.print(Panel(context_text), markup=False)
+    # Initialize Docs Agent
+    docs_agent = DocsAgent(config=product_configs.products[0], init_chroma=False)
+    (
+        good_response,
+        new_prompt,
+    ) = docs_agent.ask_content_model_with_context_prompt(
+        context=context,
+        question=question,
+        prompt="Examine the console output below and respond to the user's request specified at the end of this prompt:",
+    )
+    # Print the Gemini response
+    ai_console.print()
+    ai_console.print("[Gemini response]")
+    ai_console.print()
+    ai_console.print(good_response)
+
+
+# This function is used by the `tellme` command to ask the Gemini AQA model
+# a question from an online corpus.
+def ask_model(question: str, product_configs: ConfigFile, return_output: bool = False):
     # Initialize Rich console
     ai_console = Console(width=160)
     full_prompt = ""
@@ -139,6 +168,8 @@ def ask_model(question: str, product_configs: ConfigFile):
             final_response_md += responses[count] + "\n"
             final_links.append(links[count])
             count += 1
+
+        # Print the response.
         count = 0
         synthesize = False
         synthesize_product = None
@@ -146,6 +177,7 @@ def ask_model(question: str, product_configs: ConfigFile):
         for product in product_configs.products:
             if "gemini" in product.models.language_model:
                 synthesize_product = product
+
         if synthesize and not (synthesize_product == None):
             docs_agent = DocsAgent(config=synthesize_product, init_chroma=False)
             progress.update(
@@ -169,71 +201,295 @@ def ask_model(question: str, product_configs: ConfigFile):
             progress.update(task_docs_agent, visible=False, refresh=True)
             ai_console.print()
             ai_console.print(Markdown(final_response_md))
-        # Print results
-        for item in final_search:
-            count += 1
-        count = 0
-        ai_console.print()
-        ai_console.print(Markdown("To verify this information, see:\n"))
+
+        # Get the link to the source.
         md_links = ""
         for item in final_links:
-            if not item.startswith("UUID"):
-                md_links += f"\n* [{item}]({item})\n"
-                count += 1
+            if isinstance(item, str):
+                if not item.startswith("UUID"):
+                    md_links += f"\n* [{item}]({item})\n"
+
+        # Print the link to the source.
+        ai_console.print()
+        ai_console.print(Markdown("To verify this information, see:\n"))
         ai_console.print(Markdown(md_links))
 
+        # Retrun the output if the `return_output` flag is set.
+        if return_output:
+            return_string = (
+                str(final_response_md.strip())
+                + "\n\nTo verify this information, see:\n"
+                + md_links
+            )
+            return return_string
 
-def main():
-    # Set logging level to WARNING or above to disable progress bar
-    logging.set_verbosity(logging.WARNING)
 
+# This function is used by the `helpme` command to ask a Gemini model
+# a question without additional context.
+def ask_model_without_context(
+    question: str,
+    product_configs: ConfigFile,
+    return_output: bool = False,
+):
     # Initialize Rich console
     ai_console = Console(width=160)
-    ai_console.rule("Fold")
+    full_prompt = ""
+    final_context = ""
+    response = ""
 
-    # Initialize Docs Agent
-    ai_console.print("STATE: Initializing Docs Agent.")
-    docs_agent = DocsAgent()
-    ai_console.print("\nHello! I'm PaLM 2.\n")
-
-    # First question (for quick testing)
-    question = "What are some differences between apples and oranges?"
-
-    # User input loop
-    while True:
-        # Get context from the vector database
-        result = docs_agent.query_vector_store(question)
-        context = result.fetch_formatted(Format.CONTEXT)
-        # Add instruction to the context
-        context_with_prefix = docs_agent.add_instruction_to_context(context)
-        # Print the context
-        ai_console.print(Panel.fit(Markdown("\nContext: " + context_with_prefix)))
-        # Get URLs of the context from the vector database
-        metadatas = result.fetch_formatted(Format.URL)
-        ai_console.print(Panel.fit(Markdown(metadatas)))
-        # Print the question
-        ai_console.print(Panel.fit("Question: " + question))
-        ai_console.print("\nPaLM 2:")
-        # Pass the context and question to PaLM 2 (Text)
-        response_text = docs_agent.ask_text_model_with_context(
-            context_with_prefix, question
+    # Use the first product by default.
+    product = product_configs.products[0]
+    language_model = product.models.language_model
+    with Progress(transient=True) as progress:
+        task_docs_agent = progress.add_task(
+            "[turquoise4 bold]Starting Docs Agent ", total=None, refresh=True
         )
-        ai_console.print("\n[Text answer]:")
-        ai_console.print(Panel.fit(Markdown(response_text)))
-        # Pass the context and question to PaLM 2 (Chat)
-        response_chat = docs_agent.ask_chat_model_with_context(
-            context_with_prefix, question
+        # Initialize Docs Agent.
+        docs_agent = DocsAgent(config=product, init_chroma=False, init_semantic=False)
+        # Set the progress bar.
+        label = f"[turquoise4 bold]Asking Gemini (model: {language_model}) "
+        progress.update(task_docs_agent, description=label, total=None, refresh=True)
+        final_context = "No additional context is necessary for this question."
+        # Ask Gemini with the question without additional context.
+        response = docs_agent.ask_content_model_with_context(
+            context=final_context, question=question
         )
-        ai_console.print("\n[Chat answer]:")
-        ai_console.print(Panel.fit(Markdown(response_chat)))
-        # Keep asking questions to PaLM 2
-        ai_console.print("\n######## Ask PaLM 2 ########")
-        question = input("How can I help?\n> ")
-        ai_console.print("")
-        if question.startswith("exit"):
-            ai_console.print("Goodbye!")
-            sys.exit()
+    if return_output:
+        return str(response.strip())
+    ai_console.print()
+    ai_console.print(Markdown(response.strip()))
 
 
-if __name__ == "__main__":
-    main()
+# This function is used by the `helpme` command to ask a Gemini model
+# a question with various context sources.
+def ask_model_with_file(
+    question: str,
+    product_configs: ConfigFile,
+    file: typing.Optional[str] = None,
+    context_file: typing.Optional[str] = None,
+    rag: bool = False,
+    return_output: bool = False,
+):
+    # Initialize Rich console
+    ai_console = Console(width=160)
+    full_prompt = ""
+    final_context = ""
+    response = ""
+
+    # Set the file extension.
+    file_ext = None
+    is_image = False
+    is_audio = False
+    is_video = False
+    loaded_image = None
+    if file != None:
+        if file.endswith(".png"):
+            file_ext = "png"
+            is_image = True
+        elif file.endswith(".jpg"):
+            file_ext = "jpg"
+            is_image = True
+        elif file.endswith(".gif"):
+            file_ext = "gif"
+            is_image = True
+        elif file.endswith(".wav"):
+            file_ext = "wav"
+            is_audio = True
+        elif file.endswith(".mp3"):
+            file_ext = "wav"
+            is_audio = True
+        elif file.endswith(".flac"):
+            file_ext = "flac"
+            is_audio = True
+        elif file.endswith(".aiff"):
+            file_ext = "aiff"
+            is_audio = True
+        elif file.endswith(".aac"):
+            file_ext = "aac"
+            is_audio = True
+        elif file.endswith(".ogg"):
+            file_ext = "aac"
+            is_audio = True
+        elif file.endswith(".mp4"):
+            file_ext = "mp4"
+            is_video = True
+        elif file.endswith(".mp4"):
+            file_ext = "mp4"
+            is_video = True
+        elif file.endswith(".mov"):
+            file_ext = "mov"
+            is_video = True
+        elif file.endswith(".avi"):
+            file_ext = "avi"
+            is_video = True
+        elif file.endswith(".x-flv"):
+            file_ext = "x-flv"
+            is_video = True
+        elif file.endswith(".mpg"):
+            file_ext = "mpg"
+            is_video = True
+        elif file.endswith(".webm"):
+            file_ext = "webm"
+            is_video = True
+        elif file.endswith(".wmv"):
+            file_ext = "wmv"
+            is_video = True
+        elif file.endswith(".3gpp"):
+            file_ext = "3gpp"
+            is_video = True
+
+    # Get the content of the target file.
+    file_content = ""
+    if file != None and not is_image and not is_audio and not is_video:
+        try:
+            with open(file, "r", encoding="utf-8") as auto:
+                content = auto.read()
+                auto.close()
+            file_content = f"\nTHE CONTENT BELOW IS FROM THE FILE {file}:\n\n" + content
+        except:
+            print(f"Cannot open the file {file}")
+            exit(1)
+    elif is_image:
+        try:
+            with open(file, "rb") as image:
+                loaded_image = Image.open(image)
+                loaded_image.load()
+        except:
+            print(f"Cannot open the image {file}")
+            exit(1)
+
+    # Get the content of the context file.
+    context_file_content = ""
+    if context_file != None:
+        try:
+            with open(context_file, "r", encoding="utf-8") as auto:
+                content = auto.read()
+                auto.close()
+            context_file_content = (
+                f"\nTHE CONTENT BELOW IS FROM THE PREVIOUS EXCHANGES WITH GEMINI:\n\n"
+                + content
+            )
+            file_content = context_file_content + "\n\n" + file_content
+        except:
+            print(f"Cannot open the context file {file}")
+            exit(1)
+
+    # Use the first product by default.
+    product = product_configs.products[0]
+    language_model = product.models.language_model
+    with Progress(transient=True) as progress:
+        task_docs_agent = progress.add_task(
+            "[turquoise4 bold]Starting Docs Agent ", total=None, refresh=True
+        )
+        if rag:
+            # RAG specified. Retrieve additional context from a database.
+            if product.db_type == "chroma":
+                # Use a local Chroma database.
+                # Initialize Docs Agent.
+                docs_agent = DocsAgent(
+                    config=product, init_chroma=True, init_semantic=False
+                )
+                # Get the Chroma collection name.
+                collection = docs_agent.return_chroma_collection()
+                # Set the progress bar.
+                label = f"[turquoise4 bold]Asking Gemini (model: {language_model}, source: {collection}) "
+                progress.update(
+                    task_docs_agent, description=label, total=None, refresh=True
+                )
+                # Retrieve context from the local Chroma database.
+                (
+                    search_result,
+                    returned_context,
+                ) = docs_agent.query_vector_store_to_build(
+                    question=question,
+                    token_limit=500000,
+                    results_num=5,
+                    max_sources=5,
+                )
+                context_from_database = ""
+                chunk_count = 0
+                for item in search_result:
+                    context_from_database += item.section.content
+                    context_from_database += f"\nReference [{chunk_count}]\n\n"
+                    chunk_count += 1
+                # Construct the final context for the question.
+                final_context = (
+                    "\nTHE CONTENT BELOW IS RETRIEVED FROM THE LOCAL DATABASE:\n\n"
+                    + context_from_database.strip()
+                    + "\n\n"
+                    + str(file_content)
+                )
+            elif product.db_type == "google_semantic_retriever":
+                # Use an online corpus from the Semantic Retrieval API.
+                # Initialize Docs Agent.
+                docs_agent = DocsAgent(
+                    config=product, init_chroma=False, init_semantic=True
+                )
+                # Get the corpus name.
+                corpus_name = ""
+                for db_config in product.db_configs:
+                    if db_config.db_type == "google_semantic_retriever":
+                        corpus_name = db_config.corpus_name
+                # Set the progress bar.
+                label = f"[turquoise4 bold]Asking Gemini (model: {language_model}, source: {corpus_name}) "
+                progress.update(
+                    task_docs_agent, description=label, total=None, refresh=True
+                )
+                # Retrieve context from the online corpus.
+                context_chunks = docs_agent.retrieve_chunks_from_corpus(
+                    question, corpus_name=str(corpus_name)
+                )
+                context_from_corpus = ""
+                chunk_count = 0
+                for chunk in context_chunks.relevant_chunks:
+                    context_from_corpus += chunk.chunk.data.string_value
+                    context_from_corpus += f"\nReference [{chunk_count}]\n\n"
+                    chunk_count += 1
+                # Construct the final context for the question.
+                final_context = (
+                    "\nTHE CONTENT BELOW IS RETRIEVED FROM THE ONLINE DATABASE:\n\n"
+                    + context_from_corpus.strip()
+                    + "\n\n"
+                    + str(file_content)
+                )
+            else:
+                logging.error(f"Unknown db_type: {product.db_type}")
+                exit(1)
+        else:
+            # No RAG specified. No additional context to be retrieved from a database.
+            docs_agent = DocsAgent(
+                config=product, init_chroma=False, init_semantic=False
+            )
+            progress.update(
+                task_docs_agent,
+                description=f"[turquoise4 bold]Asking Gemini (model: {language_model}) ",
+                total=None,
+            )
+            final_context = file_content
+        if is_image:
+            this_prompt = final_context + "\nQUESTION (REQUEST): " + question
+            response = docs_agent.ask_model_about_image(
+                prompt=this_prompt, image=loaded_image
+            )
+        elif is_audio:
+            this_prompt = final_context + "\nQUESTION (REQUEST): " + question
+            response = docs_agent.ask_model_about_audio(
+                prompt=this_prompt, audio=file
+            )
+        elif is_video:
+            this_prompt = final_context + "\nQUESTION (REQUEST): " + question
+            response = docs_agent.ask_model_about_video(
+                prompt=this_prompt, video=file
+            )
+        else:
+            # Ask Gemini with the question and final context.
+            (
+                response,
+                full_prompt,
+            ) = docs_agent.ask_content_model_with_context_prompt(
+                context=final_context, question=question
+            )
+        if return_output:
+            return str(response.strip())
+        ai_console.print()
+        ai_console.print(Markdown(response.strip()))

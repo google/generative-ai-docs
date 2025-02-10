@@ -1,0 +1,15 @@
+tasks:
+  - name: "IndexPageGenerator"
+    model: "models/gemini-1.5-flash"
+    description: "An agent that generates a draft of an index page from source docs."
+    preamble: "When generating a Markdown file, limit the number of characters per line to 80 or less, and always include a brief description to each page in the list. Never include a file's full path, but use a relative path. Refer to pages using page titles, not file names (however, use the paths and filenames when generating reference links)."
+    steps:
+      - prompt: "Provide a brief description of each file in this directory."
+        flags:
+          allfiles: "<INPUT>"
+          default_input: "./docs_agent"
+          file_ext: "md"
+      - prompt: "Based on the file descriptions provided, generate a draft of an index page that organizes the pages by related topics. The index page should be designed for new developers who need to quickly understand the structure and contents of the documentation."
+      - prompt: "Please update the introduction paragraph of the index page draft to provide a more helpful and descriptive overview of the documentation. Maintain the remaining content of the draft."
+      - prompt: "Identify key words and phrases that are relevant to the documentation files. Generate a list of Markdown reference-style links that map these keywords to the corresponding files. Include the list of links at the bottom of the index page."
+

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "docs-agent"
-version = "0.3.1"
+version = "0.4.1"
 description = ""
 authors = ["Docs Agent contributors"]
 readme = "README.md"
@@ -16,7 +16,7 @@ ratelimit = "^2.2.1"
 absl-py = "^1.4.0"
 python-frontmatter = "^1.0.0"
 flatdict = "^4.0.1"
-google-generativeai = "^0.3.1"
+google-generativeai = "^0.8.3"
 uuid = "^1.30"
 pytz = ">=2020.1"
 chromadb = "^0.4.22"
@@ -25,6 +25,7 @@ pyyaml = "^6.0.1"
 numpy = "^1.26.4"
 tqdm = "^4.66.2"
 flask = "^2.3.2"
+pillow = "^11.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.13.2"
@@ -35,6 +36,7 @@ deptry = "^0.13.0"
 [tool.deptry.per_rule_ignores]
 DEP003 = ["docs_agent"]
 DEP002 = ["uuid"]
+
 
 [tool.poetry.group.internal]
 optional = true
@@ -47,5 +49,6 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 
+
 [tool.poetry.scripts]
-agent = "docs_agent.interfaces.cli:cli"
+agent = "docs_agent.interfaces.cli.cli:cli"

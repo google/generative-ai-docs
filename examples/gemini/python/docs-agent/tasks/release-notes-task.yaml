@@ -1,0 +1,13 @@
+tasks:
+  - name: "DraftReleaseNotes"
+    model: "models/gemini-1.5-flash"
+    description: "An agent that generates a draft of Docs Agent release notes from git commit messages."
+    preamble: "When generating release notes, limit the total number of key features and updates to 5 or fewer entries."
+    steps:
+      - prompt: "git --no-pager log --since=2024-06-15"
+        function: "posix"
+        description: "Load the git log commit messages from the local Docs Agent checkout since a target date."
+      - prompt: "Please extract a list of key features and improvements from the provided git log commit messages, focusing on those that are most impactful and relevant for developers."
+      - prompt: "Based on the extracted key features and improvements, write a concise and informative release notes draft. Use clear and concise language, focusing on the benefits and value provided to developers."
+      - prompt: "Revise the release notes draft to enhance readability and structure. Format the release notes using bullet points for clarity and limit each entry to a maximum of two sentences."
+

@@ -1,0 +1,27 @@
+tasks:
+  - name: "DescribeImages"
+    model: "models/gemini-1.5-flash"
+    description: "An agent that describes each image in the input directory to help write alt text."
+    preamble: "When describing an image, limit the description to 80 or less characters."
+    steps:
+      - prompt: "Provide a brief description of each Markdown file in this directory, emphasizing the key content and purpose of each file."
+        flags:
+          allfiles: "<INPUT>"
+          default_input: "./docs"
+          file_ext: "md"
+      - prompt: "Using the Markdown descriptions as context, provide a concise, descriptive alt text for this JPEG image that captures its essence and is suitable for users with visual impairments."
+        flags:
+          perfile: "<INPUT>"
+          default_input: "./docs"
+          file_ext: "jpg"
+      - prompt: "Using the Markdown descriptions as context, provide a concise, descriptive alt text for this PNG image that captures its essence and is suitable for users with visual impairments."
+        flags:
+          perfile: "<INPUT>"
+          default_input: "./docs"
+          file_ext: "png"
+      - prompt: "Using the Markdown descriptions as context, provide a concise, descriptive alt text for this GIF image that captures its essence and is suitable for users with visual impairments."
+        flags:
+          perfile: "<INPUT>"
+          default_input: "./docs"
+          file_ext: "gif"
+

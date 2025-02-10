@@ -1,5 +1,31 @@
 # What's new in Docs Agent
 
+## April 2024
+
+* **Focus: Feature enhancements and usability improvements**
+* Expanded CLI functionality with options for managing online corpora and interacting with files.
+* Addressed bug fixes and performed code refactoring for improved stability and maintainability.
+* Added a new chat app template specifically designed for the **Gemini 1.5 model**.
+* Updated GenAI SDK version to `0.5.0`.
+* Introduced a splitter for handling of Fuchsia’s FIDL protocol files in the preprocessing stage.
+
+## March 2024
+
+* **Milestone: Introduction of the Docs Agent CLI**
+* Added the `tellme` command for direct interaction with Gemini from a Linux terminal.
+* Expanded CLI options for corpora management, including creation, deletion, and permission control.
+* Enhanced the chat app UI with a "loading" animation and probability-based response pre-screening.
+* Enabled displaying more URLs retrieved from the AQA model in the widget mode.
+* Added support for including URLs as metadata when uploading chunks to online corpora.
+
+## February 2024
+
+* **Focus: Refining AQA model integration**
+* Improved UI rendering of AQA model responses, especially for code segments.
+* Addressed bug fixes to handle unexpected AQA model responses.
+* Generated related questions by using retrieved context instead of a user question.
+* Started logging `answerable_probability` for AQA model responses.
+
 ## January 2024
 
 * **Milestone: Docs Agent uses AQA model and Semantric Retrieval API**

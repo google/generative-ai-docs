@@ -20,16 +20,14 @@ from enum import auto, Enum
 import os
 import string
 import shutil
+import typing
 
 from absl import logging
 import chromadb
-from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 from chromadb.api.models import Collection
 from chromadb.api.types import QueryResult
 
-from docs_agent.models.palm import PaLM
-from docs_agent.preprocess.splitters import markdown_splitter
 from docs_agent.preprocess.splitters.markdown_splitter import Section as Section
 from docs_agent.postprocess.docs_retriever import FullPage as FullPage
 from docs_agent.utilities.helpers import resolve_path, parallel_backup_dir
@@ -41,66 +39,6 @@ class Error(Exception):
 
 class ChromaEmbeddingModelNotSupportedError(Error, RuntimeError):
     """Raised if the embedding model specified by a collection is not supported."""
-
-
-class Chroma:
-    """Chroma wrapper"""
-
-    def __init__(self, chroma_dir) -> None:
-        self.client = chromadb.PersistentClient(path=chroma_dir)
-
-    def list_collections(self):
-        return self.client.list_collections()
-
-    def get_collection(self, name, embedding_function=None, embedding_model=None):
-        if embedding_function is not None:
-            return ChromaCollection(
-                self.client.get_collection(
-                    name=name, embedding_function=embedding_function
-                ),
-                embedding_function,
-            )
-        # Read embedding meta information from the collection
-        collection = self.client.get_collection(name=name)
-        if embedding_model is None and collection.metadata:
-            embedding_model = collection.metadata.get("embedding_model", None)
-            if embedding_model is None:
-                # If embedding_model is not found in the metadata,
-                # use `models/embedding-gecko-001` by default.
-                logging.info(
-                    "Embedding model is not specified in the metadata of "
-                    "the collection %s. Using the default PaLM embedding model.",
-                    name,
-                )
-                embedding_model = "models/embedding-gecko-001"
-        if embedding_model == "local/all-mpnet-base-v2":
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            local_model_dir = os.path.join(base_dir, "models/all-mpnet-base-v2")
-            embedding_function = (
-                embedding_functions.SentenceTransformerEmbeddingFunction(
-                    model_name=local_model_dir
-                )
-            )
-        else:
-            print("Embedding model: " + str(embedding_model))
-            try:
-                palm = PaLM(embed_model=embedding_model, find_models=False)
-                # We cannot redefine embedding_function with def and
-                # have to assign a lambda to it
-                # pylint: disable-next=unnecessary-lambda-assignment
-                embedding_function = lambda texts: [palm.embed(text) for text in texts]
-            except:
-                raise ChromaEmbeddingModelNotSupportedError(
-                    f"Embedding model {embedding_model} specified by collection {name} "
-                    "is not supported."
-                )
-
-        return ChromaCollection(
-            self.client.get_collection(
-                name=name, embedding_function=embedding_function
-            ),
-            embedding_function,
-        )
 
 
 class Format(Enum):
@@ -147,7 +85,7 @@ class ChromaQueryResultItem:
         self.metadata = result["metadatas"][0][index]
         self.distance = result["distances"][0][index]
 
-    def format(self, format_type: Format, ref_index: int = None):
+    def format(self, format_type: Format, ref_index: typing.Optional[int] = None):
         d = {
             "document": self.document.strip(),
             "ref_index": ref_index,
@@ -199,7 +137,7 @@ class ChromaQueryResult:
 class ChromaCollection:
     """Chroma collection wrapper"""
 
-    def __init__(self, collection: Collection, embedding_function) -> None:
+    def __init__(self, collection, embedding_function) -> None:
         self.collection = collection
         self.embedding_function = embedding_function
 
@@ -228,31 +166,35 @@ class SectionDB(Enum):
 
     def decodeSection(self):
         if self.SECTION_ID:
-            section_id = self.SECTION_ID
+            section_id = self.SECTION_ID.value
         else:
             section_id = ""
         if self.SECTION_NAME_ID:
-            section_name_id = self.SECTION_NAME_ID
+            section_name_id = self.SECTION_NAME_ID.value
         else:
             section_name_id = ""
         if self.SECTION_TITLE:
-            section_title = self.SECTION_TITLE
+            section_title = self.SECTION_TITLE.value
         else:
             section_title = ""
         if self.SECTION_LEVEL:
-            section_level = self.SECTION_LEVEL
+            section_level = self.SECTION_LEVEL.value
         else:
             section_level = ""
         if self.PREVIOUS_ID:
-            previous_id = self.PREVIOUS_ID
+            previous_id = self.PREVIOUS_ID.value
         else:
             previous_id = ""
         if self.PARENT_TREE:
-            parent_tree = self.PARENT_TREE
+            parent_tree = self.PARENT_TREE.value
+            parent_tree_str = str(parent_tree).strip("[]").split(",")
+            parent_tree = []
+            for num in parent_tree_str:
+                parent_tree.append(int(num))
         else:
             parent_tree = ""
-        if self.token_estimate:
-            token_estimate = self.token_estimate
+        if self.TOKEN_ESTIMATE:
+            token_estimate = self.TOKEN_ESTIMATE.value
         else:
             token_estimate = ""
         if self.CONTENT:
@@ -260,14 +202,15 @@ class SectionDB(Enum):
         else:
             content = ""
         section = Section(
-            section_id,
-            section_name_id,
-            section_title,
-            section_level,
-            previous_id,
-            parent_tree,
-            token_estimate,
-            content,
+            id=int(section_id),
+            name_id=str(section_name_id),
+            section_title=str(section_title),
+            page_title="",
+            level=int(section_level),
+            previous_id=int(previous_id),
+            parent_tree=parent_tree,
+            token_count=float(token_estimate),
+            content=str(content),
         )
         return section
 
@@ -319,13 +262,13 @@ class ChromaSectionDBItem:
         self.distance = result["distances"][0][index]
         self.id = result["ids"][0][index]
 
-    def __str__(self) -> None:
+    def __str__(self):
         return f"This is a section with the following properties:\n\
 Section ID: {SectionDB.SECTION_ID}\n\
 Section Title: {SectionDB.SECTION_TITLE}\n\
 Section URL: {SectionDB.URL}\n"
 
-    def format(self, format_type: SectionDB, ref_index: int = None):
+    def format(self, format_type: SectionDB, ref_index: typing.Optional[int] = None):
         d = {
             "content": self.document.strip(),
             "ref_index": ref_index,
@@ -357,7 +300,7 @@ class ChromaEnhanced:
 
     # Returns output_dir if backup was successful, None if it failed
     # Output dir can only be a child to chroma_dir
-    def backup_chroma(self, chroma_dir: str, output_dir: str = None):
+    def backup_chroma(self, chroma_dir: str, output_dir: typing.Optional[str] = None):
         try:
             chroma_dir = resolve_path(chroma_dir)
             if output_dir == None:
@@ -385,13 +328,13 @@ class ChromaEnhanced:
             embedding_model = collection.metadata.get("embedding_model", None)
             if embedding_model is None:
                 # If embedding_model is not found in the metadata,
-                # use `models/embedding-gecko-001` by default.
+                # use `models/embedding-001` by default.
                 logging.info(
                     "Embedding model is not specified in the metadata of "
-                    "the collection %s. Using the default PaLM embedding model.",
+                    "the collection %s. Using the default embedding model: models/embedding-001",
                     name,
                 )
-                embedding_model = "models/embedding-gecko-001"
+                embedding_model = "models/embedding-001"
         if embedding_model == "local/all-mpnet-base-v2":
             base_dir = os.path.dirname(os.path.abspath(__file__))
             local_model_dir = os.path.join(base_dir, "models/all-mpnet-base-v2")
@@ -401,18 +344,10 @@ class ChromaEnhanced:
                 )
             )
         else:
-            print("Embedding model: " + str(embedding_model))
-            try:
-                palm = PaLM(embed_model=embedding_model, find_models=False)
-                # We cannot redefine embedding_function with def and
-                # have to assign a lambda to it
-                # pylint: disable-next=unnecessary-lambda-assignment
-                embedding_function = lambda texts: [palm.embed(text) for text in texts]
-            except:
-                raise ChromaEmbeddingModelNotSupportedError(
-                    f"Embedding model {embedding_model} specified by collection {name} "
-                    "is not supported."
-                )
+            raise ChromaEmbeddingModelNotSupportedError(
+                f"Embedding model {embedding_model} specified by collection {name} "
+                "is not supported."
+            )
 
         return ChromaCollectionEnhanced(
             self.client.get_collection(
@@ -425,7 +360,7 @@ class ChromaEnhanced:
 class ChromaCollectionEnhanced:
     """Chroma collection wrapper"""
 
-    def __init__(self, collection: Collection, embedding_function) -> None:
+    def __init__(self, collection, embedding_function) -> None:
         self.collection = collection
         self.embedding_function = embedding_function
 
@@ -562,8 +497,8 @@ class ChromaQueryResultEnhanced:
     def fetch_nearest(self):
         return ChromaSectionDBItem(self.result, 0)
 
-    def fetch_nearest_formatted(self, format_type: Format):
+    def fetch_nearest_formatted(self, format_type: SectionDB):
         return self.fetch_nearest().format(format_type)
 
-    def return_response(self):
-        return ChromaSectionDBItem.returnSection(self)
+    # def return_response(self):
+    #     return ChromaSectionDBItem.returnSection(self)

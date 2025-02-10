@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style-chatui-widget.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbox.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style-logs.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <title>{{ product }} Docs Agent admin page</title>
+</head>
+<body>
+  {% if logs %}
+  <div id='widget-box'>
+    <div name="title"><h1>{{ product }} Docs Agent</h1></div>
+    <div id='chat-border'>
+      <div class="body-content">
+	<h2>Answerable scores<h2>
+        <pre class="log-pre">{{ answerable_logs }}</pre>
+	<h2>Logs<h2>
+	<pre class="log-pre">{{ logs }}</pre>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</body>
+</html>

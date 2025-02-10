@@ -13,25 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+function convertDriveFolderToMDForDocsAgent(folderName, outputFolderName=""){
+  gdoc_count = 0;
+  pdf_count = 0;
+  new_file_count = 0;
+  updated_file_count = 0;
+  unchanged_file_count = 0;
+  gdoc_count, pdf_count, new_file_count, updated_file_count, unchanged_file_count = convertDriveFolder(folderName, outputFolderName=outputFolderName)
+  let conversion_count = pdf_count + gdoc_count
+  let file_count = new_file_count + updated_file_count + unchanged_file_count
+  Logger.log("Converted a total of: " + gdoc_count + " Google Doc files.");
+  Logger.log("Converted a total of: " + pdf_count + " PDF files.");
+  Logger.log("Converted a grand total of: " + conversion_count + " files.");
+  Logger.log("New files: " + new_file_count)
+  Logger.log("Updated a total of: " + updated_file_count + " files.")
+  Logger.log("Files that haven't changed: " + unchanged_file_count);
+  Logger.log("Input directory had a total of: " + file_count + " files.")
+}
 
-function convertDriveFolderToMDForDocsAgent(folderName) {
+function convertDriveFolder(folderName, outputFolderName="", indexFile="") {
+
   //Checks if input folder exists or exits
   if(folderExistsInput(folderName)){
     var file_count = 0;
     var folders = DriveApp.getFoldersByName(folderName);
-    Logger.log("Output directory: "+ folderName + "-output");
-    var folderOutput = folderName + "-output";
-    var output_file_name = folderName + "-index";
+    if (outputFolderName=="") {
+      var folderOutput = folderName + "-output";
+      var output_file_name = folderName + "-index";
+    }
+    else {
+      var folderOutput = outputFolderName + "-output";
+      var output_file_name = outputFolderName + "-index";
+    }
+    Logger.log("Output directory: "+ folderOutput);
     folderExistsOrCreate(folderOutput);
     var folderOutputObj = DriveApp.getFoldersByName(folderOutput);
     if (folderOutputObj.hasNext()){
       var folderOutputName = folderOutputObj.next();
     }
-    var sheet = checkIndexOutputOrCreate(output_file_name, folderOutputName);
-    var timeZone = Session.getScriptTimeZone();
-    var date = Utilities.formatDate(new Date(), timeZone, "MM-dd-yyyy HH:mm:ss z");
-    sheet.appendRow(["Created: ", date])
-    sheet.appendRow(["Name","ID", "URL", "Markdown ID", "Markdown Output", "Date Created", "Last Updated", "Type", "Folder", "MD5 hash", "Status"]);
+    if (indexFile=="") {
+      var sheet = checkIndexOutputOrCreate(output_file_name, folderOutputName);
+      var timeZone = Session.getScriptTimeZone();
+      var date = Utilities.formatDate(new Date(), timeZone, "MM-dd-yyyy HH:mm:ss z");
+      sheet.appendRow(["Created: ", date])
+      sheet.appendRow(["Name","ID", "URL", "Markdown ID", "Markdown Output", "Date Created", "Last Updated", "Type", "Folder", "MD5 hash", "Status"]);
+    }
+    else {
+      var sheet = indexFile
+    }
+    // var sheet_id = sheet.getId();
     var foldersnext = folders.next();
     var myfiles = foldersnext.getFiles();
     var new_file_count = 0;
@@ -44,11 +74,35 @@ function convertDriveFolderToMDForDocsAgent(folderName) {
 
     while (myfiles.hasNext()) {
       var myfile = myfiles.next();
+      var ftype = myfile.getMimeType();
+      // If this is a shorcut, retrieve the target file
+      if (ftype == "application/vnd.google-apps.shortcut") {
+        var fid = myfile.getTargetId();
+        var myfile = DriveApp.getFileById(fid);
+        var ftype = myfile.getMimeType();
+      }
+      else{
+        var fid = myfile.getId();
+      }
+      if (ftype == "application/vnd.google-apps.folder") {
+        var folder = DriveApp.getFolderById(fid);
+        Logger.log("Sub-directory: " + folder);
+        sub_gdoc_count = 0;
+        sub_pdf_count = 0;
+        sub_new_file_count = 0;
+        sub_updated_file_count = 0;
+        sub_unchanged_file_count = 0;
+        sub_gdoc_count, sub_pdf_count, sub_new_file_count, sub_updated_file_count, sub_unchanged_file_count = convertDriveFolder(folder, outputFolderName=foldersnext, indexFile=sheet);
+        gdoc_count += sub_gdoc_count;
+        pdf_count += sub_pdf_count;
+        new_file_count += sub_new_file_count;
+        updated_file_count += sub_updated_file_count;
+        unchanged_file_count += sub_unchanged_file_count;
+        continue;
+      }
       var fname = sanitizeFileName(myfile.getName());
       var fdate = myfile.getLastUpdated();
       var furl = myfile.getUrl();
-      var fid = myfile.getId();
-      var ftype = myfile.getMimeType();
       var fcreate = myfile.getDateCreated();
 
       //Function returns an array, assign each array value to seperate variables
@@ -58,7 +112,6 @@ function convertDriveFolderToMDForDocsAgent(folderName) {
         var md5_backup = backup_results[1];
         var mdoutput_backup_id = backup_results[2];
       }
-
       if (ftype == "application/vnd.google-apps.document") {
         Logger.log("File: " + fname + " is a Google doc.");
         let gdoc = DocumentApp.openById(fid);
@@ -151,7 +204,7 @@ function convertDriveFolderToMDForDocsAgent(folderName) {
           var saved_file_id = saved_file.getId();
           Logger.log("Finished converting file: "+ fname + " to markdown.");
           Logger.log("Markdown file: " + saved_file);
-          Logger.log("Clearing temporary gdoc: " );
+          Logger.log("Clearing temporary gdoc" );
           let output_file = DriveApp.getFileById(output_id);
           output_file.setTrashed(true);
           status = "New content";
@@ -175,19 +228,13 @@ function convertDriveFolderToMDForDocsAgent(folderName) {
         hash_str,
         status,
       ];
-      row_number = file_count + start_data_row;
       sheet.appendRow(metadata);
+      // Return final row to inserRichText into correct rows
+      row_number = sheet.getLastRow();
       insertRichText(sheet, original_chip, "C", row_number);
       insertRichText(sheet, md_chip, "E", row_number);
       insertRichText(sheet, folder_chip, "I", row_number);
     }
+    return gdoc_count, pdf_count, new_file_count, updated_file_count, unchanged_file_count
   }
-  let conversion_count = pdf_count + gdoc_count
-  Logger.log("Converted a total of: " + gdoc_count + " Google Doc files.");
-  Logger.log("Converted a total of: " + pdf_count + " PDF files.");
-  Logger.log("Converted a grand total of: " + conversion_count + " files.");
-  Logger.log("New files: " + new_file_count)
-  Logger.log("Updated a total of: " + updated_file_count + " files.")
-  Logger.log("Files that haven't changed: " + unchanged_file_count);
-  Logger.log("Input directory had a total of: " + file_count + " files.")
 }

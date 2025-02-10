@@ -211,7 +211,7 @@ const useTextToSpeech =
 
       const convert =
           async (text: string) => {
-        // console.log('Lamda response: ', text);
+        // console.log('Lambda response: ', text);
         // Use default voice for demo
         const voice = getDefaultAvatarVoice();
         if (!text || !voice?.cloudTtsVoice && !voice?.winslow) {
