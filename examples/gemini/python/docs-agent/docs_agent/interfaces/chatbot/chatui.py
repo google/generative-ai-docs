@@ -278,7 +278,7 @@ def construct_blueprint(
     return bp
 
 
-# Go through the `seatch_result` object returned from the AQA model
+# Go through the `search_result` object returned from the AQA model
 # and extract context.
 def extract_context_from_search_result(search_result):
     context = ""
@@ -292,7 +292,7 @@ def extract_context_from_search_result(search_result):
 
 
 # Construct a set of prompts using the user question, send the prompts to
-# the lanaguage model, receive responses, and present them into a page.
+# the language model, receive responses, and present them into a page.
 # Use template to specify a custom template for the classic web UI
 def ask_model(question, agent, template: str = "chatui/index.html"):
     # Returns a built context, a total token count of the context and an array
