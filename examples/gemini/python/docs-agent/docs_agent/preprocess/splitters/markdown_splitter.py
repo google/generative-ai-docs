@@ -362,13 +362,13 @@ def build_parent_tree(
 def clean_section_id(section_id: str) -> str:
     section_id = re.sub("'", "", section_id)
     section_id = re.sub("`", "", section_id)
-    section_id = re.sub("\.", "", section_id)
-    section_id = re.sub("\,", "", section_id)
+    section_id = re.sub(r"\.", "", section_id)
+    section_id = re.sub(",", "", section_id)
     section_id = re.sub("#", "", section_id)
-    section_id = re.sub("\?", "", section_id)
-    section_id = re.sub("\/", "", section_id)
-    section_id = re.sub("\{", "", section_id)
-    section_id = re.sub("\}", "", section_id)
+    section_id = re.sub(r"\?", "", section_id)
+    section_id = re.sub(r"\/", "", section_id)
+    section_id = re.sub(r"\{", "", section_id)
+    section_id = re.sub(r"\}", "", section_id)
     section_id = re.sub(":", "", section_id)
     return section_id
 
