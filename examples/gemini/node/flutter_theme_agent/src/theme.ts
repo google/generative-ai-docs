@@ -75,7 +75,7 @@ available color properties on a ColorScheme instead of using deprecated properti
 like Color Swatch.
 
 ${COMMENT_LABEL}
-Construct a ThemeData object with a pastel pink color palette that is asthetically 
+Construct a ThemeData object with a pastel pink color palette that is aesthetically 
 pleasing and a the CardTheme that removes elevation and adds a 2px black border.
 ${CODE_LABEL}
 ThemeData(
