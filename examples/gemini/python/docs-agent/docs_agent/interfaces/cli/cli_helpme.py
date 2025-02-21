@@ -750,7 +750,7 @@ def helpme(
                     terminal_output += line
                     # if an Enter key is detected, remove all saved lines.
                     # This allows to read the output of the last commandline only.
-                    if re.search("^\[\?2004", line):
+                    if re.search("^\\[\\?2004", line):
                         terminal_output = ""
         except:
             terminal_output = "No console output is provided."
