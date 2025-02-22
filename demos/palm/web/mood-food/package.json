@@ -37,7 +37,7 @@
     "react-router-dom": "^6.4.2",
     "react-scripts": "^5.0.1",
     "redux-persist": "^6.0.0",
-    "vite": "^3.2.7"
+    "vite": "^3.2.10"
   },
   "babel": {
     "presets": [
