@@ -245,11 +245,14 @@ def construct_blueprint(
     # using input text box.
     @bp.route("/result", methods=["GET", "POST"])
     def result():
-        if request.method == "POST":
-            question = request.form["question"]
-            return ask_model(question, agent=docs_agent, template=app_template)
-        else:
+        if request.method != "POST":
             return redirect(url_for(redirect_index))
+            
+        question = request.form.get("question", "").strip()
+        if not question:
+            return redirect(url_for(redirect_index))
+            
+        return ask_model(question, agent=docs_agent, template=app_template)
 
     # Render a response page when the user clicks a question
     # from the related questions list.
