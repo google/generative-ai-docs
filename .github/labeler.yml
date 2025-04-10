@@ -1,12 +1,6 @@
 'status:awaiting review':
 - '**/*'
 
-'component:demos':
-- demos/**/*
-
-'component:documentation':
-- site/**/*
-
 'demos:docs-agent':
 - demos/palm/python/docs-agent/**/*
 
