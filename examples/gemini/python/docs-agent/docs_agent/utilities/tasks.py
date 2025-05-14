@@ -29,10 +29,12 @@ class Flags:
     def __init__(
         self,
         model: typing.Optional[str] = None,
-        file: typing.Optional[str] = None,
+        file: typing.Optional[list[str]] = None,
         perfile: typing.Optional[str] = None,
         allfiles: typing.Optional[str] = None,
+        list_file: typing.Optional[str] = None,
         file_ext: typing.Optional[str] = None,
+        repeat_until: typing.Optional[bool] = False,
         rag: typing.Optional[bool] = False,
         yaml: typing.Optional[str] = None,
         out: typing.Optional[str] = None,
@@ -40,13 +42,16 @@ class Flags:
         cont: typing.Optional[str] = None,
         terminal: typing.Optional[str] = None,
         default_input: typing.Optional[str] = None,
+        script_input: typing.Optional[str] = None,
         response_type: typing.Optional[str] = None,
     ):
         self.model = model
         self.file = file
         self.perfile = perfile
         self.allfiles = allfiles
+        self.list_file = list_file
         self.file_ext = file_ext
+        self.repeat_until = repeat_until
         self.rag = rag
         self.yaml = yaml
         self.out = out
@@ -54,6 +59,7 @@ class Flags:
         self.cont = cont
         self.terminal = terminal
         self.default_input = default_input
+        self.script_input = script_input
         self.response_type = response_type
 
     def __str__(self):
@@ -66,10 +72,16 @@ class Flags:
             help_str += f"Per file: {self.perfile}\n"
         if self.allfiles is not None and self.allfiles != "":
             help_str += f"All files: {self.allfiles}\n"
+        if self.list_file is not None and self.list_file != "":
+            help_str += f"List file: {self.list_file}\n"
         if self.default_input is not None and self.default_input != "":
             help_str += f"Default input: {self.default_input}\n"
+        if self.script_input is not None and self.script_input != "":
+            help_str += f"Default input: {self.script_input}\n"
         if self.file_ext is not None and self.file_ext != "":
             help_str += f"File ext: {self.file_ext}\n"
+        if self.repeat_until is not None and self.repeat_until != False:
+            help_str += f"Repeat until: {str(self.repeat_until)}\n"
         if self.rag is not None and self.rag != False:
             help_str += f"RAG: {str(self.rag)}\n"
         if self.yaml is not None and self.yaml != "":
@@ -93,7 +105,12 @@ def dictionaryToFlags(flags: dict) -> Flags:
     else:
         model = ""
     if "file" in flags:
-        file = str(flags["file"])
+        file = []
+        if isinstance(flags["file"], (list, tuple)):
+            for item in flags["file"]:
+                file.append(str(item))
+        else:
+            file.append(str(flags["file"]))
     else:
         file = ""
     if "perfile" in flags:
@@ -104,10 +121,18 @@ def dictionaryToFlags(flags: dict) -> Flags:
         allfiles = str(flags["allfiles"])
     else:
         allfiles = ""
+    if "list_file" in flags:
+        list_file = str(flags["list_file"])
+    else:
+        list_file = ""
     if "file_ext" in flags:
         file_ext = str(flags["file_ext"])
     else:
         file_ext = ""
+    if "repeat_until" in flags:
+        repeat_until = bool(flags["repeat_until"])
+    else:
+        repeat_until = False
     if "rag" in flags:
         rag = bool(flags["rag"])
     else:
@@ -136,6 +161,10 @@ def dictionaryToFlags(flags: dict) -> Flags:
         default_input = str(flags["default_input"])
     else:
         default_input = ""
+    if "script_input" in flags:
+        script_input = str(flags["script_input"])
+    else:
+        script_input = ""
     if "response_type" in flags:
         response_type = str(flags["response_type"])
     else:
@@ -145,7 +174,9 @@ def dictionaryToFlags(flags: dict) -> Flags:
         file=file,
         perfile=perfile,
         allfiles=allfiles,
+        list_file=list_file,
         file_ext=file_ext,
+        repeat_until=repeat_until,
         rag=rag,
         yaml=yaml,
         out=out,
@@ -153,6 +184,7 @@ def dictionaryToFlags(flags: dict) -> Flags:
         cont=cont,
         terminal=terminal,
         default_input=default_input,
+        script_input=script_input,
         response_type=response_type,
     )
     return flags

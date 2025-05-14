@@ -1,0 +1,37 @@
+tasks:
+  - name: "DescribeImagesFromDoc"
+    model: "models/gemini-2.0-flash"
+    description: >
+      An agent that extracts all image files names in an input doc and generates alt text for the images.
+    preamble: >
+      When you generate a response for alt text, your suggestion should not start with Picture of,
+      Image of, or Screenshot of. Your new alt text suggestion must be fewer than 125 characters.
+      Do not exceed 125 characters. Provide the option that is most suitable for alt text. Output
+      only the alt text suggestion. Do not include any explanations or commentary. Do not include
+      end punctuation. Do not include colon(:).
+    steps:
+      - prompt: >
+          Provide an overview of this file (under 100 words).
+        flags:
+          file: "<INPUT>"
+          default_input: "./README.md"
+      - prompt: "extract_image_files.py"
+        function: "script"
+        description: >
+          This script extract all image files found in the input file and store the list of image
+          file names in the agent_out/image_paths.txt file.
+        flags:
+          script_input: "<INPUT>"
+          default_input: "./README.md"
+      - prompt: >
+          Using the above information as context, provide concise, descriptive alt text for this image
+          that captures its essence and is suitable for users with visual impairments. Use any existing
+          alt text found in the information above for context.
+        flags:
+          list_file: "agent_out/image_paths.txt"
+      - prompt: >
+          Provide a YAML file that maps each alt text to the image path, where each entry has the - path:
+          <value> field and the response: <value> field (in next line). Return only the content of the
+          YAML file without any additional explanation in your response.
+        flags:
+          repeat_until: True

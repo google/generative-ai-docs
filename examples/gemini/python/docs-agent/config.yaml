@@ -17,8 +17,8 @@
 configs:
   - product_name: "Fuchsia"
     models:
-      - language_model: "models/gemini-1.5-flash-latest"
-        embedding_model: "models/embedding-001"
+      - language_model: "gemini-2.0-flash"
+        embedding_model: "text-embedding-004"
         api_endpoint: "generativelanguage.googleapis.com"
         embedding_api_call_limit: 1400
         embedding_api_call_period: 60
@@ -41,10 +41,16 @@ configs:
         Read the context below first and answer the user's question at the end.
         In your answer, provide a summary in three or five sentences. (BUT DO NOT USE
         ANY INFORMATION YOU KNOW ABOUT THE WORLD.)"
-        fact_check_question: "Can you compare the text below to the information
-        provided in this prompt above and write a short message that warns the readers
-        about which part of the text they should consider fact-checking? (Please keep
-        your response concise, focus on only one important item, but DO NOT USE BOLD
-        TEXT IN YOUR RESPONSE.)"
         model_error_message: "Gemini is not able to answer this question at the moment.
         Rephrase the question and try asking again."
+    # mcp_servers:
+    #   - name: "git"
+    #     server_type: "stdio"
+    #     command: "uv"
+    #     args: ["--directory","/usr/local/home/mcp_servers/servers/src/git", "run", "mcp-server-git"]
+    #   - name: "puppeteer"
+    #     server_type: "stdio"
+    #     command: "npx"
+    #     args: ["-y", "@modelcontextprotocol/server-puppeteer"]
+    #     env:
+    #       PUPPETEER_LAUNCH_OPTIONS: '{ "headless": true, "args": [] }'

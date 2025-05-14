@@ -121,6 +121,37 @@ A step that runs a POSIX command:
 **Important**: To run a POSIX command, the `function` field
 must be set to `posix`.
 
+### A script step
+
+A step that runs a custom script:
+
+```
+   steps:
+     - prompt: "extract_image_files.py"
+       function: "script"
+```
+
+**Important**: To run a custom script, the script must be stored in
+the [`scripts`][scripts-dir] directory of the Docs Agent setup.
+
+You can provide a `script` step with a custom input string as
+arguments to the script using the `script_input` field, for example:
+
+```
+   steps:
+      - prompt: "extract_image_files.py"
+        function: "script"
+        flags:
+          script_input: "<INPUT>"
+          default_input: "./README.md"
+```
+
+This step runs the following commandline:
+
+```sh
+$ python3 scripts/extract_image_files.py <INPUT>
+```
+
 ### A step that reads a file
 
 The `file` flag reads the specified file and added its content
@@ -147,6 +178,18 @@ A step that runs the `helpme` command with the `file` flag and accepts custom in
 
 When this step is run, the `<INPUT>` string will be replaced with
 the value provided in the `--custom_input` field at runtime.
+
+You can also provide multiple files using a list as shown below:
+
+```
+    steps:
+      - prompt: "Provide a concise, descriptive alt text for this PNG image."
+        flags:
+          file:
+            - "docs/images/apps-script-screenshot-01.png"
+            - "docs/images/docs-agent-ui-screenshot-01.png"
+            - "docs/images/docs-agent-embeddings-01.png"
+```
 
 ### A step that reads all files in a directory
 
@@ -206,6 +249,29 @@ and accepts custom input:
 When this step is run, the `<INPUT>` string will be replaced with
 the value provided in the `--custom_input` field at runtime.
 
+### A step that reads a list of file names from an input file
+
+Similar to the `perfile` flag, the `list_file` flag reads an input
+file that contains a list of filenames and applies the prompt to
+each file in the list:
+
+```
+   steps:
+     - prompt: "Write an alt text string for this image."
+       flags:
+         list_file: "out/mylist.txt"
+```
+
+where the `out/mylist.txt` file contains a list of file names in
+plain text as shown below:
+
+```none
+$ cat out/mylist.txt
+docs/images/apps-script-screenshot-01.png
+docs/images/docs-agent-ui-screenshot-01.png
+docs/images/docs-agent-embeddings-01.png
+```
+
 ### A step with the name field
 
 A step that runs the `helpme` command and the `name` field
@@ -246,3 +312,4 @@ Using the `tellme` command requires **a vector database setup**.
 
 [model-code]: https://ai.google.dev/gemini-api/docs/models/gemini
 [tasks-dir]: ../tasks
+[scripts-dir]: ../scripts

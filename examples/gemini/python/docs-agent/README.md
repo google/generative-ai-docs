@@ -7,6 +7,36 @@ Docs Agent provides a set of easy-to-use self-service tools designed to give you
 your team access to Google's [Gemini API][genai-doc-site] for learning, experimentation,
 and project deployment.
 
+## Docs Agent MCP integration [NEW]
+
+With the latest MCP (Model Context Protocol) integration, you can set up and launch
+a MCP server and enable the Docs Agent CLI (`agent tools`) to use this MCP server.
+
+The following example shows Docs Agent interacting with a
+[`git` MCP server][git-mcp-server] on the host machine:
+
+```
+$ agent tools Show me the latest commit in the Docs Agent project.
+
+Using tools: ['git']
+
+Commit: 082949927e88df429c76e6dbf0a9e216c88fa5b0
+Author: Bob Alice
+Date: Tue May 13 11:22:19 2025 -0700
+Message: Update BeautifulSoup findAll to find_all.
+```
+
+To enable a MCP server, update the `config.yaml` file in your Docs Agent project,
+for example:
+
+```
+mcp_servers:
+  - server_type: "stdio"
+    command: "uv"
+    name: "git"
+    args: ["--directory","/usr/local/home/user01/mcp_servers/servers/src/git", "run", "mcp-server-git"]
+```
+
 ## Docs Agent web app
 
 Docs Agent uses a technique known as **Retrieval Augmented Generation (RAG)**, which
@@ -64,8 +94,6 @@ The list below summarizes the tasks and features supported by Docs Agent:
   chunks that are most relevant to user questions.
 - **Add context to a user question**: Add chunks returned from a semantic search as
   [context][prompt-structure] to a prompt.
-- **Fact-check responses**: This [experimental feature][fact-check-section] composes
-  a follow-up prompt and asks the language model to “fact-check” its own previous response.
 - **Generate related questions**: In addition to answering a question, Docs Agent can
   [suggest related questions][related-questions-section] based on the context of the
   question.
@@ -112,6 +140,13 @@ The list below summarizes the tasks and features supported by Docs Agent:
 
   You can use this feature for creating tasks as well. For example, see the
   [DescribeImages][describe-images] task.
+
+- **Interact with LLM using external tools**: The `agent tools` command allows
+  you to interact with the Gemini model using configured external tools
+  (through MCP - Model Context Protocol). This enables the agent to perform
+  actions by leveraging specialized tools. (See
+  [Docs Agent CLI reference][cli-reference] and
+  [Docs Agent concepts][docs-agent-concepts]).
 
 For more information on Docs Agent's architecture and features,
 see the [Docs Agent concepts][docs-agent-concepts] page.
@@ -244,7 +279,19 @@ Clone the Docs Agent project and install dependencies:
    poetry install
    ```
 
-4. Enter the `poetry` shell environment:
+4. Set up the Poetry environment:
+
+   ```
+   poetry env activate
+   ```
+
+5. Install the `shell` plugin:
+
+   ```
+   poetry self add poetry-plugin-shell
+   ```
+
+6. Enter the `poetry` shell environment:
 
    ```
    poetry shell
@@ -253,7 +300,7 @@ Clone the Docs Agent project and install dependencies:
    **Important**: From this point, all `agent` command lines below need to
    run in this `poetry shell` environment.
 
-5. (**Optional**) To enable autocomplete commands and flags related to
+7. (**Optional**) To enable autocomplete commands and flags related to
    Docs Agent in your shell environment, run the following command:
 
    ```
@@ -450,7 +497,6 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [set-up-docs-agent]: #set-up-docs-agent
 [preprocess-dir]: ./docs_agent/preprocess/
 [populate-vector-database]: ./docs_agent/preprocess/populate_vector_database.py
-[fact-check-section]: ./docs/concepts.md#using-a-language-model-to-fact_check-its-own-response
 [related-questions-section]: ./docs/concepts.md#using-a-language-model-to-suggest-related-questions
 [submit-a-rewrite]: ./docs/concepts.md#enabling-users-to-submit-a-rewrite-of-a-generated-response
 [like-generated-responses]: ./docs/concepts.md#enabling-users-to-like-generated-responses
@@ -479,3 +525,4 @@ Meggin Kearney (`@Meggin`), and Kyo Lee (`@kyolee415`).
 [tasks-dir]: tasks/
 [describe-images]: tasks/describe-images-for-alt-text-task.yaml
 [create-a-new-task]: docs/create-a-new-task.md
+[git-mcp-server]: https://github.com/modelcontextprotocol/servers/tree/main/src/git

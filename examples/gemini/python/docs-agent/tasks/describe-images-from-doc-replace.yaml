@@ -1,0 +1,20 @@
+tasks:
+  - name: "DescribeImagesFromDocReplace"
+    model: "models/gemini-2.0-flash"
+    description: >
+      An agent that extracts all image files names in an input doc and generates alt text for the images.
+    preamble: >
+      When you generate a response for alt text, your suggestion should not start with Picture of, Image
+      of, or Screenshot of. Your new alt text suggestion must be fewer than 125 characters. Do not exceed
+      125 characters. Provide the option that is most suitable for alt text. Output only the alt text
+      suggestion. Do not include any explanations or commentary. Do not include end punctuation.
+    steps:
+      - prompt: "extract_replace_image_alt_text.py"
+        function: "script"
+        description: >
+          This script extract all image files found in the input file and store the list of image file
+          names in the agent_out/image_paths.txt file.
+        flags:
+          script_input: "<INPUT>"
+          default_input: "./README.md"
+

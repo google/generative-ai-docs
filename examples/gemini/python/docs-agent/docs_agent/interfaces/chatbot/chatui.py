@@ -35,10 +35,6 @@ from docs_agent.utilities.helpers import (
     md_to_html,
 )
 from docs_agent.utilities import config
-from docs_agent.preprocess.splitters import markdown_splitter
-from docs_agent.postprocess.docs_retriever import SectionProbability
-
-from docs_agent.storage.chroma import Format
 from docs_agent.agents.docs_agent import DocsAgent
 
 from docs_agent.memory.logging import (
@@ -334,14 +330,14 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
         # Extract context from this AQA model's response.
         final_context = extract_context_from_search_result(search_result)
         # Save this AQA model's response.
-        aqa_response_json = docs_agent.get_saved_aqa_response_json()
+        aqa_response_json = docs_agent.aqa_model.get_saved_aqa_response_json()
         # Convert this AQA model's response to HTML for better rendering.
         if aqa_response_json:
             aqa_response_in_html = json.dumps(
                 type(aqa_response_json).to_dict(aqa_response_json), indent=2
             )
     else:
-        # For the `gemini-*` model, alway use the Chroma database.
+        # For the `gemini-*` model, always use the Chroma database.
         if docs_agent.config.docs_agent_config == "experimental":
             results_num = 10
             new_question_count = 5
@@ -356,14 +352,24 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
             # Issue if max_sources > results_num, so leave the same for now
         else:
             this_token_limit = 30000
-            if docs_agent.config.models.language_model.startswith("models/gemini-1.5"):
+            if docs_agent.config.models.language_model.startswith("gemini-1.5"):
                 this_token_limit = 50000
-            search_result, final_context = docs_agent.query_vector_store_to_build(
-                question=question,
-                token_limit=this_token_limit,
-                results_num=results_num,
-                max_sources=results_num,
-            )
+            if not docs_agent.rag:
+                logging.error("No initialized Chroma collection.")
+                search_result = []
+                final_context = "Error: Could not retrieve context."
+            else:
+                try:
+                    search_result, final_context = docs_agent.rag.query_vector_store_to_build(
+                        question=question,
+                        token_limit=this_token_limit,
+                        results_num=results_num,
+                        max_sources=results_num,
+                    )
+                except Exception as e:
+                    logging.error(f"Error retrieving content from Chroma: {e}")
+                    search_result = []
+                    final_context = "Error: Could not retrieve context."
         try:
             response, full_prompt = docs_agent.ask_content_model_with_context_prompt(
                 context=final_context, question=question
@@ -374,8 +380,8 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
 
     ### Check the AQA model's answerable_probability field
     probability = "None"
-    if docs_agent.check_if_aqa_is_used():
-        aqa_response = docs_agent.get_saved_aqa_response_json()
+    if docs_agent.aqa_model:
+        aqa_response = docs_agent.aqa_model.get_saved_aqa_response_json()
         try:
             probability = aqa_response.answerable_probability
         except:
@@ -430,7 +436,7 @@ def ask_model(question, agent, template: str = "chatui/index.html"):
             context=final_context,
             question=new_question,
             prompt=new_condition,
-            model="gemini-pro",
+            model="gemini-1.5",
         )
         # Clean up the response to a proper html list
         related_questions = parse_related_questions_response_to_html_list(
@@ -540,7 +546,11 @@ def ask_model_with_sources(question, agent):
     docs_agent = agent
     full_prompt = ""
     search_result, context = docs_agent.query_vector_store_to_build(
-        question=question, token_limit=30000, results_num=10, max_sources=10
+        collection=docs_agent.collection,
+        docs_agent_config=docs_agent.config.docs_agent_config,
+        question=question, token_limit=30000,
+        results_num=10,
+        max_sources=10
     )
     context_with_instruction = docs_agent.add_instruction_to_context(context)
     if "gemini" in docs_agent.get_language_model_name():
