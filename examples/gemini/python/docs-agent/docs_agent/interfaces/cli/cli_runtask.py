@@ -29,6 +29,7 @@ from docs_agent.interfaces.cli.cli_common import common_options
 from docs_agent.interfaces.cli.cli_helpme import helpme
 from docs_agent.interfaces.cli.cli_tellme import tellme
 from docs_agent.interfaces.cli.cli_posix import posix
+from docs_agent.interfaces.cli.cli_script import script
 import os
 import re
 import time
@@ -364,7 +365,10 @@ def runtask(
             top_level_model = model
         else:
             top_level_model = curr_task.model
-        if not top_level_model.startswith("models/gemini"):
+        # Remove the "models/" prefix if it exists. models/ prefix is legacy
+        if top_level_model.startswith("models/"):
+            top_level_model = top_level_model.removeprefix("models/")
+        if not top_level_model.startswith("gemini"):
             click.echo(
                 f"runtask mode is not supported with this model: {top_level_model} for {curr_task.name}"
             )
@@ -420,8 +424,15 @@ def runtask(
                         this_step_buffer += f"\nperfile: {step.flags.perfile}"
                     if step.flags.allfiles is not None and step.flags.allfiles != "":
                         this_step_buffer += f"\nallfiles: {step.flags.allfiles}"
+                    if step.flags.list_file is not None and step.flags.list_file != "":
+                        this_step_buffer += f"\nlist_file: {step.flags.list_file}"
                     if step.flags.file_ext is not None and step.flags.file_ext != "":
                         this_step_buffer += f"\nfile_ext: {step.flags.file_ext}"
+                    if (
+                        step.flags.script_input is not None
+                        and step.flags.script_input != ""
+                    ):
+                        this_step_buffer += f"\nscript_input: {step.flags.script_input}"
                     if (
                         step.flags.default_input is not None
                         and step.flags.default_input != ""
@@ -480,8 +491,17 @@ def runtask(
                         this_step_buffer += f"        perfile: {step.flags.perfile}\n"
                     if step.flags.allfiles is not None and step.flags.allfiles != "":
                         this_step_buffer += f"        allfiles: {step.flags.allfiles}\n"
+                    if step.flags.list_file is not None and step.flags.list_file != "":
+                        this_step_buffer += (
+                            f"        list_file: {step.flags.list_file}\n"
+                        )
                     if step.flags.file_ext is not None and step.flags.file_ext != "":
                         this_step_buffer += f"        file_ext: {step.flags.file_ext}\n"
+                    if (
+                        step.flags.script_input is not None
+                        and step.flags.script_input != ""
+                    ):
+                        this_step_buffer += f"\nscript_input: {step.flags.script_input}"
                     if (
                         step.flags.default_input is not None
                         and step.flags.default_input != ""
@@ -570,12 +590,15 @@ def runtask(
                 this_file = None
                 this_perfile = None
                 this_allfiles = None
+                this_list_file = None
                 this_file_ext = None
+                this_repeat_until = None
                 this_out = None
                 this_yaml = None
                 this_rag = None
                 this_terminal = None
                 this_default_input = None
+                this_script_input = None
                 if hasattr(task, "flags"):
                     if hasattr(task.flags, "file"):
                         this_file = task.flags.file
@@ -583,8 +606,12 @@ def runtask(
                         this_perfile = task.flags.perfile
                     if hasattr(task.flags, "allfiles"):
                         this_allfiles = task.flags.allfiles
+                    if hasattr(task.flags, "list_file"):
+                        this_list_file = task.flags.list_file
                     if hasattr(task.flags, "file_ext"):
                         this_file_ext = task.flags.file_ext
+                    if hasattr(task.flags, "repeat_until"):
+                        this_repeat_until = task.flags.repeat_until
                     if hasattr(task.flags, "out"):
                         this_out = task.flags.out
                     if hasattr(task.flags, "yaml"):
@@ -595,6 +622,8 @@ def runtask(
                         this_terminal = task.flags.terminal
                     if hasattr(task.flags, "default_input"):
                         this_default_input = task.flags.default_input
+                    if hasattr(task.flags, "script_input"):
+                        this_script_input = task.flags.script_input
 
                 # Set the out filename to the default name.
                 if this_out is None or this_out == "":
@@ -614,27 +643,37 @@ def runtask(
                 if custom_input is not None:
                     # First try to replace them with the custom input value provided by
                     # the --custom_input flag at runtime
-                    if this_file == "<INPUT>":
-                        this_file = custom_input
+                    if this_file == ["<INPUT>"]:
+                        this_file = [custom_input]
                     if this_perfile == "<INPUT>":
                         this_perfile = custom_input
                     if this_allfiles == "<INPUT>":
                         this_allfiles = custom_input
+                    if this_list_file == "<INPUT>":
+                        this_list_file = custom_input
+                    if this_script_input == "<INPUT>":
+                        this_script_input = custom_input
                 elif this_default_input is not None:
                     # If no custom_input value is provided at runtime,
                     # try to replace them with the default input value provided in the task file.
-                    if this_file == "<INPUT>":
-                        this_file = this_default_input
+                    if this_file == ["<INPUT>"]:
+                        this_file = [this_default_input]
                     if this_perfile == "<INPUT>":
                         this_perfile = this_default_input
                     if this_allfiles == "<INPUT>":
                         this_allfiles = this_default_input
+                    if this_list_file == "<INPUT>":
+                        this_list_file = this_default_input
+                    if this_script_input == "<INPUT>":
+                        this_script_input = this_default_input
                 else:
                     # Error and exit if there is still <INPUT> in any fields.
                     if (
-                        this_file == "<INPUT>"
+                        this_file == ["<INPUT>"]
                         or this_perfile == "<INPUT>"
                         or this_allfiles == "<INPUT>"
+                        or this_list_file == "<INPUT>"
+                        or this_script_input == "<INPUT>"
                     ):
                         print()
                         print(
@@ -683,14 +722,16 @@ def runtask(
                         + task.prompt
                     )
                     overwrite_words = overwrite_words.split()
-                    ctx.invoke(
+                    success = ctx.invoke(
                         helpme,
                         words=overwrite_words,
                         force=True,
                         file=this_file,
                         perfile=this_perfile,
                         allfiles=this_allfiles,
+                        list_file=this_list_file,
                         file_ext=this_file_ext,
+                        repeat_until=this_repeat_until,
                         out=this_out,
                         yaml=this_yaml,
                         rag=this_rag,
@@ -700,6 +741,34 @@ def runtask(
                         terminal=this_terminal,
                         model=this_model,
                     )
+                    if this_repeat_until:
+                        print("Successful?")
+                        print(success)
+                        repeat_count = 0
+                        while success is not True and repeat_count < 3:
+                            success = ctx.invoke(
+                                helpme,
+                                words=overwrite_words,
+                                force=True,
+                                file=this_file,
+                                perfile=this_perfile,
+                                allfiles=this_allfiles,
+                                list_file=this_list_file,
+                                file_ext=this_file_ext,
+                                repeat_until=this_repeat_until,
+                                out=this_out,
+                                yaml=this_yaml,
+                                rag=this_rag,
+                                new=bool(is_new),
+                                cont=bool(is_cont),
+                                panel=bool(use_panel),
+                                terminal=this_terminal,
+                                model=this_model,
+                            )
+                            print("Successful?")
+                            print(success)
+                            repeat_count += 1
+
                 elif task.function == "tellme":
                     # tellme Task
                     # Note: Usually don't want to overwrite model from curr_task.model in
@@ -763,6 +832,41 @@ def runtask(
                     overwrite_words = overwrite_words.split()
                     ctx.invoke(
                         posix,
+                        words=overwrite_words,
+                        new=bool(is_new),
+                        cont=bool(is_cont),
+                    )
+                elif task.function == "script":
+                    # Render this step information.
+                    if use_panel:
+                        print()
+                        ai_console.print(
+                            Panel(
+                                f"Script (script): {task.prompt}",
+                                title=f"Step {this_step}. {task.name}",
+                                title_align="left",
+                                padding=(1, 2),
+                            ),
+                            style=console_style,
+                        )
+                        print()
+                    else:
+                        print()
+                        print(f"===================")
+                        print(f"Running a script: {task.name}")
+                        print(f"Script: {task.prompt}")
+                        print(f"===================")
+                        print()
+                    # Append the custom input as arguments to the script.
+                    if this_script_input is not None:
+                        overwrite_words = (
+                            str(task.prompt) + " " + str(this_script_input)
+                        )
+                    else:
+                        overwrite_words = task.prompt
+                    overwrite_words = overwrite_words.split()
+                    ctx.invoke(
+                        script,
                         words=overwrite_words,
                         new=bool(is_new),
                         cont=bool(is_cont),

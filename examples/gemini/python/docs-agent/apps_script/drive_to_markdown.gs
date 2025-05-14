@@ -75,7 +75,7 @@ function convertDriveFolder(folderName, outputFolderName="", indexFile="") {
     while (myfiles.hasNext()) {
       var myfile = myfiles.next();
       var ftype = myfile.getMimeType();
-      // If this is a shorcut, retrieve the target file
+      // If this is a shortcut, retrieve the target file
       if (ftype == "application/vnd.google-apps.shortcut") {
         var fid = myfile.getTargetId();
         var myfile = DriveApp.getFileById(fid);
@@ -105,7 +105,7 @@ function convertDriveFolder(folderName, outputFolderName="", indexFile="") {
       var furl = myfile.getUrl();
       var fcreate = myfile.getDateCreated();
 
-      //Function returns an array, assign each array value to seperate variables
+      //Function returns an array, assign each array value to separate variables
       var backup_results = returnBackupHash(sheet, "Backup", fid, start_data_row, 1, 9, 3);
       if (backup_results != undefined && backup_results[0] != "no_results") {
         var backup_fid = backup_results[0];
@@ -229,7 +229,7 @@ function convertDriveFolder(folderName, outputFolderName="", indexFile="") {
         status,
       ];
       sheet.appendRow(metadata);
-      // Return final row to inserRichText into correct rows
+      // Return final row to insertRichText into correct rows
       row_number = sheet.getLastRow();
       insertRichText(sheet, original_chip, "C", row_number);
       insertRichText(sheet, md_chip, "E", row_number);

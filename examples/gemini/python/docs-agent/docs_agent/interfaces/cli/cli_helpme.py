@@ -18,10 +18,12 @@
 
 import click
 import typing
-from docs_agent.utilities import config
 from docs_agent.utilities.config import ConfigFile
-from docs_agent.utilities.config import return_config_and_product, get_project_path
-from docs_agent.utilities.helpers import resolve_path
+from docs_agent.utilities.config import return_config_and_product
+from docs_agent.utilities.helpers import create_output_directory
+from docs_agent.utilities.helpers import identify_file_type
+from docs_agent.utilities.helpers import open_file
+from docs_agent.utilities.helpers import resolve_and_ensure_path
 
 from docs_agent.interfaces import run_console as console
 from docs_agent.interfaces.cli.cli_common import common_options
@@ -30,13 +32,11 @@ import os
 import string
 import re
 import time
-import subprocess
 from pathlib import Path
 
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.text import Text
 from rich.style import Style
 
 
@@ -64,6 +64,7 @@ def cli_helpme(ctx, config_file, product):
 @click.option(
     "--file",
     type=click.Path(),
+    multiple=True,
     help="Specify a file to be included as context.",
 )
 @click.option(
@@ -77,8 +78,18 @@ def cli_helpme(ctx, config_file, product):
     help="Specify a path where all files in the directory are used as context.",
 )
 @click.option(
+    "--list_file",
+    type=click.Path(),
+    help="Specify a path to a file that contains a list of input files.",
+)
+@click.option(
     "--file_ext",
     help="Works with --perfile and --dir. Specify the file type to be selected. The default is set to use all files.",
+)
+@click.option(
+    "--repeat_until",
+    is_flag=True,
+    help="Repeat this step until conditions are met",
 )
 @click.option(
     "--yaml",
@@ -151,7 +162,9 @@ def helpme(
     file: typing.Optional[str] = None,
     perfile: typing.Optional[str] = None,
     allfiles: typing.Optional[str] = None,
+    list_file: typing.Optional[str] = None,
     file_ext: typing.Optional[str] = None,
+    repeat_until: bool = False,
     yaml: bool = False,
     out: typing.Optional[str] = None,
     rag: bool = False,
@@ -186,17 +199,28 @@ def helpme(
 
     # Get the language model.
     this_model = product_config.products[0].models.language_model
+    # Remove the "models/" prefix if it exists. models/ prefix is legacy
+    if this_model.startswith("models/"):
+        this_model = this_model.removeprefix("models/")
     # This feature is only available to the Gemini Pro models (not AQA).
-    if not this_model.startswith("models/gemini"):
+    if not this_model.startswith("gemini"):
         click.echo(f"File mode is not supported with this model: {this_model}")
         exit(1)
-    # This feature is only available to the Gemini 1.5 models.
-    if not this_model.startswith("models/gemini-1.5") and response_type != "text":
-        click.echo(f"x.enum and json only work on gemini-1.5 models. You are using: {this_model}")
+    # This feature is only available to the Gemini 1.5 or 2.0 models.
+    if (
+        not (this_model.startswith("gemini-1.5") or this_model.startswith("gemini-2.0"))
+        and response_type != "text"
+    ):
+        click.echo(
+            f"x.enum and json only work on gemini-1.5 or gemini-2.0 models. "
+            + f"You are using: {this_model}"
+        )
         exit(1)
     if response_type == "x.enum" and response_schema is None:
-         click.echo(f"You must specify a response_schema when using text/x.enum. Optional for json.")
-         exit(1)
+        click.echo(
+            f"You must specify a response_schema when using text/x.enum. Optional for json."
+        )
+        exit(1)
     if response_type:
         product_config.products[0].models.response_type = response_type
     # Get the question string.
@@ -210,40 +234,27 @@ def helpme(
     # help format the output of the final file.
     question_out_wrapper = (
         f"The answer that you provide to the question below will be saved to a file "
-        + f"named {out}. Your response must only include what will go in this file. "
-        + f"Do your best to ensure that you provide a response that matches the format "
-        + f"of this file extension. For example .md indicates a Markdown file, .py "
-        + f"a Python file, and so on. Markdown files must always be in valid Markdown "
-        + f"format and begin with the # header (for instance, # <PAGE TITLE>).\n\n"
+        + f"named {out}. Ensure that your response matches the format of this file "
+        + f"extension. For example, .md indicates a Markdown file, .py a Python file, "
+        + f"and so on. Markdown files must always be in valid Markdown format "
+        + f"and begin with the # header (for instance, # <PAGE TITLE>).\n\n"
     )
-    # Set output path to the agent_out directory.
-    if out is not None and out != "" and out != "None":
-        if out.startswith("~/"):
-            out = os.path.expanduser(out)
-        if out.startswith("/"):
-            base_out = os.path.dirname(out)
-            out = Path(out).name
-        # This includes paths like out.startswith("~")
-        else:
-            base_out = os.path.join(get_project_path(), "agent_out")
-        # Creates the output directory if it can't write, it will try home directory.
-        try:
-            os.makedirs(base_out, exist_ok=True)
-        except:
-            base_out = os.path.expanduser("~/docs_agent")
-            base_out = os.path.join(base_out, "agent_out")
-            try:
-                os.makedirs(base_out, exist_ok=True)
-            except:
-                base_out = os.path.join("/tmp/docs_agent", "agent_out")
-                try:
-                    os.makedirs(base_out, exist_ok=True)
-                except:
-                    print(f"Failed to create the output directory: {base_out}")
-                    exit(1)
-        if base_out.endswith("/"):
-            base_out = base_out[:-1]
-        out = base_out + "/" + out
+    output_file_path = None
+    original_question = question
+    if out:
+        output_file_path = create_output_directory(out)
+        if not output_file_path:
+            click.echo("Error: Could not determine or create a valid output directory.")
+            exit(1)
+        out_filename_display = Path(output_file_path).name
+        question_out_wrapper = (
+            f"The answer that you provide to the question below will be saved to a file "
+            + f"named {out_filename_display}. Ensure that your response matches the format of this file "
+            + f"extension. For example, .md indicates a Markdown file, .py a Python file, "
+            + f"and so on. Markdown files must always be in valid Markdown format "
+            + f"and begin with the # header (for instance, # <PAGE TITLE>).\n\n"
+        )
+        question = question_out_wrapper + question
 
     # Print the prompt for testing.
     if check:
@@ -260,7 +271,9 @@ def helpme(
         helpme_mode = "PER_FILE"
     elif allfiles and allfiles != "None":
         helpme_mode = "ALL_FILES"
-    elif file and file != "None":
+    elif list_file and list_file != "None":
+        helpme_mode = "LIST_FILE"
+    elif file and file != "None" and file != [None]:
         helpme_mode = "SINGLE_FILE"
     elif cont:
         helpme_mode = "PREVIOUS_EXCHANGES"
@@ -271,8 +284,6 @@ def helpme(
 
     # Select the mode.
     if helpme_mode == "PREVIOUS_EXCHANGES":
-        if out is not None and out != "" and out != "None":
-            question = question_out_wrapper + question
         # Continue mode, which uses the previous exchangs as the main context.
         this_output = console.ask_model_with_file(
             question.strip(),
@@ -299,12 +310,12 @@ def helpme(
 
         # Save this exchange in a YAML file.
         if yaml is True:
-            output_filename = "./responses.yaml"
+            yaml_file_path = create_output_directory("responses.yaml")
             # Prepare output to be saved in the YAML file.
             yaml_buffer = (
                 f"  - question: {question}\n" + f"    response: {this_output}\n"
             )
-            with open(output_filename, "w", encoding="utf-8") as yaml_file:
+            with open(yaml_file_path, "w", encoding="utf-8") as yaml_file:
                 yaml_file.write("logs:\n")
                 yaml_file.write(yaml_buffer)
                 yaml_file.close()
@@ -312,121 +323,84 @@ def helpme(
         # Save the response to the `out` file.
         if out is not None and out != "" and out != "None":
             try:
-                with open(out, "w", encoding="utf-8") as out_file:
+                output_file_path = create_output_directory(out)
+                with open(output_file_path, "w", encoding="utf-8") as out_file:
                     out_file.write(f"{this_output}\n")
                     out_file.close()
             except:
                 print(f"Failed to write the output to file: {out}")
+
+        # Check for conditions if repeat_until is True.
+        if repeat_until:
+            print()
+            print("The repeat_until flag is set.")
+            print()
+            # print(f"{this_output}")
+            # print()
+            lines = this_output.splitlines()
+            # print(lines)
+            is_acceptable = False
+            is_path_found = False
+            yaml_lines = ""
+            for this_line in lines:
+                if this_line.startswith("- path:"):
+                    print(this_line)
+                    yaml_lines += this_line + "\n"
+                    is_path_found = True
+                elif is_path_found and this_line.startswith("  response:"):
+                    print(this_line)
+                    yaml_lines += this_line + "\n"
+                    is_acceptable = True
+            print()
+            if is_acceptable is True:
+                print("This yaml format is acceptable.")
+                try:
+                    yaml_out_filename = "./agent_out/task_output.yaml"
+                    with open(yaml_out_filename, "w", encoding="utf-8") as yaml_file:
+                        yaml_file.write(f"{yaml_lines}")
+                        yaml_file.close()
+                except:
+                    print(f"Failed to write the output to file: {yaml_out_filename}")
+            else:
+                print("This yaml format is not acceptable!")
+            print()
+            return is_acceptable
 
     elif helpme_mode == "SINGLE_FILE":
-        if out is not None and out != "" and out != "None":
-            question = question_out_wrapper + question
-        # Single file mode.
-        if file.startswith("~/"):
-            file = os.path.expanduser(file)
-        this_file = os.path.realpath(os.path.join(os.getcwd(), file))
-        this_output = ""
-
-        # if the `--cont` flag is set, include the previous exchanges as additional context.
-        context_file = None
-        if cont:
-            context_file = history_file
-
-        this_output = console.ask_model_with_file(
-            question.strip(),
-            product_config,
-            file=this_file,
-            context_file=context_file,
-            rag=rag,
-            return_output=True,
-        )
-
-        # Render the response.
-        if use_panel:
-            ai_console.print("[Response]", style=console_style)
-            ai_console.print(Panel(Markdown(this_output, code_theme="manni")))
-        else:
-            print()
-            print(f"{this_output}")
-            print()
-
-        # Read the file content to be included in the history file.
-        file_content = ""
-        if (
-            this_file.endswith(".png")
-            or this_file.endswith(".jpg")
-            or this_file.endswith(".gif")
-        ):
-            file_content = "This is an image file.\n"
-        elif (
-            this_file.endswith(".mp3")
-            or this_file.endswith(".wav")
-            or this_file.endswith(".ogg")
-            or this_file.endswith(".flac")
-            or this_file.endswith(".aac")
-            or this_file.endswith(".aiff")
-            or this_file.endswith(".mp4")
-            or this_file.endswith(".mov")
-            or this_file.endswith(".avi")
-            or this_file.endswith(".x-flv")
-            or this_file.endswith(".mpg")
-            or this_file.endswith(".webm")
-            or this_file.endswith(".wmv")
-            or this_file.endswith(".3gpp")
-        ):
-            file_content = "This is an audio file.\n"
-        else:
-            try:
-                with open(this_file, "r", encoding="utf-8") as target_file:
-                    file_content = target_file.read()
-                    target_file.close()
-            except:
-                print(f"[Error] This file cannot be opened: {this_file}\n")
-                exit(1)
-
-        # If the `--new` flag is set, overwrite the history file.
-        write_mode = "a"
-        if new:
-            write_mode = "w"
-        # Record this exchange in the history file.
-        with open(history_file, write_mode, encoding="utf-8") as out_file:
-            out_file.write(f"QUESTION: {question}\n\n")
-            out_file.write(f"FILE NAME: {file}\n")
-            out_file.write(f"FILE CONTENT:\n\n{file_content}\n")
-            out_file.write(f"RESPONSE:\n\n{this_output}\n\n")
-            out_file.close()
-
-        # Save this exchange in a YAML file.
-        if yaml is True:
-            output_filename = "./responses.yaml"
-            # Prepare output to be saved in the YAML file.
-            yaml_buffer = (
-                f"  - question: {question}\n"
-                + f"    response: {this_output}\n"
-                + f"    file: {this_file}\n"
+        # Files mode, which makes the request to each file in the array.
+        list_of_files = file
+        input_file_count = 0
+        is_multi = False
+        for this_file in list_of_files:
+            if len(list_of_files) > 1:
+                if use_panel is True and input_file_count > 0:
+                    print()
+                print(f"Input file: {this_file}")
+                if use_panel is True:
+                    print()
+            if input_file_count > 0:
+                is_multi = True
+            helpme_single_file_mode(
+                console,
+                question,
+                product_config,
+                history_file,
+                rag,
+                ai_console,
+                console_style,
+                use_panel,
+                new,
+                cont,
+                yaml,
+                out,
+                this_file,
+                is_multi,
             )
-            with open(output_filename, "w", encoding="utf-8") as yaml_file:
-                yaml_file.write("logs:\n")
-                yaml_file.write(yaml_buffer)
-                yaml_file.close()
-
-        # Save the response to the `out` file.
-        if out is not None and out != "" and out != "None":
-            try:
-                with open(out, "w", encoding="utf-8") as out_file:
-                    out_file.write(f"{this_output}\n")
-                    out_file.close()
-            except:
-                print(f"Failed to write the output to file: {out}")
+            input_file_count += 1
 
     elif helpme_mode == "PER_FILE":
         # Per file mode, which makes the request to each file in the path.
-        if perfile.startswith("~/"):
-            perfile = os.path.expanduser(perfile)
-        this_path = os.path.realpath(resolve_path(perfile))
-        if not os.path.exists(this_path):
-            print(f"[Error] Cannot access the input path: {this_path}")
-            exit(1)
+        this_path = resolve_and_ensure_path(perfile, check_exists=True)
         # Set the `file_type` variable for display only.
         file_type = "." + str(file_ext)
         if file_ext is None or file_ext == "":
@@ -453,7 +427,7 @@ def helpme(
             out_buffer = ""
             out_buffer_2 = ""
             yaml_buffer = ""
-            for root, dirs, files in os.walk(resolve_path(perfile)):
+            for root, dirs, files in os.walk(resolve_and_ensure_path(perfile)):
                 for file in files:
                     file_path = os.path.realpath(os.path.join(root, file))
                     if file_ext == None:
@@ -587,8 +561,8 @@ def helpme(
                 out_file.close()
 
             if yaml is True:
-                output_filename = "./responses.yaml"
-                with open(output_filename, "w", encoding="utf-8") as yaml_file:
+                yaml_file_path = create_output_directory("responses.yaml")
+                with open(yaml_file_path, "w", encoding="utf-8") as yaml_file:
                     yaml_file.write("logs:\n")
                     yaml_file.write(yaml_buffer)
                     yaml_file.close()
@@ -596,29 +570,27 @@ def helpme(
             # Save the responses to the `out` file.
             if out is not None and out != "" and out != "None":
                 try:
-                    with open(out, "w", encoding="utf-8") as out_file:
+                    output_file_path = create_output_directory(out)
+                    with open(output_file_path, "w", encoding="utf-8") as out_file:
                         out_file.write(f"{out_buffer_2}")
                         out_file.close()
                 except:
                     print(f"Failed to write the output to file: {out}")
 
     elif helpme_mode == "ALL_FILES":
-        if allfiles.startswith("~/"):
-            allfiles = os.path.expanduser(allfiles)
         # All files mode, which makes all files in the path to be included as context.
-        this_path = os.path.realpath(resolve_path(allfiles))
-        if not os.path.exists(this_path):
-            print(f"[Error] Cannot access the input path: {this_path}")
-            exit(1)
+        this_path = resolve_and_ensure_path(allfiles, check_exists=True)
         # Set the `file_type` variable for display only.
         file_type = "." + str(file_ext)
         if file_ext is None or file_ext == "":
             file_type = "All types"
 
         # Ask the user to confirm.
+        # Use original_question instead of question because question might be
+        # modified by the question_out_wrapper.
         confirm_string = (
             f"Adding all files found in the path below to context:\n"
-            + f"Question: {question}\nPath: {this_path}\nFile type: {file_type}\n"
+            + f"Question: {original_question}\nPath: {this_path}\nFile type: {file_type}\n"
         )
         if force or click.confirm(
             f"{confirm_string}" + f"Do you want to continue?",
@@ -629,7 +601,7 @@ def helpme(
             else:
                 print()
             context_buffer = ""
-            for root, dirs, files in os.walk(resolve_path(allfiles)):
+            for root, dirs, files in os.walk(resolve_and_ensure_path(allfiles)):
                 for file in files:
                     file_path = os.path.realpath(os.path.join(root, file))
                     file_content = ""
@@ -710,26 +682,70 @@ def helpme(
 
             # Save this exchange in a YAML file.
             if yaml is True:
-                output_filename = "./responses.yaml"
+                yaml_file_path = create_output_directory("responses.yaml")
+                # output_filename = output_file_path + "/responses.yaml"
                 # Prepare output to be saved in the YAML file.
                 yaml_buffer = (
                     f"  - question: {question}\n"
                     + f"    response: {this_output}\n"
                     + f"    path: {this_path}\n"
                 )
-                with open(output_filename, "w", encoding="utf-8") as yaml_file:
+                with open(yaml_file_path, "w", encoding="utf-8") as yaml_file:
                     yaml_file.write("logs:\n")
                     yaml_file.write(yaml_buffer)
                     yaml_file.close()
 
             # Save the response to the `out` file.
-            if out is not None and out != "" and out != "None":
+            if output_file_path:
                 try:
-                    with open(out, "w", encoding="utf-8") as out_file:
+                    with open(output_file_path, "w", encoding="utf-8") as out_file:
                         out_file.write(f"{this_output}\n")
                         out_file.close()
                 except:
-                    print(f"Failed to write the output to file: {out}")
+                    print(f"Failed to write the output to file: {output_file_path}")
+
+    elif helpme_mode == "LIST_FILE":
+        # List file mode, which reads a text file that contains a list of input files.
+        this_list_file = resolve_and_ensure_path(list_file, check_exists=True)
+        print(f"Input list file: {this_list_file}")
+        print()
+        list_of_files = []
+        try:
+            with open(this_list_file, "r", encoding="utf-8") as file:
+                for line in file.readlines():
+                    # print(line.strip())
+                    list_of_files.append(line.strip())
+        except:
+            print(f"[Error] Cannot access the input list file: {this_list_file}")
+            exit(1)
+        input_file_count = 0
+        is_multi = False
+        for this_file in list_of_files:
+            if len(list_of_files) > 1:
+                if use_panel is True and input_file_count > 0:
+                    print()
+                print(f"Input file: {this_file}")
+                if use_panel is True:
+                    print()
+            if input_file_count > 0:
+                is_multi = True
+            helpme_single_file_mode(
+                console,
+                question,
+                product_config,
+                history_file,
+                rag,
+                ai_console,
+                console_style,
+                use_panel,
+                new,
+                cont,
+                yaml,
+                out,
+                this_file,
+                is_multi,
+            )
+            input_file_count += 1
 
     elif helpme_mode == "TERMINAL_OUTPUT":
         # Terminal output mode, which reads the terminal output as context.
@@ -739,7 +755,7 @@ def helpme(
         # Set the maximum number of lines to read from the terminal.
         lines_limit = -150
         # For the new 1.5 pro model, increase the limit to 5000 lines.
-        if this_model.startswith("models/gemini-1.5"):
+        if this_model.startswith("gemini-1.5") or this_model.startswith("gemini-2.0"):
             lines_limit = -5000
         try:
             with open(file_path, "r", encoding="utf-8") as file:
@@ -784,28 +800,131 @@ def helpme(
 
         # Save this exchange in a YAML file.
         if yaml is True:
-            output_filename = "./responses.yaml"
+            yaml_file_path = create_output_directory("responses.yaml")
             # Prepare output to be saved in the YAML file.
             yaml_buffer = (
                 f"  - question: {question}\n" + f"    response: {this_output}\n"
             )
-            with open(output_filename, "w", encoding="utf-8") as yaml_file:
+            with open(yaml_file_path, "w", encoding="utf-8") as yaml_file:
                 yaml_file.write("logs:\n")
                 yaml_file.write(yaml_buffer)
                 yaml_file.close()
 
         # Save the response to the `out` file.
-        if out is not None and out != "" and out != "None":
+        if output_file_path:
             try:
-                with open(out, "w", encoding="utf-8") as out_file:
+                with open(output_file_path, "w", encoding="utf-8") as out_file:
                     out_file.write(f"{this_output}\n")
                     out_file.close()
             except:
-                print(f"Failed to write the output to file: {out}")
+                print(f"Failed to write the output to file: {output_file_path}")
 
     # When the --sleep flag is provided, sleep for the specified duration.
     if sleep > 0:
         time.sleep(int(sleep))
+
+
+def helpme_single_file_mode(
+    console,
+    question,
+    product_config,
+    history_file,
+    rag,
+    ai_console,
+    console_style,
+    use_panel,
+    new,
+    cont,
+    yaml,
+    out,
+    file,
+    is_multi,
+):
+    this_file = resolve_and_ensure_path(file)
+    this_output = ""
+
+    # if the `--cont` flag is set, include the previous exchanges as additional context.
+    context_file = None
+    if cont:
+        context_file = history_file
+
+    this_output = console.ask_model_with_file(
+        question.strip(),
+        product_config,
+        file=this_file,
+        context_file=context_file,
+        rag=rag,
+        return_output=True,
+    )
+
+    # Render the response.
+    if use_panel:
+        ai_console.print("[Response]", style=console_style)
+        ai_console.print(Panel(Markdown(this_output, code_theme="manni")))
+    else:
+        print()
+        print(f"{this_output}")
+        print()
+
+    # Read the file content to be included in the history file.
+    file_content = ""
+    file_type = identify_file_type(this_file)
+    if file_type == "image":
+        file_content = "This is an image file.\n"
+    elif file_type == "audio":
+        file_content = "This is an audio file.\n"
+    elif file_type == "video":
+        file_content = "This is a video file.\n"
+    else:
+        file_content = open_file(this_file)
+    # If the `--new` flag is set, overwrite the history file.
+    write_mode = "a"
+    if new:
+        write_mode = "w"
+        # However, if there are multiple files as input, do not overwrite the history file.
+        if is_multi is True:
+            write_mode = "a"
+    # Record this exchange in the history file.
+    with open(history_file, write_mode, encoding="utf-8") as out_file:
+        out_file.write(f"QUESTION: {question}\n\n")
+        out_file.write(f"FILE NAME: {file}\n")
+        out_file.write(f"FILE CONTENT:\n\n{file_content}\n")
+        out_file.write(f"RESPONSE:\n\n{this_output}\n\n")
+        out_file.close()
+
+    # Save this exchange in a YAML file.
+    if yaml is True:
+        yaml_file_path = create_output_directory("responses.yaml")
+        # Prepare output to be saved in the YAML file.
+        yaml_buffer = (
+            f"  - question: {question}\n"
+            + f"    response: {this_output}\n"
+            + f"    file: {this_file}\n\n"
+        )
+        yaml_write_mode = "w"
+        if is_multi is True:
+            yaml_write_mode = "a"
+        with open(yaml_file_path, yaml_write_mode, encoding="utf-8") as yaml_file:
+            yaml_file.write("logs:\n")
+            yaml_file.write(yaml_buffer)
+            yaml_file.close()
+
+    # Save the response to the `out` file.
+    if out:
+        output_file_path = create_output_directory(out)
+        if not output_file_path:
+            click.echo("Error: Could not determine or create a valid output directory.")
+            exit(1)
+        try:
+            out_write_mode = "w"
+            if is_multi is True:
+                out_write_mode = "a"
+            with open(output_file_path, out_write_mode, encoding="utf-8") as out_file:
+                out_file.write(f"Input file: {this_file}\n\n")
+                out_file.write(f"{this_output}\n\n")
+                out_file.close()
+        except:
+            print(f"Failed to write the output to file: {output_file_path}")
 
 
 cli = click.CommandCollection(

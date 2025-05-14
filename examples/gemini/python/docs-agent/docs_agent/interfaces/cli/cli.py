@@ -24,11 +24,12 @@ from docs_agent.interfaces.cli.cli_runtask import cli_runtask
 from docs_agent.interfaces.cli.cli_helpme import cli_helpme
 from docs_agent.interfaces.cli.cli_tellme import cli_tellme
 from docs_agent.interfaces.cli.cli_posix import cli_posix
+from docs_agent.interfaces.cli.cli_tools import cli_tools
 from docs_agent.interfaces.cli.cli_show_session import cli_show_session
 
 
 cli = click.CommandCollection(
-    sources=[cli_common, cli_admin, cli_runtask, cli_helpme, cli_tellme, cli_posix, cli_show_session],
+    sources=[cli_common, cli_admin, cli_runtask, cli_helpme, cli_tellme, cli_posix, cli_show_session, cli_tools],
     help="With Docs Agent, you can populate vector databases, manage online corpora, and interact with Google's Gemini models.",
 )
 

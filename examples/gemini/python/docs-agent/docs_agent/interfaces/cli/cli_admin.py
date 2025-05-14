@@ -17,24 +17,16 @@
 """Docs Agent CLI client"""
 
 import click
-import sys
 import typing
-from docs_agent.utilities import config
-from docs_agent.utilities.config import ReadDbConfigs
 from docs_agent.utilities.config import return_config_and_product
-from docs_agent.utilities.helpers import (
-    parallel_backup_dir,
-    return_pure_dir,
-    end_path_backslash,
-    start_path_no_backslash,
-    resolve_path,
-)
+from docs_agent.utilities.helpers import resolve_path
 from docs_agent.preprocess import files_to_plain_text as chunker
 from docs_agent.preprocess import populate_vector_database as populate_script
 from docs_agent.benchmarks import run_benchmark_tests as benchmarks
 from docs_agent.interfaces import chatbot as chatbot_flask
 from docs_agent.storage.google_semantic_retriever import SemanticRetriever
-from docs_agent.storage.chroma import ChromaEnhanced
+from docs_agent.storage.rag import RAGFactory
+from docs_agent.storage.base import RAG
 from docs_agent.memory.logging import write_logs_to_csv_file
 from docs_agent.interfaces.cli.cli_common import common_options
 from docs_agent.interfaces.cli.cli_common import show_config
@@ -338,7 +330,7 @@ def cleanup_dev(
             print(f"Corpus name: {db.corpus_name}")
             corpus_name = db.corpus_name
     if chroma_dir != "":
-        command = "rm -fr " + chroma_dir
+        command = "rm -fr " + resolve_path(chroma_dir)
         if click.confirm(
             f"\nDeleting the Chroma database {chroma_dir} ({command}).\nDo you want to continue?",
             abort=True,
@@ -370,29 +362,14 @@ def backup_chroma(
     loaded_config, product_config = return_config_and_product(
         config_file=config_file, product=product
     )
-    if input_chroma == None:
-        # Get first product
+    try:
         input_product = product_config.return_first()
-        if input_product.db_type == "chroma":
-            input_chroma = ReadDbConfigs(input_product.db_configs).return_chroma_db()
-        else:
-            click.echo(
-                f"Your product {input_product.product_name} is not configured for chroma."
-            )
-            sys.exit(0)
-    if output_dir == None:
-        output_dir = parallel_backup_dir(input_chroma)
-    else:
-        pure_path = return_pure_dir(input_chroma)
-        output_dir = end_path_backslash(start_path_no_backslash(output_dir)) + pure_path
-    # Initialize chroma and then use backup function
-    chroma_db = ChromaEnhanced(chroma_dir=input_chroma)
-    final_output_dir = chroma_db.backup_chroma(
-        chroma_dir=input_chroma, output_dir=output_dir
-    )
-    if final_output_dir:
+        if input_chroma == None:
+            input_chroma = input_product.db_configs[0].vector_db_dir
+        chroma_db: RAG = RAGFactory.create_rag(product_config=input_product)
+        final_output_dir = chroma_db.backup(output_dir=output_dir)
         click.echo(f"Successfully backed up {input_chroma} to {final_output_dir}.")
-    else:
+    except:
         click.echo(f"Can't backup chroma database specified: {input_chroma}")
 
 

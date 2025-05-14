@@ -58,7 +58,7 @@ def main():
         print(response_gemini)
 
     # Pass the context and question to the `aqa` model
-    if docs_agent.check_if_aqa_is_used():
+    if docs_agent.aqa_model:
         response_aqa = docs_agent.ask_aqa_model(question)
         print("\n[AQA answer]:")
         print(response_aqa)

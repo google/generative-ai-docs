@@ -22,12 +22,10 @@ import re
 import sys
 
 from absl import logging
-import chromadb
-from chromadb.utils import embedding_functions
+
 import flatdict
 import tqdm
 
-from docs_agent.models.google_genai import Gemini
 from docs_agent.preprocess.splitters import markdown_splitter
 from docs_agent.storage.google_semantic_retriever import SemanticRetriever
 from docs_agent.utilities import config
@@ -35,6 +33,7 @@ from docs_agent.utilities.config import ConfigFile
 from docs_agent.utilities.config import ProductConfig
 from docs_agent.utilities.helpers import end_path_backslash
 from docs_agent.utilities.helpers import resolve_path
+from docs_agent.storage.chroma import  ChromaEnhanced
 
 
 class chromaAddSection:
@@ -73,10 +72,7 @@ def init_progress_bars(file_count):
     unchanged_file = tqdm.tqdm(
         position=2, desc="Total unchanged files 0", bar_format="{desc}"
     )
-    update_file = tqdm.tqdm(
-        position=3, desc="Total updated files 0", bar_format="{desc}"
-    )
-    return main, new_file, unchanged_file, update_file
+    return main, new_file, unchanged_file
 
 
 # Open a file and return its content.
@@ -87,19 +83,6 @@ def get_file_content(full_path):
         content_file.strip()
         auto.close()
     return content_file
-
-
-# Initialize Gemini objects for generating embeddings.
-def init_gemini_model(product_config: ProductConfig):
-    gemini_new = Gemini(models_config=product_config.models)
-    # Use a chromadb function to initialize db
-    embedding_function_gemini = embedding_functions.GoogleGenerativeAiEmbeddingFunction(
-        api_key=product_config.models.api_key,
-        model_name=product_config.models.embedding_model,
-        task_type="RETRIEVAL_DOCUMENT",
-    )
-    return gemini_new, embedding_function_gemini
-
 
 # Upload a text chunk to an online stroage using the Semantic Retrieval API.
 def upload_an_entry_to_a_corpus(
@@ -313,198 +296,239 @@ def populateToDbFromProduct(product_config: ProductConfig):
     Args:
         product_config: A ProductConfig object containing configuration details.
     """
-    # Initialize Gemini objects.
-    (gemini_new, embedding_function_gemini) = init_gemini_model(product_config)
-
-    # Initialize the Chroma database.
-    for item in product_config.db_configs:
-        if "chroma" in item.db_type:
-            logging.info("Initializing Chroma for a local storage.")
-            chroma_client = chromadb.PersistentClient(
-                path=resolve_path(item.vector_db_dir)
-            )
-            collection = chroma_client.get_or_create_collection(
-                name=item.collection_name,
-                embedding_function=embedding_function_gemini,
-            )
-            if (
-                hasattr(product_config, "enable_delete_chunks")
-                and product_config.enable_delete_chunks == "True"
-            ):
-                # Delete entries in the database if we cannot find matches
-                # in the current dataset.
-                delete_unmatched_entries_in_chroma(
-                    product_config, chroma_client, collection
-                )
-
-    # Initialzie the Semantic Retreival API.
+    logging.info("Starting populateToDbFromProduct")
+    # Initialize variables
+    chroma_collection = None
+    semantic = None
     corpus_name = ""
-    if product_config.db_type == "google_semantic_retriever":
-        logging.info("Initializing the Semantic Retrieval API for an online storage.")
-        semantic = SemanticRetriever()
-        for item in product_config.db_configs:
-            if "google_semantic_retriever" in item.db_type:
-                corpus_name = item.corpus_name
-                if semantic.does_this_corpus_exist(corpus_name) == False:
-                    # Create a new corpus.
-                    semantic.create_a_new_corpus(item.corpus_display, corpus_name)
-                elif (
+
+    # Initialize Chroma database and collection
+    for db_conf in product_config.db_configs:
+        if "chroma" in db_conf.db_type:
+            logging.info("Initializing Chroma.")
+            try:
+                chroma = ChromaEnhanced(
+                    chroma_dir=resolve_path(db_conf.vector_db_dir),
+                    models_config=product_config.models,
+                )
+                logging.info(f"Attempting to get or create collection '{db_conf.collection_name}'")
+                chroma_collection = chroma.client.get_or_create_collection(
+                    name=db_conf.collection_name,
+                    embedding_function=chroma.embedding_function_instance,
+                )
+                logging.info(f"Successfully got or created collection '{db_conf.collection_name}'")
+                # Delete unmatched entries in Chroma
+                if (
                     hasattr(product_config, "enable_delete_chunks")
                     and product_config.enable_delete_chunks == "True"
                 ):
-                    # Delete chunks in the corpus if we cannot find matches in the current dataset.
-                    delete_unmatched_entries_in_online_corpus(
-                        product_config, semantic, corpus_name
+                    delete_unmatched_entries_in_chroma(
+                        product_config, chroma.client, chroma_collection
                     )
+                break
+            except Exception as e:
+                logging.error(f"Failed to initialize Chroma DB or collection '{db_conf.collection_name}': {e}", exc_info=True)
+                return
 
-    # Initialize progress bar objects.
-    file_count = get_file_count_in_a_dir(product_config.output_path)
-    (
-        progress_bar,
-        progress_new_file,
-        progress_unchanged_file,
-        progress_update_file,
-    ) = init_progress_bars(file_count)
+    # Initialize Semantic Retrieval API (if enabled)
+    if ("google_semantic_retriever" in product_config.db_type):
+        logging.info("Initializing the Semantic Retrieval API for an online storage.")
+        semantic = SemanticRetriever()
+        for db_conf in product_config.db_configs:
+            if "google_semantic_retriever" in db_conf.db_type:
+                corpus_name = db_conf.corpus_name
+                try:
+                    if not semantic.does_this_corpus_exist(corpus_name):
+                        semantic.create_a_new_corpus(db_conf.corpus_display, corpus_name)
+                    elif (
+                        hasattr(product_config, "enable_delete_chunks")
+                        and product_config.enable_delete_chunks == "True"
+                    ):
+                        delete_unmatched_entries_in_online_corpus(
+                            product_config, semantic, corpus_name
+                        )
+                    break
+                except Exception as e:
+                    logging.error(f"Failed to initialize Semantic Retriever Corpus '{corpus_name}': {e}", exc_info=True)
+                    semantic = None
+                break
 
-    # Get the preprocess information from the `file_index.json` file.
-    (index, full_index_path) = load_index(input_path=product_config.output_path)
+    # Check for Chroma collection initialization
+    if chroma_collection is None and any("chroma" in db_conf.db_type for db_conf in product_config.db_configs):
+        logging.error("Chroma collection could not be initialized. Aborting population.")
+        return
 
-    # Local variables track the resource names of documents for the Semantic Retrieval API.
+    # Load the index file
+    logging.info(f"Loading file index... {product_config.output_path}")
+    index, full_index_path = load_index(input_path=product_config.output_path)
+    logging.info("File index loaded.")
+    # Resolve the output path
+    resolved_walk_path = resolve_path(product_config.output_path)
+    logging.info(f"Starting file processing in directory: {resolved_walk_path}")
+    if not os.path.isdir(resolved_walk_path):
+        logging.error(f"Target directory does not exist or is not a directory: {resolved_walk_path}")
+        return
+
+    # Get the file count in the directory
+    file_count = get_file_count_in_a_dir(resolved_walk_path)
+    logging.info(f"Using os.walk file count ({file_count}) for main progress bar.")
+    # Initialize progress bars
+    progress_bar, progress_new_file, progress_unchanged_file = init_progress_bars(file_count)
+
+    # Counters
+    total_files_processed = 0
+    new_count = 0
+    unchanged_count = 0
+    skipped_invalid_uuid_count = 0
+    skipped_other_count = 0
+
+    # Semantic Retriever state
     document_name_in_corpus = ""
     dict_document_names_in_corpus = {}
 
-    # Local variables for counting files.
-    total_files = 0
-    updated_count = 0
-    new_count = 0
-    unchanged_count = 0
-
-    # Loop through each `path` in the `config.yaml` file.
-    for root, dirs, files in os.walk(product_config.output_path):
-        # Convert `output_path` to be a fully resolved path.
-        fully_resolved_output = end_path_backslash(
-            resolve_path(product_config.output_path)
-        )
-        # Loop through all files found in the `output_path` directory.
+    # Loop through the files in the directory
+    for root, dirs, files in os.walk(resolved_walk_path):
         for file in files:
-            # Displays status bar, sleep helps to stick the progress
+            # Update main progress bar based on os.walk count total
             progress_bar.update(1)
             progress_bar.set_description_str(f"Processing file {file}", refresh=True)
-            # Get the full path for the file.
-            full_file_name = resolve_path(os.path.join(root, "")) + file
-            # Process only files with `.md` extension.
+            full_file_name = os.path.join(root, file)
+            # Skip the index file itself
+            if full_file_name == full_index_path:
+                continue
             if file.endswith(".md"):
-                # Open the file and get the content.
-                content_file = get_file_content(os.path.join(root, file))
-                # Get a Section object from the file index object.
-                chroma_add_item = findFileinDict(
-                    input_file_name=full_file_name,
-                    index_object=index,
-                    content_file=content_file,
-                )
-                # Quick fix: If the filename ends with `_##.md`, extract the file prefix
-                # Then check if this prefix exists in a local dict, which tracks document
-                # resource names for the Semantic Retrieval API call.
-                file_page_prefix = ""
-                is_this_first_chunk = False
-                match_file_page = re.search(r"(.*)_\d+\.md$", full_file_name)
-                if match_file_page:
-                    file_page_prefix = match_file_page.group(1)
-                    if file_page_prefix in dict_document_names_in_corpus:
-                        # If the prefix exists in the dict, retrieve the document resource name.
-                        document_name_in_corpus = dict_document_names_in_corpus.get(
-                            file_page_prefix
-                        )
-                    else:
-                        # if not, set the flag to indicate that a new `document` needs
-                        # to be created.
-                        is_this_first_chunk = True
-                        document_name_in_corpus = ""
-                else:
-                    # If the file is not in a group, treat it as its own document.
-                    file_page_prefix = full_file_name
-                # Skip if the file size is larger than 10000 bytes (API limit)
-                if (
-                    chroma_add_item.section.content != ""
-                    and len(chroma_add_item.section.content) < 10000
-                    and chroma_add_item.section.md_hash != ""
-                    and chroma_add_item.section.uuid != ""
-                ):
-                    # Compare the text chunk entries in the local Chroma database
-                    # to check if the hash value has changed.
-                    id_to_not_change = collection.get(
-                        include=["metadatas"],
-                        ids=chroma_add_item.section.uuid,
-                        where={"md_hash": {"$eq": chroma_add_item.section.md_hash}},
-                    )["ids"]
-                    if id_to_not_change != []:
-                        # This text chunk is unchanged. Skip this text chunk.
-                        qty_change = len(id_to_not_change)
-                        progress_unchanged_file.update(qty_change)
-                        unchanged_count += qty_change
-                        progress_unchanged_file.set_description_str(
-                            f"Total unchanged file {unchanged_count}",
-                            refresh=True,
-                        )
-                    else:
-                        # Process this text chunk and store it into the databases.
-                        # Generate an embedding
-                        this_embedding = gemini_new.embed(
-                            content=chroma_add_item.section.content,
-                            task_type="RETRIEVAL_DOCUMENT",
-                            title=chroma_add_item.doc_title,
-                        )[0]
-                        # Store this text chunk entry in Chroma.
-                        collection.add(
-                            documents=[chroma_add_item.section.content],
-                            embeddings=[this_embedding],
-                            metadatas=[chroma_add_item.metadata],
-                            ids=[chroma_add_item.section.uuid],
-                        )
-                        # Update the progress bar.
-                        new_count += 1
-                        progress_new_file.update(1)
-                        progress_new_file.set_description_str(
-                            f"Total new files {new_count}", refresh=True
-                        )
-                        # Add this text chunk to the online storage.
-                        if product_config.db_type == "google_semantic_retriever":
-                            document_name = upload_an_entry_to_a_corpus(
-                                semantic,
-                                corpus_name,
-                                document_name_in_corpus,
-                                chroma_add_item,
-                                is_this_first_chunk,
-                            )
-                            # Store the document resource name
-                            dict_document_names_in_corpus[
-                                file_page_prefix
-                            ] = document_name
-                    total_files += 1
-                else:
-                    if chroma_add_item.section.content == "":
-                        logging.error(f"Skipped {file} because the file is empty.")
-                    else:
-                        logging.error(
-                            f"Skipped {file} because the file is is too large {str(len(chroma_add_item.section.content))}"
-                        )
-            # Skips logging a warning if the file being walked is the index file
-            elif full_file_name == full_index_path:
-                next
-            else:
-                # Logs missing extensions from input directory that may be
-                # processed
-                file_name, extension = os.path.splitext(file)
-                logging.warning(
-                    f"Skipped {file} because there is no configured parser for extension {extension}"
-                )
+                try:
+                    content_file = get_file_content(full_file_name)
+                    chroma_add_item = findFileinDict(
+                        input_file_name=full_file_name,
+                        index_object=index,
+                        content_file=content_file,
+                    )
+                    # Check for invalid content
+                    if not chroma_add_item.section.content:
+                        logging.warning(f"Skipping {file}: Content is empty.")
+                        skipped_other_count += 1
+                        continue
+                    if len(chroma_add_item.section.content) >= 10000:
+                        logging.warning(f"Skipping {file}: Content too large ({len(chroma_add_item.section.content)} bytes).")
+                        skipped_other_count += 1
+                        continue
+                    if not chroma_add_item.section.md_hash:
+                         logging.warning(f"Skipping {file}: Missing md_hash in index data.")
+                         skipped_other_count += 1
+                         continue
 
-    progress_bar.set_description_str(
-        f"Finished processing text chunk files (and file_index.json).", refresh=True
-    )
-    progress_unchanged_file.set_description_str(
-        f"Total number of entries: {total_files}", refresh=True
-    )
+                    # Check for invalid UUID
+                    uuid_value = chroma_add_item.section.uuid
+                    if not isinstance(uuid_value, str) or not uuid_value:
+                        logging.error(f"File {file}: Invalid UUID detected ({repr(uuid_value)}). Skipping operation for this file.")
+                        skipped_invalid_uuid_count += 1
+                        continue
+                    id_to_not_change = []
+                    # Check for Chroma collection existence
+                    if chroma_collection:
+                        try:
+                            ids_to_check = [uuid_value]
+                            get_result = chroma_collection.get(
+                                ids=ids_to_check,
+                                where={"md_hash": {"$eq": chroma_add_item.section.md_hash}},
+                                include=[],
+                            )
+                            id_to_not_change = get_result["ids"]
+                        except Exception as e:
+                            if "does not exist" in str(e).lower():
+                                 id_to_not_change = []
+                            else:
+                                 logging.warning(f"File {file}: Error in Chroma to get for ID {uuid_value}: {e}")
+                                 id_to_not_change = []
+
+                    # Check for existing entry with same hash
+                    if id_to_not_change:
+                        # Exists with same hash -> Unchanged
+                        qty_change = len(id_to_not_change)
+                        unchanged_count += qty_change
+                        total_files_processed += qty_change
+                        progress_unchanged_file.update(qty_change)
+                        progress_unchanged_file.set_description_str(f"Total unchanged files {unchanged_count}", refresh=True)
+                    else:
+                        # New or updated entry
+                        if chroma_collection:
+                            try:
+                                doc_list = [chroma_add_item.section.content]
+                                meta_list = [chroma_add_item.metadata]
+                                id_list = [uuid_value]
+                                # Upsert the entry
+                                chroma_collection.upsert(
+                                    documents=doc_list,
+                                    metadatas=meta_list,
+                                    ids=id_list,
+                                )
+                                new_count += 1
+                                total_files_processed += 1
+                                progress_new_file.update(1)
+                                progress_new_file.set_description_str(f"Total new/updated files {new_count}", refresh=True)
+
+                            except Exception as e:
+                                # Keep this error log
+                                logging.error(f"Error during collection.upsert for ID {uuid_value}: {e}", exc_info=True)
+                                skipped_other_count += 1
+                        else:
+                             logging.warning(f"File {file}: Skipping add/upsert because Chroma collection is not available.")
+                             skipped_other_count += 1
+
+                        # Check for Semantic Retriever initialization
+                        if semantic and corpus_name:
+                            file_page_prefix = full_file_name
+                            is_this_first_chunk = True
+                            match_file_page = re.search(r"(.*)_\d+\.md$", full_file_name)
+                            if match_file_page:
+                                file_page_prefix = match_file_page.group(1)
+                                if file_page_prefix in dict_document_names_in_corpus:
+                                    document_name_in_corpus = dict_document_names_in_corpus[file_page_prefix]
+                                    is_this_first_chunk = False
+                                else:
+                                     document_name_in_corpus = ""
+
+                            try:
+                                document_name = upload_an_entry_to_a_corpus(
+                                    semantic,
+                                    corpus_name,
+                                    document_name_in_corpus,
+                                    chroma_add_item,
+                                    is_this_first_chunk,
+                                )
+                                dict_document_names_in_corpus[file_page_prefix] = document_name
+                            except Exception as e:
+                                logging.error(f"Failed to upload chunk for {file} to Semantic Retriever: {e}", exc_info=True)
+
+                except Exception as e:
+                    # Keep this error log for file-level processing errors
+                    logging.error(f"Error processing file {full_file_name}: {e}", exc_info=True)
+                    skipped_other_count += 1
+            else:
+                 # Skip non-markdown files
+                 pass
+
+    # Close all progress bars
+    progress_bar.set_description_str(f"Finished processing.", refresh=True)
+    progress_bar.close()
+    progress_new_file.close()
+    progress_unchanged_file.close()
+
+    # Simplified final summary print
+    print(f"\nProcessing Summary:")
+    print(f"  Total files found for database: {total_files_processed}")
+    print(f"  New or updated files:   {new_count}")
+    print(f"  Unchanged files:     {unchanged_count}")
+    # Optionally report skipped counts if they are non-zero, otherwise omit for cleaner output
+    if skipped_invalid_uuid_count > 0:
+        print(f"  Skipped (Invalid UUID):  {skipped_invalid_uuid_count}")
+    if skipped_other_count > 0:
+        print(f"  Skipped (Other reasons): {skipped_other_count}")
+
+    print(f"\nFinished processing and generating embeddings for all files.")
+    if any("chroma" in db_conf.db_type for db_conf in product_config.db_configs):
+        print("Finalized generation of embeddings for all files in Chroma DB.")
 
 
 def findFileinDict(input_file_name: str, index_object, content_file):

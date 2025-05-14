@@ -176,10 +176,16 @@ agent helpme <REQUEST> --file <PATH_TO_FILE>
 ```
 
 Replace `REQUEST` with a prompt and `PATH_TO_FILE` with a file's
-absolure or relative path, for example:
+absolute or relative path, for example:
 
 ```sh
 agent helpme write comments for this C++ file? --file ../my-project/test.cc
+```
+
+You can also provide multiple files for the same request, for example:
+
+```sh
+agent helpme summarize the content of this file? --file ../my-project/example_01.md --file ../my-project/example_02.md --file ~/my-new-project/example.md
 ```
 
 ### Ask for advice using RAG
@@ -256,6 +262,32 @@ For example:
 
 ```sh
 agent helpme write a concept doc covering all features in this project? --allfiles ~/my-project --new
+```
+
+### Ask the model to read a list of file names from an input file
+
+Similar to the `--perfile` flag, the command below reads the input
+file that contains a list of filenames and applies the request to
+each file in the list:
+
+```sh
+agent helpme <REQUEST> --list_file <PATH_TO_FILE>
+```
+
+For example:
+
+```sh
+agent helpme write an alt text string for this image? --list_file ./mylist.txt
+```
+
+where the `mylist.txt` file contains a list of file names in plain text
+as shown below:
+
+```none
+$ cat mylist.txt
+docs/images/apps-script-screenshot-01.png
+docs/images/docs-agent-ui-screenshot-01.png
+docs/images/docs-agent-embeddings-01.png
 ```
 
 ### Ask the model to print the output in JSON
@@ -377,6 +409,18 @@ The command below deletes an online corpus:
 
 ```sh
 agent delete-corpus --name corpora/example01
+```
+
+### Interact with the model using external tools
+
+The command below sends your prompt to the Gemini model and allows the model to
+use configured external tools (through MCP servers defined in `config.yaml`) to
+fulfill the request.
+
+Note: You can use a `-v` flag to enable verbose mode to see the tool execution.
+
+```sh
+agent tools <PROMPT>
 ```
 
 <!-- Reference links -->

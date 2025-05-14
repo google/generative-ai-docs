@@ -20,6 +20,7 @@ import os
 import sys
 import yaml
 import typing
+from pathlib import Path
 
 from absl import logging
 from docs_agent.utilities.helpers import get_project_path
@@ -166,6 +167,83 @@ class ReadInputs:
         return self.input_list
 
 
+class MCPServerConfig:
+    def __init__(
+        self,
+        server_type: str,
+        name: typing.Optional[str] = None,
+        # Stdio specific
+        command: typing.Optional[str] = None,
+        args:  typing.Optional[typing.List[str]] = None,
+        env: typing.Optional[typing.Dict[str, str]] = None,
+        # SSE specific
+        url: typing.Optional[str] = None,
+    ):
+        self.server_type = server_type.lower()
+        self.name = name
+        self.command = command
+        self.args = args or []
+        self.env = env or {}
+        self.url = url
+
+        # Server validation
+        if self.server_type not in ["stdio", "sse"]:
+            raise ValueError(f"Unsupported MCP server_type: {server_type}. Must be 'stdio' or 'sse'.")
+        if self.server_type == "stdio" and not self.command:
+            raise ValueError("MCP server_type 'stdio' requires a 'command'.")
+        if self.server_type == "sse" and not self.url:
+            raise ValueError("MCP server_type 'sse' requires a 'url'.")
+        if self.server_type == "stdio" and self.env is not None and not isinstance(self.env, dict):
+             raise ValueError("MCP server_type 'stdio' requires 'env' to be a dictionary if provided.")
+
+    def __str__(self):
+        details = [f"Type: {self.server_type}"]
+        if self.name:
+            details.append(f"Name: {self.name}")
+        if self.server_type == "stdio":
+            details.append(f"Command: {self.command}")
+            if self.args:
+                details.append(f"Args: {' '.join(self.args)}")
+            if self.env:
+                env_str = ", ".join(f"{k}={v}" for k, v in self.env.items())
+                details.append(f"Env: [{env_str}]")
+        elif self.server_type == "sse":
+            details.append(f"URL: {self.url}")
+        return ", ".join(details)
+
+
+class ReadMCPServerConfigs:
+    def __init__(self, input_list: list[dict]):
+        self.input_list = input_list
+
+    def returnMCPServerConfigs(self) -> list[MCPServerConfig]:
+        configs = []
+        if not isinstance(self.input_list, list):
+            logging.error("Expected  a list of MCP server configs.")
+            return []
+
+        for item in self.input_list:
+            if not isinstance(item, dict):
+                logging.warning(f"Skipping item in MCP server config list: {item}")
+                continue
+            try:
+                config_item = MCPServerConfig(
+                    server_type=item["server_type"],
+                    name=item.get("name"),
+                    command=item.get("command"),
+                    args=item.get("args"),
+                    env=item.get("env"),
+                    url=item.get("url"),
+                )
+                configs.append(config_item)
+            except KeyError as error:
+                logging.error(f"MCP server config item is missing required key {error}: {item}")
+                continue
+            except ValueError as error:
+                logging.error(f"Invalid MCP server config item: {error}. Config: {item}")
+                continue
+        return configs
+
 class Models:
     def __init__(
         self,
@@ -264,25 +342,13 @@ class Conditions:
     def __init__(
         self,
         condition_text: str,
-        fact_check_question: typing.Optional[str] = None,
         model_error_message: typing.Optional[str] = None,
     ):
-        default_fact_check_question = (
-            "Can you compare the text below to the information provided in this"
-            " prompt above and write a short message that warns the readers"
-            " about which part of the text they should consider"
-            " fact-checking? (Please keep your response concise, focus on only"
-            " one important item, but DO NOT USE BOLD TEXT IN YOUR RESPONSE.)"
-        )
         default_model_error_message = (
             "Gemini is not able to answer this question at the moment."
             " Rephrase the question and try asking again."
         )
         self.condition_text = condition_text
-        if fact_check_question is None:
-            self.fact_check_question = default_fact_check_question
-        else:
-            self.fact_check_question = fact_check_question
         if model_error_message is None:
             self.model_error_message = default_model_error_message
         else:
@@ -292,8 +358,6 @@ class Conditions:
         help_str = ""
         if self.condition_text is not None and self.condition_text != "":
             help_str += f"Condition text: {self.condition_text}\n"
-        if self.fact_check_question is not None and self.fact_check_question != "":
-            help_str += f"Fact check question: {self.fact_check_question}\n"
         if self.model_error_message is not None and self.model_error_message != "":
             help_str += f"Model error message: {self.model_error_message}\n"
         return help_str
@@ -316,7 +380,6 @@ class ReadConditions:
                 # Using .get let's you specify optional keys
                 condition_item = Conditions(
                     condition_text=item["condition_text"],
-                    fact_check_question=item.get("fact_check_question", None),
                     model_error_message=item.get("model_error_message", None),
                 )
                 conditions.append(condition_item)
@@ -351,6 +414,7 @@ class ProductConfig:
         enable_delete_chunks: str = "False",
         secondary_db_type: typing.Optional[str] = None,
         secondary_corpus_name: typing.Optional[str] = None,
+        mcp_servers: typing.Optional[list[MCPServerConfig]] = None,
     ):
         self.product_name = product_name
         self.docs_agent_config = docs_agent_config
@@ -371,6 +435,7 @@ class ProductConfig:
         self.enable_delete_chunks = enable_delete_chunks
         self.secondary_db_type = secondary_db_type
         self.secondary_corpus_name = secondary_corpus_name
+        self.mcp_servers = mcp_servers
 
     def __str__(self):
         # Extracts the list of Inputs
@@ -383,6 +448,10 @@ class ProductConfig:
         for item in self.db_configs:
             dbconfigs.append(str(item))
         db_config_str = "\n".join(dbconfigs)
+        mcp_servers = []
+        for item in self.mcp_servers:
+            mcp_servers.append(str(item))
+        mcp_server_str = "\n".join(mcp_servers)
         help_str = ""
         if self.product_name is not None and self.product_name != "":
             help_str += f"Product: {self.product_name}\n"
@@ -422,6 +491,8 @@ class ProductConfig:
             help_str += f"\nInputs:\n{input_str}\n"
         if self.conditions is not None and self.conditions != "":
             help_str += f"Conditions:\n{self.conditions}\n"
+        if mcp_server_str != "":
+            help_str += f"\nMCP Servers:\n{mcp_server_str}\n"
         return help_str
 
 
@@ -450,23 +521,68 @@ class ConfigFile:
 # returnProducts() with an optional product flag will return
 # all product configurations or the specified one
 class ReadConfig:
-    # Tries to ingest the configuration file and validate its keys
-    # Defaults to the config.yaml file in the source of the project
-    def __init__(
-        self, yaml_path: str = os.path.join(get_project_path(), "config.yaml")
-    ):
-        self.yaml_path = yaml_path
+    """
+    Reads a configuration file to import configuration settings.
+
+    Attributes:
+        yaml_path (str): The path to the YAML configuration file.
+        config_values (dict): The dictionary containing the configuration values.
+    """
+    def __init__(self, yaml_path_input: str | None = None):
+        """
+        Initializes ReadConfig.
+
+        Args:
+            yaml_path_input: Optional path to the config file. Can be absolute or
+                             relative. If relative, it's resolved from the project root.
+                             If None, defaults to 'config.yaml' in the project root.
+        """
+        # Default config file name
+        config_filename = "config.yaml"
+        calculated_yaml_path: Path
+
         try:
-            with open(yaml_path, "r", encoding="utf-8") as inp_yaml:
+            # Find the project root first based on the config_filename
+            project_root = get_project_path(marker=config_filename)
+            if yaml_path_input is None:
+                # Default: Use config.yaml from the project root
+                calculated_yaml_path = project_root / config_filename
+                logging.info(f"No config path provided, using default: {calculated_yaml_path}")
+            else:
+                # If path is provided
+                explicit_path = Path(yaml_path_input)
+                if explicit_path.is_absolute():
+                    # Use the provided absolute path
+                    calculated_yaml_path = explicit_path.resolve()
+                    logging.info(f"Using specified absolute config path: {calculated_yaml_path}")
+                else:
+                    # If relative, resolve from the project root
+                    calculated_yaml_path = (project_root / explicit_path).resolve()
+                    logging.info(f"Resolving specified relative config path '{yaml_path_input}' "
+                                 f"relative to project root '{project_root}': {calculated_yaml_path}")
+            # Store the calculated path
+            self.yaml_path = str(calculated_yaml_path)
+            # Load the configuration from the absolute path
+            if not calculated_yaml_path.is_file():
+                raise FileNotFoundError(f"Configuration file not found at the calculated path: {self.yaml_path}")
+
+            with open(calculated_yaml_path, "r", encoding="utf-8") as inp_yaml:
                 self.config_values = yaml.safe_load(inp_yaml)
-                # self.yaml_path = yaml_path
-        except FileNotFoundError:
-            logging.error(f"The config file {self.yaml_path} does not exist.")
-            # Exits the scripts if there is no valid config file
-            return sys.exit(1)
+                logging.info(f"Successfully loaded config file: {self.yaml_path}")
+
+        except FileNotFoundError as e:
+            logging.error(e)
+            sys.exit(1)
+        except yaml.YAMLError as e:
+            logging.error(f"Error parsing YAML file {getattr(self, 'yaml_path', yaml_path_input)}: {e}")
+            sys.exit(1)
+        except Exception as e:
+            logging.error(f"An unexpected error occurred during configuration loading: {e}", exc_info=True)
+            sys.exit(1)
 
     def __str__(self):
-        return self.yaml_path
+        # Returns the absoulte path to the config file or provides an error message
+        return getattr(self, "yaml_path", "Config path not determined")
 
     def returnProducts(self, product: typing.Optional[str] = None) -> ConfigFile:
         products = []
@@ -548,6 +664,7 @@ class ReadConfig:
                         enable_delete_chunks=enable_delete_chunks,
                         secondary_db_type=secondary_db_type,
                         secondary_corpus_name=secondary_corpus_name,
+                        mcp_servers=item.get("mcp_servers", None),
                     )
                     # This is done for keys with children
                     # Inputs
@@ -567,6 +684,15 @@ class ReadConfig:
                         input_list=item["db_configs"]
                     ).returnDbConfigs()
                     product_config.db_configs = new_db_configs
+                    # MCP Servers
+                    mcp_servers_raw = item.get("mcp_servers")
+                    mcp_server_configs = None
+                    if mcp_servers_raw is not None:
+                         if isinstance(mcp_servers_raw, list):
+                              mcp_server_configs = ReadMCPServerConfigs(
+                                   input_list=mcp_servers_raw
+                              ).returnMCPServerConfigs()
+                    product_config.mcp_servers = mcp_server_configs
                     # Append
                     products.append(product_config)
                 except KeyError as error:
@@ -608,7 +734,7 @@ def return_config_and_product(
     if config_file is None:
         loaded_config = ReadConfig()
     else:
-        loaded_config = ReadConfig(yaml_path=config_file)
+        loaded_config = ReadConfig(yaml_path_input=config_file)
     final_products = []
     if product == () or product == [""]:
         product_config = loaded_config.returnProducts()
