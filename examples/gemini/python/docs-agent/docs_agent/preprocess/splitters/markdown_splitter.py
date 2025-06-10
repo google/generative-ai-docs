@@ -220,7 +220,7 @@ def markdown_to_text(markdown_string):
     html = markdown.markdown(markdown_string)
     # Extract text
     soup = bs4.BeautifulSoup(html, "html.parser")
-    text = "".join(soup.findAll(string=True))
+    text = "".join(soup.find_all(string=True))
     # Remove [][] in Markdown
     text = re.sub(r"\[(.*?)\]\[(.*?)\]", "\\1", text)
     # Remove {: } in Markdown

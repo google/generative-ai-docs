@@ -17,20 +17,31 @@
 """Chroma wrapper"""
 
 from enum import auto, Enum
-import os
 import string
 import shutil
 import typing
 
 from absl import logging
 import chromadb
-from chromadb.utils import embedding_functions
-from chromadb.api.models import Collection
+from chromadb import Documents, EmbeddingFunction, Embeddings
+from chromadb.api.types import Images
 from chromadb.api.types import QueryResult
+from docs_agent.storage.base import RAG
+from docs_agent.models.llm import GenerativeLanguageModelFactory
+from docs_agent.utilities.config import Models, ProductConfig, DbConfig
+from docs_agent.utilities.helpers import resolve_path
 
 from docs_agent.preprocess.splitters.markdown_splitter import Section as Section
 from docs_agent.postprocess.docs_retriever import FullPage as FullPage
-from docs_agent.utilities.helpers import resolve_path, parallel_backup_dir
+from docs_agent.postprocess.docs_retriever import (
+    query_vector_store_to_build as retriever_query_vector_store_to_build,
+    SectionDistance,
+)
+from docs_agent.utilities import helpers
+
+
+# Embeddable types for Chroma - from chroma docs
+Embeddable = typing.Union[Documents, Images]
 
 
 class Error(Exception):
@@ -289,99 +300,256 @@ Section URL: {SectionDB.URL}\n"
         return result
 
 
-class ChromaEnhanced:
+class GeminiEmbeddingFunction(EmbeddingFunction):
+    """Embedding function wrapper for Gemini models"""
+
+    def __init__(self, models_config: Models, task_type: str = "RETRIEVAL_DOCUMENT"):
+        self.models_config = models_config
+        self.task_type = task_type
+        # Create the embedding model instance
+        self.model = GenerativeLanguageModelFactory.create_model(
+            model_type=self.models_config.embedding_model,
+            models_config=self.models_config,
+        )
+
+    def __call__(self, input: Embeddable) -> Embeddings:
+        # Handles list of strings
+        if isinstance(input, list) and all(isinstance(i, str) for i in input):
+            embeddings_list = self.model.embed(content=input, task_type=self.task_type)
+        # Commented out for now. Can use images here.
+        # elif isinstance(input, list) and all(isinstance(i, np.ndarray) for i in input):
+        #    embeddings_list = model.embed_images(images=input, task_type=self.task_type) # Example
+        else:
+            logging.error(
+                f"Unsupported input type for embedding function: {type(input)}"
+            )
+            # In case there is a single string, which is the most common case
+            if isinstance(input, str):
+                embeddings_list = self.model.embed(
+                    content=[input], task_type=self.task_type
+                )
+            else:
+                # Update this if images get enabled
+                raise TypeError("Input must be Documents (List[str])")
+
+        return typing.cast(Embeddings, embeddings_list)
+
+
+class ChromaEnhanced(RAG):
     """Chroma wrapper"""
 
-    def __init__(self, chroma_dir) -> None:
+    def __init__(self, chroma_dir: str, models_config: Models) -> None:
         self.client = chromadb.PersistentClient(path=chroma_dir)
+        self.models_config = models_config
+        self.chroma_dir = chroma_dir
+        self._collection_name: typing.Optional[str] = None
+        # Start the embedding function
+        self.embedding_function_instance = GeminiEmbeddingFunction(
+            models_config=self.models_config, task_type="RETRIEVAL_DOCUMENT"
+        )
+        logging.info(f"ChromaEnhanced instance initialized for path: {chroma_dir}")
+
+    @staticmethod
+    def from_product_config(product_config: ProductConfig) -> "ChromaEnhanced":
+        """Creates a ChromaEnhanced instance from a ProductConfig."""
+        chroma_db_conf: DbConfig | None = None
+        for db_conf in product_config.db_configs:
+            if db_conf.db_type == "chroma":
+                chroma_db_conf = db_conf
+                break
+        if not chroma_db_conf:
+            logging.error("Chroma configuration not found in product config.")
+            raise ValueError("Chroma configuration not found in product config.")
+
+        if not chroma_db_conf.vector_db_dir:
+            logging.error("Chroma vector_db_dir is missing in the configuration.")
+            raise ValueError("Chroma vector_db_dir is missing in the configuration.")
+
+        logging.info(
+            f"[ChromaEnhanced] Relative chroma path from configuration: '{chroma_db_conf.vector_db_dir}'"
+        )
+        try:
+            resolved_chroma_dir = resolve_path(chroma_db_conf.vector_db_dir)
+            logging.info(
+                f"[ChromaEnhanced] Resolved absolute chroma path: '{resolved_chroma_dir}'"
+            )
+        except Exception as e:
+            logging.error(f"[ChromaEnhanced] Error resolving chroma path: {e}")
+            raise
+
+        # Create the ChromaEnhanced instance
+        try:
+            chroma_instance = ChromaEnhanced(
+                chroma_dir=resolved_chroma_dir, models_config=product_config.models
+            )
+            logging.info(
+                f"ChromaEnhanced successfully created for path: {resolved_chroma_dir}"
+            )
+            return chroma_instance
+        except Exception as e:
+            logging.error(f"Error creating ChromaEnhanced instance: {e}")
+            raise
+
+    # Returns the instance of the embedding function
+    def embedding_function(self, *args, **kwargs) -> GeminiEmbeddingFunction:
+        """Returns the embedding function instance configured for the Chroma wrapper."""
+        return self.embedding_function_instance
 
     def list_collections(self):
         return self.client.list_collections()
 
-    # Returns output_dir if backup was successful, None if it failed
-    # Output dir can only be a child to chroma_dir
-    def backup_chroma(self, chroma_dir: str, output_dir: typing.Optional[str] = None):
+    def backup(self, output_dir: typing.Optional[str] = None):
+        """Backs up the chroma database to the specified output directory.
+
+        Args:
+            output_dir (str, optional): The directory to backup to. If None, a
+                backup directory will be created that is parralel to the
+                self.chroma_dir.
+
+        Returns:
+            str: The path to the backup directory, or None if the backup failed.
+        """
+        if output_dir == None:
+            try:
+                output_dir = helpers.parallel_backup_dir(self.chroma_dir)
+            except:
+                logging.exception(
+                    "Failed to create backup directory for: %s", self.chroma_dir
+                )
+                return None
+        else:
+            try:
+                pure_path = helpers.return_pure_dir(self.chroma_dir)
+                output_dir = (
+                    helpers.end_path_backslash(
+                        helpers.start_path_no_backslash(output_dir)
+                    )
+                    + pure_path
+                )
+            except:
+                logging.exception(
+                    "Failed to resolve output directory for: %s", output_dir
+                )
+                return None
         try:
-            chroma_dir = resolve_path(chroma_dir)
             if output_dir == None:
-                output_dir = parallel_backup_dir(chroma_dir)
-            shutil.copytree(chroma_dir, output_dir, dirs_exist_ok=True)
-            logging.info(f"Backed up from: {chroma_dir} to {output_dir}")
+                output_dir = helpers.parallel_backup_dir(self.chroma_dir)
+            shutil.copytree(self.chroma_dir, output_dir, dirs_exist_ok=True)
+            logging.info("Backed up from: %s to %s", self.chroma_dir, output_dir)
             return output_dir
         except:
+            logging.exception(
+                "Failed to backup from: %s to %s", self.chroma_dir, output_dir
+            )
             return None
 
     # def getSameOriginUUID(self):
     #     return self.client.get()
 
-    def get_collection(self, name, embedding_function=None, embedding_model=None):
-        if embedding_function is not None:
-            return ChromaCollectionEnhanced(
-                self.client.get_collection(
-                    name=name, embedding_function=embedding_function
-                ),
-                embedding_function,
-            )
-        # Read embedding meta information from the collection
-        collection = self.client.get_collection(name=name)
-        if embedding_model is None and collection.metadata:
-            embedding_model = collection.metadata.get("embedding_model", None)
-            if embedding_model is None:
-                # If embedding_model is not found in the metadata,
-                # use `models/embedding-001` by default.
-                logging.info(
-                    "Embedding model is not specified in the metadata of "
-                    "the collection %s. Using the default embedding model: models/embedding-001",
-                    name,
-                )
-                embedding_model = "models/embedding-001"
-        if embedding_model == "local/all-mpnet-base-v2":
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            local_model_dir = os.path.join(base_dir, "models/all-mpnet-base-v2")
-            embedding_function = (
-                embedding_functions.SentenceTransformerEmbeddingFunction(
-                    model_name=local_model_dir
-                )
-            )
-        else:
-            raise ChromaEmbeddingModelNotSupportedError(
-                f"Embedding model {embedding_model} specified by collection {name} "
-                "is not supported."
+    def get_collection(self, name, embedding_function=None):
+        # Can override the embedding function
+        ef_to_use = (
+            embedding_function
+            if embedding_function
+            else self.embedding_function_instance
+        )
+        try:
+            collection = self.client.get_collection(name=name)
+            if self._collection_name is None:
+                self._collection_name = name
+        except Exception as e:
+            logging.error(f"Failed to get collection '{name}': {e}")
+            raise
+        return ChromaCollectionEnhanced(collection, ef_to_use)
+
+    def query_vector_store_to_build(
+        self,
+        question: str,
+        token_limit: float = 200000,
+        results_num: int = 10,
+        max_sources: int = 4,
+        collection_name: typing.Optional[str] = None,
+        docs_agent_config: typing.Optional[str] = "normal",
+    ) -> tuple[list[SectionDistance], str]:
+        """
+        Queries the vector database collection and builds a context string.
+        Calls the retriever function.
+
+        Args:
+            question (str): The user's question.
+            token_limit (float, optional): The total token limit for the context. Defaults to 200000.
+            results_num (int, optional): The initial number of results to retrieve. Defaults to 10.
+            max_sources (int, optional): The maximum number of sources to use. Defaults to 4.
+            collection_name (str, optional): The name of the collection to query.
+                                            If None, uses the collection name stored
+                                            during the first get_collection call.
+            docs_agent_config (str, optional): The docs agent configuration string. "experimental" or "normal". Defaults to "normal".
+
+        Returns:
+            tuple: A tuple containing a list of SectionDistance objects and the final context string.
+        """
+        target_collection_name = collection_name or self._collection_name
+        if not target_collection_name:
+            logging.error("Collection name not provided and not previously set.")
+            raise ValueError(
+                "Must provide collection_name or call get_collection first."
             )
 
-        return ChromaCollectionEnhanced(
-            self.client.get_collection(
-                name=name, embedding_function=embedding_function
-            ),
-            embedding_function,
+        target_docs_agent_config = docs_agent_config
+        try:
+            collection_obj = self.get_collection(name=target_collection_name)
+        except Exception as e:
+            logging.error(f"Failed to get collection '{target_collection_name}': {e}")
+            raise
+
+        # Call the function from docs_retriever
+        return retriever_query_vector_store_to_build(
+            collection=collection_obj,
+            docs_agent_config=target_docs_agent_config,
+            question=question,
+            token_limit=token_limit,
+            results_num=results_num,
+            max_sources=max_sources,
         )
 
 
 class ChromaCollectionEnhanced:
     """Chroma collection wrapper"""
 
-    def __init__(self, collection, embedding_function) -> None:
+    def __init__(self, collection, embedding_function_instance) -> None:
         self.collection = collection
-        self.embedding_function = embedding_function
+        # Store the embedding function instance
+        self.embedding_function = embedding_function_instance
+        # Retrieve the models config from the embedding function instance
+        if hasattr(embedding_function_instance, "models_config"):
+            self._models_config = embedding_function_instance.models_config
+        else:
+            self._models_config = None
+            logging.warning(
+                "ChromaCollectionEnhanced could not access models_config from the embedding function."
+            )
 
-    def query(self, text: str, top_k: int = 1):
-        dict = {}
-        # dict.update({"token_estimate": {"$gt": 100}})
-        return ChromaQueryResultEnhanced(
-            self.collection.query(query_texts=[text], n_results=top_k, where=dict)
-        )
-
-        # same_page = self.collection.get(include=["documents","metadatas"],
-        #                             where={"origin_uuid": {"$eq": origin_uuid[i]}},)
-
-    # # Return all entries that match an origin_uuid
-    # def getPageOriginUUID(self, origin_uuid):
-    #     return ChromaDBGet(
-    #         self.collection.get(
-    #             include=["metadatas", "documents"],
-    #             where={"origin_uuid": {"$eq": origin_uuid}},
-    #         )
-    #     )
+    def query(self, text: str, top_k: int = 1, where: dict = None):
+        """Queries the ChromaDB collection using appropriate query embeddings."""
+        if self._models_config:
+            query_ef = GeminiEmbeddingFunction(
+                models_config=self._models_config, task_type="RETRIEVAL_QUERY"
+            )
+            # Query the collection using the query embeddings
+            query_embeddings = query_ef([text])
+            query_args = {"query_embeddings": query_embeddings, "n_results": top_k}
+            if where is not None:
+                query_args["where"] = where
+            result = self.collection.query(**query_args)
+        else:
+            logging.warning(
+                "Cannot create query-specific embedding function. Falling back to using collection's default embedding function for query."
+            )
+            query_args = {"query_texts": [text], "n_results": top_k}
+            if where is not None:
+                query_args["where"] = where
+            result = self.collection.query(**query_args)
+        return ChromaQueryResultEnhanced(result)
 
     # Return a FullPage (list of Section) that match an origin_uuid
     def getPageOriginUUIDList(self, origin_uuid):
@@ -429,7 +597,9 @@ class ChromaQueryResultEnhanced:
         self.result = result
 
     def __len__(self):
-        return len(self.result["documents"][0])
+        if self.result["documents"] and self.result["documents"][0]:
+            return len(self.result["documents"][0])
+        return 0
 
     # Get without considering distance
     def clean_get(self):
@@ -477,10 +647,16 @@ class ChromaQueryResultEnhanced:
     # limit specific in query. You can then access from each list item with
     # .document, .id, etc...
     def returnDBObjList(self, distance_threshold=float("inf")):
-        results = self.fetch(distance_threshold=distance_threshold)
         contents = []
-        for item in results:
-            contents.append(item)
+        # Check if results exist before iterating
+        if self.result and self.result.get("documents") and self.result["documents"][0]:
+            results = self.fetch(distance_threshold=distance_threshold)
+            for item in results:
+                contents.append(item)
+        else:
+            logging.warning(
+                "No documents found in Chroma query result for returnDBObjList."
+            )
         return contents
 
     # This function returns a list of ChromaSectionDBItem that match results up to
@@ -495,10 +671,20 @@ class ChromaQueryResultEnhanced:
         return results
 
     def fetch_nearest(self):
-        return ChromaSectionDBItem(self.result, 0)
+        # Add check for empty results
+        if len(self) > 0:
+            return ChromaSectionDBItem(self.result, 0)
+        else:
+            logging.warning(
+                "Attempted to fetch nearest from empty Chroma query result."
+            )
+            return None  # Or raise an error
 
     def fetch_nearest_formatted(self, format_type: SectionDB):
-        return self.fetch_nearest().format(format_type)
+        nearest = self.fetch_nearest()
+        if nearest:
+            return nearest.format(format_type)
+        return ""  # Return empty string if no nearest item
 
     # def return_response(self):
     #     return ChromaSectionDBItem.returnSection(self)

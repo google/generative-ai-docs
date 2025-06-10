@@ -93,6 +93,18 @@ from your `$HOME` directory.
    poetry install
    ```
 
+4. Set up the Poetry environment:
+
+   ```
+   poetry env activate
+   ```
+
+5. Install the `shell` plugin:
+
+   ```
+   poetry self add poetry-plugin-shell
+   ```
+
 ## 4. Try the Docs Agent CLI
 
 1. Enter the `poetry shell` environment:
@@ -138,7 +150,9 @@ For more details on these commands, see the
 [Interacting with language models][cli-reference-helpme] section in
 the CLI reference page.
 
-## Appendices
+For creating a new task, see [Create a new Docs Agent task][create-a-new-task].
+
+## Appendix
 
 ### Authorize credentials for Docs Agent
 
@@ -372,3 +386,4 @@ To set up this `helpme` command in your terminal, do the following:
 [genai-doc-site]: https://ai.google.dev/docs/gemini_api_overview
 [cli-reference-helpme]: ../../docs/cli-reference.md#interacting-with-language-models
 [docs-agent-tasks]: ../../tasks
+[create-a-new-task]: ../../docs/create-a-new-task.md

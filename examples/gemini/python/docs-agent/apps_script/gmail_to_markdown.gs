@@ -66,7 +66,7 @@ function exportEmailsToMarkdown(search, folderName) {
           let md5_hash = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5,hash_content,
                           Utilities.Charset.US_ASCII);
           let hash_str = byteToStr(md5_hash);
-          //Function returns an array, assign each array value to seperate variables. For emails, only need to retrieve
+          //Function returns an array, assign each array value to separate variables. For emails, only need to retrieve
           // backup markdown ids
           var backup_results = returnBackupHash(sheet, "Backup", hash_str, start_data_row, 7, 4, 5);
           if (backup_results != undefined && backup_results[0] != "no_results") {

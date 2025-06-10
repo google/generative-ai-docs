@@ -1,5 +1,16 @@
 # What's new in Docs Agent
 
+
+## April 2025
+
+* **Milestone: Introduced Tool Usage through MCP**
+* Added the new `agent tools` CLI command, enabling interaction with the model
+  using external tools.
+* Leverages the Model Context Protocol (MCP) for tool discovery and execution.
+  Define MCP servers in `config.yaml`.
+* This allows the agent to use configured tools.
+* Manages tools through the `ToolManager` and `MCPService`.
+
 ## April 2024
 
 * **Focus: Feature enhancements and usability improvements**

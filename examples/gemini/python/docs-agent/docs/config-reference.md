@@ -147,6 +147,31 @@ for example:
 secondary_corpus_name: "corpora/my-example-corpus"
 ```
 
+### mcp_servers
+
+This field defines a list of Model Context Protocol (MCP) servers that Docs
+Agent can use. These servers expose external tools that the language model can
+use when responding to prompts through the `agent tools` command.
+Each entry in the list defines a connection to one MCP server.
+
+```yaml
+mcp_servers:
+  - name: "my_custom_tool"  # A unique identifier for this tool server
+    connection_type: "stdio"  # Currently 'stdio' or 'sse'
+    command: ["npx"] # This can be npx to directly run a MCP server with npx
+    args: ["<flag>", "<address>"] # Command to use the server for stdio
+    env:
+      <ENV_NAME>: '{ "headless": true, "args": [] }' # I.E. PUPPETEER_LAUNCH_OPTIONS: '{ "headless": true, "args": [] }'
+    # url: "http://localhost:8080/mcp" # URL for the server (for sse)
+  - name: "another_tool"
+    connection_type: "sse"
+    url: "http://localhost:8080/mcp"
+  - name: "git"
+    server_type: "stdio"
+    command: "uv"
+    name: "git"
+    args: ["--directory","~/mcp_servers/servers/src/git", "run", "mcp-server-git"] # Your machine needs the checkout
+```
 <!-- Reference link -->
 
 [config-yaml]: ../config.yaml

@@ -26,10 +26,8 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 
-from docs_agent.storage.chroma import Format
 from docs_agent.agents.docs_agent import DocsAgent
 from docs_agent.utilities import config
-from docs_agent.utilities.config import ProductConfig
 
 
 # A function that asks the questin to the AI model using the RAG technique.
@@ -37,7 +35,7 @@ def ask_model(question: str, docs_agent: DocsAgent):
     results_num = 5
     if "gemini" in docs_agent.config.models.language_model:
         # print("Asking a Gemini model")
-        (search_result, final_context) = docs_agent.query_vector_store_to_build(
+        (search_result, final_context) = docs_agent.rag.query_vector_store_to_build(
             question=question,
             token_limit=30000,
             results_num=results_num,
@@ -147,7 +145,7 @@ def run_benchmarks():
         vprint("################")
         vprint("Input text:")
         vprint(target_answer)
-        embedding_01 = docs_agent.generate_embedding(target_answer)
+        embedding_01 = docs_agent.language_model.embed(content=target_answer, task_type="SEMANTIC_SIMILARITY")[0]
         vprint("")
         vprint("Embedding:")
         vprint(str(embedding_01))
@@ -165,7 +163,7 @@ def run_benchmarks():
         vprint("################")
         vprint("Input text:")
         vprint(response)
-        embedding_02 = docs_agent.generate_embedding(response)
+        embedding_02 = docs_agent.language_model.embed(content=response, task_type="SEMANTIC_SIMILARITY")[0]
         vprint("")
         vprint("Embedding:")
         vprint(str(embedding_02))

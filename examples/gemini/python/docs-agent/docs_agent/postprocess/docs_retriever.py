@@ -16,6 +16,7 @@
 # from markdown import markdown
 # from bs4 import BeautifulSoup
 # import re, os
+import typing
 from docs_agent.models import tokenCount
 from docs_agent.preprocess.splitters.markdown_splitter import Section as Section
 
@@ -166,7 +167,6 @@ class FullPage:
         # If Section doesn't match, just return a FullPage with a blank list
         if not match:
             print(f"Could not find a section with the provided ID {section_id}")
-            # return FullPage(section_list=updated_list)
             return None
         # Start token count at 0
         curr_token = 0
@@ -240,3 +240,128 @@ class FullPage:
                     section_token_count += item.token_count
         final_page = FullPage(final_sections).sortSections(reverse=reverse)
         return final_page
+
+
+def query_vector_store_to_build(
+    collection: typing.Any, # TODO Update to use a RAG object
+    docs_agent_config: str,
+    question: str,
+    token_limit: float = 200000,
+    results_num: int = 10,
+    max_sources: int = 4,
+) -> tuple[list[SectionDistance], str]:
+    """
+    Queries the vector database collection and builds a context string.
+
+    Args:
+        collection: The vector store collection object (e.g., Chroma collection).
+        docs_agent_config: The configuration string ('experimental' or other).
+        question (str): The user's question.
+        token_limit (float, optional): The total token limit for the context. Defaults to 200000.
+        results_num (int, optional): The initial number of results to retrieve from the vector store. Defaults to 10.
+        max_sources (int, optional): The maximum number of sources to use to build the context. Defaults to 4.
+
+    Returns:
+        tuple: A tuple containing a list of SectionDistance objects and the final context string.
+    """
+    if not hasattr(collection, 'query'):
+        raise AttributeError("Passed collection object does not have a 'query' method.")
+    contexts_query = collection.query(question, results_num)
+
+    if not hasattr(contexts_query, 'returnDBObjList'):
+        raise AttributeError("Result of collection.query does not have a 'returnDBObjList' method.")
+
+    build_context = contexts_query.returnDBObjList()
+
+    if max_sources <= 0:
+        token_limit_per_source = []
+    else:
+        token_limit_temp = token_limit / max_sources
+        token_limit_per_source = [token_limit_temp] * max_sources
+
+    search_result = []
+    same_pages = []
+    for item in build_context:
+         if not hasattr(item, 'metadata') or not hasattr(item, 'document') or not hasattr(item, 'distance'):
+             print(f"Warning: Skipping item in query_vector_store_to_build due to missing attributes: {item}")
+             continue
+         if not isinstance(item.metadata, dict):
+             print(f"Warning: Skipping item due to unexpected metadata type: {type(item.metadata)}")
+             continue
+
+         section = SectionDistance(
+             section=Section(
+                 id=item.metadata.get("section_id", None),
+                 name_id=item.metadata.get("name_id", None),
+                 page_title=item.metadata.get("page_title", None),
+                 section_title=item.metadata.get("section_title", None),
+                 level=item.metadata.get("level", None),
+                 previous_id=item.metadata.get("previous_id", None),
+                 parent_tree=item.metadata.get("parent_tree", None),
+                 token_count=item.metadata.get("token_estimate", None),
+                 content=item.document,
+                 md_hash=item.metadata.get("md_hash", None),
+                 url=item.metadata.get("url", None),
+                 origin_uuid=item.metadata.get("origin_uuid", None),
+             ),
+             distance=item.distance,
+         )
+         search_result.append(section)
+
+    final_pages = []
+    this_range = min(len(search_result), max_sources)
+
+    for i in range(this_range):
+        if not (search_result[i] and hasattr(search_result[i], 'section') and search_result[i].section):
+             print(f"Warning: Skipping index {i} in build loop due to invalid search result item.")
+             continue
+
+        current_section = search_result[i].section
+
+        page_token_limit = token_limit_per_source[i] if i < len(token_limit_per_source) else 0
+
+        if not hasattr(collection, 'getPageOriginUUIDList'):
+            raise AttributeError("Passed collection object does not have a 'getPageOriginUUIDList' method.")
+
+        try:
+            same_page = collection.getPageOriginUUIDList(
+                origin_uuid=current_section.origin_uuid
+            )
+            if not hasattr(same_page, 'buildSections'):
+                 raise AttributeError("Object returned by getPageOriginUUIDList does not have a 'buildSections' method.")
+
+        except Exception as e:
+            print(f"Error processing item {i} with origin_uuid {current_section.origin_uuid}: {e}")
+            continue
+
+        if docs_agent_config == "experimental":
+            test_page = same_page.buildSections(
+                section_id=current_section.id,
+                selfSection=True,
+                children=True,
+                parent=True,
+                siblings=True,
+                token_limit=page_token_limit,
+                reverse=False
+            )
+        else:
+            test_page = same_page.buildSections(
+                section_id=current_section.id,
+                selfSection=True,
+                children=False,
+                parent=False,
+                siblings=False,
+                token_limit=page_token_limit,
+                reverse=False
+            )
+        final_pages.append(test_page)
+
+    final_context = ""
+    for item in final_pages:
+         if hasattr(item, 'section_list') and item.section_list:
+             for source in item.section_list:
+                 if hasattr(source, 'content') and source.content:
+                     final_context += source.content + "\n\n"
+    final_context = final_context.strip()
+
+    return search_result, final_context

@@ -1,0 +1,57 @@
+tasks:
+  - name: "DescribeImagesAndReplace"
+    model: "models/gemini-2.0-flash-thinking-exp"
+    description: >
+      An agent that extracts all image file names in an input doc and
+      generates alt text for the images.
+    preamble: >
+      When you generate a response for alt text, your suggestion should not
+      start with Picture of, Image of, or Screenshot of. Your new alt text
+      suggestion must be fewer than 125 characters. Do not exceed 125
+      characters. Provide the option that is most suitable for alt text.
+      Output only the alt text suggestion. Do not include any explanations
+      or commentary. Do not include end punctuation.
+    steps:
+      - prompt: "create_file_dictionary.py"
+        function: "script"
+        description: >
+          This script extract all image files found in the input file and
+          store the list of image file names in the
+          agent_out/files_alt_text.yaml file.
+        flags:
+          script_input: "<INPUT>"
+          default_input: "./README.md"
+      - prompt: >
+          Provide a brief description of each Markdown file in this
+          directory, emphasizing the key content and purpose of each file.
+        flags:
+          allfiles: "<INPUT>"
+          default_input: "./docs"
+          file_ext: "md"
+      - prompt: >
+          Using the above information as context, provide concise,
+          descriptive alt text for this image that captures its essence and
+          is suitable for users with visual impairments. Use any existing
+          alt text found in the information above for context.
+        flags:
+          list_file: "agent_out/image_paths.txt"
+          model: "models/gemini-2.0-flash"
+      - prompt: >
+          Update the provided YAML file and map each description as a key
+          that is parallel to the relevant image path, the key should be
+          "llm_alt_texts" for every description. Make sure that the values
+          are wrapped in double quotes in case the strings have special
+          values. Do not wrap your response with triple backticks yaml or
+          add any additional text around your response. Just return a valid
+          YAML file.
+        flags:
+          file: "agent_out/file_alt_text.yaml"
+          out: "llm_file_alt_text.yaml"
+      - prompt: "update_files_from_yaml.py"
+        function: "script"
+        description: >
+          This script updates all files with new alt text from the
+          llm_file_alt_text.yaml file.
+        flags:
+          script_input: "agent_out/llm_file_alt_text.yaml"
+          default_input: "./README.md"
