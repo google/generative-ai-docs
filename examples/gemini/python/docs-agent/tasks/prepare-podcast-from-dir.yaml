@@ -1,5 +1,5 @@
 tasks:
-  - name: "PreparePodcasteFromDir"
+  - name: "PreparePodcastFromDir"
     model: "models/gemini-1.5-pro-latest"
     description: "An agent that helps prepare a podcast from a directory of markdown files."
     preamble: "When writing a prompt, always be direct and concise."

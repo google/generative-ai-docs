@@ -315,5 +315,5 @@ def log_dislike(is_dislike, uid, save: bool = True):
             log_file.write(
                 "[" + date.strftime(date_format) + "][UID " + str(uid) + "]\n"
             )
-            log_file.write("Disike: " + str(is_dislike) + "\n\n")
+            log_file.write("Dislike: " + str(is_dislike) + "\n\n")
             log_file.close()

@@ -67,7 +67,7 @@ _script()
   ReviseContentStructure
   IndexPageGenerator
   DraftPSA
-  PreparePodcasteFromDir
+  PreparePodcastFromDir
   DescribeImages
   DescribeImagesWithoutMarkdown
   DescribeImagesFromDoc

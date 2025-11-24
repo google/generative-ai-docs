@@ -167,7 +167,7 @@
 {% elif feedback_mode == "like_and_dislike" %}
 <div id="feedback-buttons-box">
   <input type="button" class="notselected" value="Like this response &#128077;" id="like-button">
-  <input type="button" class="notselected" value="Disike &#128078;" id="dislike-button">
+  <input type="button" class="notselected" value="Dislike &#128078;" id="dislike-button">
   {% if aqa_response_in_html != "" %}
   <span id="answerable-span">
     (<b>Answerable probability</b>: {{"%.3f"|format(probability|float)}})
