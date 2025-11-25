@@ -284,7 +284,7 @@ def helpme(
 
     # Select the mode.
     if helpme_mode == "PREVIOUS_EXCHANGES":
-        # Continue mode, which uses the previous exchangs as the main context.
+        # Continue mode, which uses the previous exchanges as the main context.
         this_output = console.ask_model_with_file(
             question.strip(),
             product_config,

@@ -17,10 +17,10 @@
 This script updates markdown files with image paths and alt text from a YAML file.
 
 Usage:
-  python update_files_from_yaml.py
+  python update_files_from_yaml.py <yaml_file>
 
 Example:
-  python update_files_from_yaml.py
+  python update_files_from_yaml.py agent_out/file_alt_text.yaml
 """
 
 import re

@@ -581,7 +581,7 @@ class ReadConfig:
             sys.exit(1)
 
     def __str__(self):
-        # Returns the absoulte path to the config file or provides an error message
+        # Returns the absolute path to the config file or provides an error message
         return getattr(self, "yaml_path", "Config path not determined")
 
     def returnProducts(self, product: typing.Optional[str] = None) -> ConfigFile:

@@ -12,7 +12,7 @@ tasks:
       - prompt: "extract_replace_image_alt_text.py"
         function: "script"
         description: >
-          This script extract all image files found in the input file and store the list of image file
+          This script extracts all image files found in the input file and stores the list of image file
           names in the agent_out/image_paths.txt file.
         flags:
           script_input: "<INPUT>"

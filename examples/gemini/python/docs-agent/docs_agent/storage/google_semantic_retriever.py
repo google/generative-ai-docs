@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-"""Semantic Retrievel module for using the Semantic Retrieval API with AQA"""
+"""Semantic Retrieval module for using the Semantic Retrieval API with AQA"""
 
 import google.ai.generativelanguage as glm
 from absl import logging
@@ -133,7 +133,7 @@ class SemanticRetriever:
             # Set the `document_resource_name` for subsequent sections.
             document_resource_name = create_document_response.name
         except:
-            logging.error(f"Cannot create a new doucment: {page_title}")
+            logging.error(f"Cannot create a new document: {page_title}")
             exit(1)
         return document_resource_name
 
@@ -144,7 +144,7 @@ class SemanticRetriever:
             # Make the request
             response = self.retriever_service_client.get_document(get_document_request)
         except:
-            logging.error(f"Cannot retrieve a doucment: {document_resource_name}")
+            logging.error(f"Cannot retrieve a document: {document_resource_name}")
         return response
 
     def create_a_chunk(
@@ -241,10 +241,10 @@ class SemanticRetriever:
                 )
                 return chunk
             except:
-                logging.error("Error in creaing a doc chunk: " + page_title)
+                logging.error("Error in creating a doc chunk: " + page_title)
                 return None
         except:
-            logging.error("Error in creaing a doc chunk: " + page_title)
+            logging.error("Error in creating a doc chunk: " + page_title)
             return None
 
     def get_all_docs(self, corpus_name: str, print_output: bool = False):
