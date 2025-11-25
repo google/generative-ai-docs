@@ -59,11 +59,11 @@ def construct_chunks(library_name: str, protocol_name: str, lines):
     contents = []
     buffer_size = get_byte_size(lines)
     if int(buffer_size) > 5000:
-        # If the protocol is larget than 5KB, divide it into two.
+        # If the protocol is larger than 5KB, divide it into two.
         logging.info(
             "Found a text chunk ("
             + str(protocol_name)
-            + ") is greater than 6KB (size: "
+            + ") is greater than 5KB (size: "
             + str(buffer_size)
             + ")."
         )
@@ -116,11 +116,11 @@ def split_file_to_protocols(this_file):
             # print("MATCHED [End bracket]")
             line_buffer.append(line)
             if library_name != "" and protocol_name != "":
-                # Prepre a captured FIDL protocl into small text chunks.
+                # Prepare a captured FIDL protocol into small text chunks.
                 contents = construct_chunks(library_name, protocol_name, line_buffer)
                 for content in contents:
                     protocols.append(content)
-            # Clear the line butter and protocol name when an end bracket is found.
+            # Clear the line buffer and protocol name when an end bracket is found.
             line_buffer.clear()
             protocol_name = ""
         else:

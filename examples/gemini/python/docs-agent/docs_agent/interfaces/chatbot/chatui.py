@@ -55,7 +55,7 @@ def construct_blueprint(
         if product_config.secondary_db_type == "chroma":
             docs_agent = DocsAgent(config=product_config, init_chroma=True)
         else:
-            # A local Chroma DB is not needed for the Semantic Retreiver only mode.
+            # A local Chroma DB is not needed for the Semantic Retriever only mode.
             docs_agent = DocsAgent(config=product_config, init_chroma=False)
     elif product_config.db_type == "none":
         docs_agent = DocsAgent(

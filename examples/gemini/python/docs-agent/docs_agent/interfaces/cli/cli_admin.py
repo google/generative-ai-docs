@@ -208,7 +208,7 @@ def delete_corpus(
         click.echo("Deleting " + name)
         if click.confirm("Do you want to continue?", abort=True):
             semantic.delete_a_corpus(corpus_name=name, force=True)
-            click.echo("Successfuly deleted " + name)
+            click.echo("Successfully deleted " + name)
             corpora_response = semantic.list_existing_corpora()
             click.echo(f"Corpora list:\n{corpora_response}")
 

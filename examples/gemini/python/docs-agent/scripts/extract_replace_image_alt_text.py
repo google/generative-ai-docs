@@ -17,12 +17,12 @@
 This script extracts image paths from markdown, html, or directory of files.
 
 Usage:
-  python extract_image_files.py <input_file>
+  python extract_replace_image_alt_text.py <input_file>
 
 Example:
-  python extract_image_files.py my_document.md
-  python extract_image_files.py my_document.html
-  python extract_image_files.py my_documents_folder
+  python extract_replace_image_alt_text.py my_document.md
+  python extract_replace_image_alt_text.py my_document.html
+  python extract_replace_image_alt_text.py my_documents_folder
 """
 
 import os

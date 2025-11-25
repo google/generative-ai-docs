@@ -15,8 +15,8 @@ tasks:
       - prompt: "create_file_dictionary.py"
         function: "script"
         description: >
-          This script extract all image files found in the input file and
-          store the list of image file names in the
+          This script extracts all image files found in the input file and
+          stores the list of image file names in the
           agent_out/files_alt_text.yaml file.
         flags:
           script_input: "<INPUT>"

@@ -629,7 +629,7 @@ def process_document_into_sections(markdown_text):
     return sections
 
 
-# Process an array of Markdwon text into an array of string buffers
+# Process an array of Markdown text into an array of string buffers
 # whose size is smaller than 5KB.
 def construct_chunks(lines):
     contents = []

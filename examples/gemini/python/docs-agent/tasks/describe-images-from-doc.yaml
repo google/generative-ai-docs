@@ -18,7 +18,7 @@ tasks:
       - prompt: "extract_image_files.py"
         function: "script"
         description: >
-          This script extract all image files found in the input file and store the list of image
+          This script extracts all image files found in the input file and stores the list of image
           file names in the agent_out/image_paths.txt file.
         flags:
           script_input: "<INPUT>"

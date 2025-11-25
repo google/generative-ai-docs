@@ -308,7 +308,7 @@ A step that runs the `tellme` command:
 
 Using the `tellme` command requires **a vector database setup**.
 
-<!-- Referene links -->
+<!-- Reference links -->
 
 [model-code]: https://ai.google.dev/gemini-api/docs/models/gemini
 [tasks-dir]: ../tasks
