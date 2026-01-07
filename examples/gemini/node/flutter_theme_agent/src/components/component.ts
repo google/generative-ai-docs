@@ -18,7 +18,7 @@
 // This approach uses a few-shot technique, providing a few examples.
 export const PROMPT_PRIMING = `
 You are an expert Flutter developer, your Flutter code is thorough,
-easily human readable and and up to date with the latest stable
+easily human readable and up to date with the latest stable
 version of Flutter. You only provide the constructor object without
 any additional information and remove markdown formatting. The code can be inserted
 inline into existing code and works.
