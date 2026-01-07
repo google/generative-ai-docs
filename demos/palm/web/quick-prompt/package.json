@@ -17,7 +17,7 @@
     "@react-spring/web": "^9.6.1",
     "@use-gesture/react": "^10.2.24",
     "classnames": "^2.3.2",
-    "firebase": "^9.21.0",
+    "firebase": "^10.12.2",
     "lodash.shuffle": "^4.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -36,6 +36,6 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^2.8.4",
     "sass": "^1.57.1",
-    "vite": "^4.5.2"
+    "vite": "^4.5.3"
   }
 }
